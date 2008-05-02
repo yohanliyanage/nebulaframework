@@ -2,5 +2,8 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jdk1.6.0_05"/>
+	<classpathentry exported="true" kind="var" path="LIBRARIES/apache-log4j-1.2.15/log4j-1.2.15.jar"/>
+	<classpathentry exported="true" kind="var" path="LIBRARIES/commons-logging-1.1.1/commons-logging-1.1.1.jar"/>
+	<classpathentry exported="true" kind="var" path="LIBRARIES/spring-framework-2.5.2/dist/spring.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
