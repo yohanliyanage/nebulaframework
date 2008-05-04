@@ -29,11 +29,10 @@ public interface GridTask<T extends Serializable> extends Serializable{
 	/**
 	 * Executes the GridTask on a remote node.
 	 * 
-	 * @param args Arguments for the execute method.
 	 * @return Result of execution.
 	 * @throws GridExecutionException If an exception was thrown at the time of execution.
 	 */
-	public T execute(Serializable... args) throws GridExecutionException;
+	public T execute() throws GridExecutionException;
 	
 	/**
 	 * Cancels the execution of this Task.

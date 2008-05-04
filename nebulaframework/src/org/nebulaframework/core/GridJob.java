@@ -39,12 +39,8 @@ public interface GridJob<R extends Serializable> extends Serializable{
 	 * which are the outcome of {@link GridTask} execution.
 	 * @return Final result of Job
 	 */
-	public R aggregate(List<? extends GridTaskResult<R>> results);
+	public R aggregate(List<GridTaskResult> results);
 	
-	/**
-	 * Starts execution of the {@link GridJob}.
-	 * @return A {@link GridJobFuture} indicating status of Job
-	 */
-	public GridJobFuture<R> start();
+
 
 }

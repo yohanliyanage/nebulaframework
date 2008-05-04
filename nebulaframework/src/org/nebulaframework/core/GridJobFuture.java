@@ -15,6 +15,9 @@ package org.nebulaframework.core;
 
 import java.io.Serializable;
 
+import org.nebulaframework.core.job.GridJobState;
+import org.nebulaframework.core.job.GridJobStateListener;
+
 /**
  * <p>TaskFuture is returned by {@link GridJob#start()} method. This class allows to 
  * check the status of a {@link GridJob}, to cancel execution of a {@link GridJob}, 
@@ -24,19 +27,13 @@ import java.io.Serializable;
  *
  * @param <T> Type of result of execution of GridTask.
  */
-public interface GridJobFuture<T extends Serializable> extends Serializable{
+public interface GridJobFuture extends Serializable{
 	
 	/**
-	 * Returns true of the job is complete.
-	 * @return true of the job is complete.
+	 * Returns the Job State through {@link GridJobState} enum.
+	 * @return JobState of the Grid Job
 	 */
-	public boolean isComplete();
-	
-	/**
-	 * Returns true if the job was canceled before completion.
-	 * @return true if the job was canceled
-	 */
-	public boolean isCancelled();
+	public GridJobState getState();
 	
 	/**
 	 * Attempts to cancel execution of this job. The cancellation of the job is not a guaranteed behavior.
@@ -51,7 +48,7 @@ public interface GridJobFuture<T extends Serializable> extends Serializable{
 	 * @return Result of the job
 	 * @throws GridExecutionException if execution fails
 	 */
-	public T getResult() throws GridExecutionException;
+	public Serializable getResult() throws GridExecutionException;
 	
 	/**
 	 * Returns the result of Job with in a given time. 
@@ -63,5 +60,17 @@ public interface GridJobFuture<T extends Serializable> extends Serializable{
 	 * @throws GridExecutionException if execution fails
 	 * @throws GridTimeoutException if timeout occurs
 	 */
-	public T getResult(long timeout) throws GridExecutionException, GridTimeoutException;
+	public Serializable getResult(long timeout) throws GridExecutionException, GridTimeoutException;
+
+	/**
+	 * Returns the current {@link GridJobStateListener} assigned to the GridJobFuture.
+	 * @return {@link GridJobStateListener}
+	 */
+	public GridJobStateListener getListener();
+
+	/**
+	 * Sets the {@link GridJobStateListener} for this GridJobFuture.
+	 * @param listener {@link GridJobStateListener}
+	 */
+	public void setListener(GridJobStateListener listener);
 }
