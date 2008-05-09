@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 2008 Yohan Liyanage. 
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
+ * you may not use this file except in compliance with the License. 
+ * You may obtain a copy of the License at 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS, 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 package org.nebulaframework.core.job;
 
 import java.io.Serializable;
@@ -16,6 +29,11 @@ import org.nebulaframework.core.job.distribute.ResultQueue;
 import org.nebulaframework.core.job.distribute.TaskQueue;
 import org.nebulaframework.core.job.distribute.TaskResultListener;
 
+/**
+ * Job Executor manages Job Execution.
+ * @author Yohan Liyanage
+ *
+ */
 public class JobExecutor {
 
 	private static Log log = LogFactory.getLog(JobExecutor.class);
@@ -25,36 +43,49 @@ public class JobExecutor {
 	private static RemoteGridJob job;
 	private static List<JobListener> jobListeners = new ArrayList<JobListener>();
 	private static boolean executing = false;
-
+	private static Object mutex = new Object();
+	
+	/**
+	 * Static Initialization Block
+	 * creates and starts JobExecutorDaemon Thread.
+	 */
 	static {
-		new Thread(new Runnable() {
+		
+		/**
+		 * JobExecutorDaemon Thread takes a Job from 
+		 */
+		Thread jobExecutor = new Thread(new Runnable() {
 
 			@Override
 			public void run() {
-				while (true) {
-
-					try {
-						synchronized (JobExecutor.class) {
-							if (executing) {
-								continue;
+				try {
+					//Infinite Loop : Until Interrupted
+					while (true) {
+						
+							//If a Job is in execution
+							while (JobExecutor.isExecuting()) {
+								synchronized (mutex) {
+									// Wait till current Job finishes
+									mutex.wait();
+								}
 							}
-						}
-
-						JobQueue queue = JobQueueImpl.getInstance();
-						log.info("Requesting Next Job from JobQueue");
-						JobExecutor.setJob(queue.nextJob());
-						JobExecutor.execute();
-					} finally {
-						try {
-							Thread.sleep(1000);
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
+							
+							// Check for Next Job
+							log.info("Requesting Next Job from JobQueue...");
+							JobExecutor.setJob(JobQueueImpl.getInstance().nextJob());
+							JobExecutor.execute();
 					}
+				}
+				catch (InterruptedException e) {
+					log.warn("Interrupted Exception at JobExecutorDaemon Thread", e);
+					log.debug("Stopping JobExecutorDaemon Thread");
 				}
 			}
 
-		}).start();
+		}, "JobExecutorDaemon");
+		
+		jobExecutor.setDaemon(true);	//Daemon Thread : Runs continuously
+		jobExecutor.start();
 	}
 
 	/**
@@ -68,20 +99,19 @@ public class JobExecutor {
 		return job;
 	}
 
-	public static synchronized void setJob(RemoteGridJob job) {
+	public static synchronized void setJob(RemoteGridJob job) throws IllegalArgumentException {
+		if (job==null) throw new IllegalArgumentException("No Job Specified");
 		JobExecutor.job = job;
 	}
 
-	public static synchronized <T extends Serializable> void execute() {
+	public static synchronized <T extends Serializable> void execute() throws IllegalStateException {
 
 		if (job == null) {
-			log.debug("No Job to Execute [null]");
-			return;
+			throw new IllegalStateException("JobExecutor.execute() invoked with a 'null' Job");
 		}
-		
+
 		log.info("Starting Execution of Job " + job.getJobId());
 		executing = true;
-		log.debug("Updating Future...");
 		job.getFuture().setState(GridJobState.EXECUTING);
 		
 		log.debug("Creating Task Tracker...");
@@ -107,7 +137,7 @@ public class JobExecutor {
 
 		});
 
-		log.debug("Notifying Job Start...");
+		
 		// Notify Workers that a new Job is available
 		notifyJobStart();
 
@@ -121,22 +151,7 @@ public class JobExecutor {
 
 		}).start();
 	}
-
-	@SuppressWarnings("unchecked")
-	private synchronized static void aggreagateJob(
-			GridJob<? extends Serializable> job, ResultQueue resultQueue) {
-		
-		log.debug("Aggreagating Results for Job " + JobExecutor.getJob().getJobId());
-		try {
-			Serializable result = job.aggregate(resultQueue.getResults());
-			JobExecutor.job.getFuture().setResult(result);
-			JobExecutor.job.getFuture().setState(GridJobState.COMPLETE);
-		} catch (Exception e) {
-			JobExecutor.job.getFuture().setState(GridJobState.FAILED);
-		}
-
-	}
-
+	
 	private synchronized static void splitJob(
 			GridJob<? extends Serializable> job, TaskQueue taskQueue) {
 
@@ -150,6 +165,38 @@ public class JobExecutor {
 		}
 
 	}
+	
+	@SuppressWarnings("unchecked")
+	private static void aggreagateJob(
+			GridJob<? extends Serializable> job, ResultQueue resultQueue) {
+		
+		log.debug("Aggreagating Results for Job " + JobExecutor.getJob().getJobId());
+		
+		synchronized (JobExecutor.class) {
+			try {
+				//Aggregate
+				Serializable result = job.aggregate(resultQueue.getResults());
+				
+				//Update Future
+				JobExecutor.job.getFuture().setResult(result);
+				JobExecutor.job.getFuture().setState(GridJobState.COMPLETE);
+				
+				//Update Flag
+				setExecuting(false);
+			} catch (Exception e) {
+				JobExecutor.job.getFuture().setState(GridJobState.FAILED);
+			}
+		}
+		
+		log.debug("Aggregation Finished");
+		
+		synchronized (mutex) {
+			//Notify to JobExecutorDaemon about Job Finished Event
+			mutex.notifyAll();
+		}
+	}
+
+
 
 	public static void addJobListener(JobListener listener) {
 		synchronized (jobListeners) {
@@ -170,11 +217,9 @@ public class JobExecutor {
 	}
 
 	private synchronized static void notifyJobStart() {
-		if (job == null) {
-			return;
-		}
-
-
+		
+		log.debug("Notifying Job Start...");
+		
 		synchronized (jobListeners) {
 			new Thread(new Runnable() {
 
@@ -191,12 +236,6 @@ public class JobExecutor {
 	}
 
 	private synchronized static void notifyJobEnd() {
-		if (job == null) {
-			return;
-		}
-
-		
-
 		synchronized (jobListeners) {
 			new Thread(new Runnable() {
 
@@ -206,14 +245,19 @@ public class JobExecutor {
 						l.endJob(job.getJobId());
 					}
 					
-					// Update Flag
-					executing = false;
+					
 				}
 
 			}).start();
 		}
-		
-		
 	}
 
+	private synchronized static boolean isExecuting() {
+		return executing;
+	}
+	
+	private synchronized static void setExecuting(boolean executing) {
+		JobExecutor.executing = executing;
+		
+	}
 }

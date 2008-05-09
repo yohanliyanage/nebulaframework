@@ -13,30 +13,35 @@
  */
 package test.nebulaframework.simpleTest;
 
+import java.util.Date;
 import java.util.Random;
 
-import org.nebulaframework.core.GridExecutionException;
-import org.nebulaframework.core.GridTask;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
- * Task Implementation for Test Job.
+ * Executes a Sequential Job to Demonstrate Sequential Running Time.
  * @author Yohan Liyanage
  *
  */
-public class TestTask implements GridTask<Integer>{
+public class SequentialRunner {
 
-	private static final long serialVersionUID = -4826864297461445244L;
-
-	@Override
-	public boolean cancel() {
-		// TODO Auto-generated method stub
-		return false;
+	private static Log log = LogFactory.getLog(SequentialRunner.class);
+	public static void main(String[] args) {
+		Date start = new Date();
+		int sum = 0;
+		log.info("Starting Job...");
+		for(int i=0 ; i < 50; i++) {
+			sum += execute();
+		}
+		Date end = new Date();
+		log.info("Job Complete. RESULT : " + sum);
+		log.info("Execution Time : " + (end.getTime() - start.getTime()) + " milliseconds");
 	}
-
-	@Override
-	public Integer execute() throws GridExecutionException {
+	
+	private static int execute() {
 		Integer val = new Random().nextInt(100);
-		System.out.println("Random Value : " + val);
+		System.out.println("Got Random Value : " + val);
 		TestRunner.sum += val;
 		try {
 			//Wait for 1 second, to simulate a large work unit
@@ -44,7 +49,6 @@ public class TestTask implements GridTask<Integer>{
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		return val;
+		return val;		
 	}
-
 }
