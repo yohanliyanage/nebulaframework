@@ -10,7 +10,6 @@ public class RegistrationImpl implements Registration {
 	private UUID uuid;
 	private UUID clusterId;
 	private String brokerUrl;
-	private String serviceTopic;
 
 	/**
 	 * {@inheritDoc}
@@ -58,19 +57,5 @@ public class RegistrationImpl implements Registration {
 		this.brokerUrl = brokerUrl;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */	
-	public String getServiceTopic() {
-		return serviceTopic;
-	}
-
-	/**
-	 * Sets the ServiceTopic Name of ClusterManager
-	 * @param serviceTopic ServiceTopic Name
-	 */
-	public void setServiceTopic(String serviceTopic) {
-		this.serviceTopic = serviceTopic;
-	}
 
 }

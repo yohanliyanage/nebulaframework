@@ -23,10 +23,5 @@ public interface Registration extends Serializable {
 	 */
 	public abstract String getBrokerUrl();
 
-	/**
-	 * Returns the name of the ServiceTopic for ClusterManager
-	 * @return String Service Topic Name
-	 */
-	public abstract String getServiceTopic();
 
 }

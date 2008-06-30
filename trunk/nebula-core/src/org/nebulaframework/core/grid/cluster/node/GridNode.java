@@ -5,8 +5,7 @@ import java.util.UUID;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.grid.cluster.ServiceMessage;
-import org.nebulaframework.core.grid.cluster.manager.ClusterManager;
-import org.nebulaframework.core.grid.cluster.node.messeging.support.ServiceMessageNodeSupport;
+import org.nebulaframework.core.grid.cluster.manager.services.registration.NodeRegistrationService;
 import org.nebulaframework.core.grid.cluster.registration.Registration;
 import org.nebulaframework.core.grid.cluster.registration.RegistrationException;
 import org.nebulaframework.core.support.ID;
@@ -21,7 +20,7 @@ public class GridNode implements ApplicationContextAware {
 	private UUID id;
 	private Registration registration;
 	private GridNodeProfile profile;
-	private ClusterManager clusterManager;
+	private NodeRegistrationService clusterManager;
 	private ApplicationContext applicationContext;
 	
 	public GridNode(GridNodeProfile profile) {
@@ -35,11 +34,11 @@ public class GridNode implements ApplicationContextAware {
 		return id;
 	}
 
-	public ClusterManager getClusterManager() {
+	public NodeRegistrationService getClusterManager() {
 		return clusterManager;
 	}
 
-	public void setClusterManager(ClusterManager clusterManager) {
+	public void setClusterManager(NodeRegistrationService clusterManager) {
 		this.clusterManager = clusterManager;
 	}
 
@@ -62,9 +61,6 @@ public class GridNode implements ApplicationContextAware {
 		log.info("Node " + id + " registered in Cluster "
 				+ registration.getClusterId());
 		log.debug("Broker URL : " + registration.getBrokerUrl());
-		log.debug("Service Topic : " + registration.getServiceTopic());
-		
-		ServiceMessageNodeSupport.registerServiceTopic(applicationContext, registration.getServiceTopic());
 	}
 
 	public void unregister() {
@@ -73,7 +69,6 @@ public class GridNode implements ApplicationContextAware {
 			throw new IllegalStateException("Unable to unregister. Not registered with any Cluster");
 		}
 		
-		ServiceMessageNodeSupport.unregisterServiceTopic(registration.getServiceTopic());
 		this.clusterManager.unregisterNode(this.id);
 		log.info("Node " + id + " unregistered from Cluster");
 	}

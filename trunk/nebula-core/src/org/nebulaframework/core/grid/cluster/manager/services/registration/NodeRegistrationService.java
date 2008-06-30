@@ -11,12 +11,11 @@
  * See the License for the specific language governing permissions and 
  * limitations under the License.
  */
-package org.nebulaframework.core.grid.cluster.manager;
+package org.nebulaframework.core.grid.cluster.manager.services.registration;
 
 import java.util.UUID;
 
 import org.nebulaframework.core.grid.cluster.registration.Registration;
-import org.nebulaframework.core.job.GridJobProfile;
 
 /**
  * ClusterManager API Interface. A ClusterManager manages a 
@@ -26,20 +25,8 @@ import org.nebulaframework.core.job.GridJobProfile;
  * @author Yohan Liyanage
  *
  */
-public interface ClusterManager {
+public interface NodeRegistrationService {
 
-	/**
-	 * Returns the Identifier for the Cluster Manager
-	 * @return UUID Identifier
-	 */
-	public UUID getId();
-
-	/*
-	 * 
-	 * Currently, no need to pass in any details
-	 * about the Node. So the method takes
-	 * no arguments.
-	 */
 	/**
 	 * Registers a GridNode with ClusterManager
 	 * @param id Identifier of Node
@@ -53,10 +40,4 @@ public interface ClusterManager {
 	 */
 	public void unregisterNode(UUID id);
 	
-	/**
-	 * Requests to join a GridJob
-	 * @param jobId Job Identifier
-	 * @return GridJobProfile for Job if success, otherwise <tt>null</tt>
-	 */
-	public GridJobProfile requestJob(String jobId);
 }
