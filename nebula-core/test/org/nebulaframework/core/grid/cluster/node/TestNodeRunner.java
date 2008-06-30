@@ -1,5 +1,7 @@
 package org.nebulaframework.core.grid.cluster.node;
 
+import java.io.IOException;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.xbean.spring.context.ClassPathXmlApplicationContext;
@@ -20,18 +22,17 @@ public class TestNodeRunner {
 
 			log.debug("Registering Node");
 			node.register();
-			log.debug("Sleeping...");
-			Thread.sleep(10000);
+			log.debug("Waiting...");
+			System.in.read();
 			log.debug("Unregistering Node");
 			node.unregister();
 		} catch (RegistrationException e) {
 			e.printStackTrace();
-		} catch (InterruptedException e) {
+		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (RemoteAccessException ex) {
 			log.error("Unable to connect to Cluster",ex);
 		}
-		
 		
 	}
 }
