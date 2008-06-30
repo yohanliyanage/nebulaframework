@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:amq="http://activemq.apache.org/schema/core"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd 
+		http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core-5.1.0.xsd">
+
+	<context:property-placeholder location="nebula-client.properties" />
+
+	<!-- Client Connection Factory [ FIX URL should be dynamic] -->
+	<amq:connectionFactory id="jmsConnectionFactory"
+		brokerURL="${cluster.url}" />
+
+	<bean id="remoteClusterManager"
+		class="org.springframework.jms.remoting.JmsInvokerProxyFactoryBean">
+		<property name="serviceInterface"
+			value="org.nebulaframework.core.grid.cluster.manager.ClusterManager" />
+		<property name="connectionFactory" ref="jmsConnectionFactory" />
+		<property name="queueName"
+			value="nebula.cluster.registration.queue" />
+	</bean>
+
+
+	<bean id="localNode"
+		class="org.nebulaframework.core.grid.cluster.node.GridNode">
+		<constructor-arg>
+			<bean
+				class="org.nebulaframework.core.grid.cluster.node.GridNodeProfileImpl">
+				<property name="clockSpeed" value="2000" />
+				<property name="memory" value="2048" />
+				<property name="name" value="Link" />
+				<property name="processor" value="Intel Core Duo T2500" />
+				<property name="OS" value="Microsoft Windows XP SP2" />
+			</bean>
+		</constructor-arg>
+		<property name="clusterManager" ref="remoteClusterManager" />
+	</bean>
+
+	<bean id="serviceTopicMessageListener"
+		class="org.springframework.jms.listener.adapter.MessageListenerAdapter">
+		<property name="delegate" ref="localNode" />
+		<property name="defaultListenerMethod" value="onServiceMessage"/>
+	</bean>
+	
+	<bean id="serviceTopicJMSContainer" class="org.springframework.jms.listener.DefaultMessageListenerContainer" scope="prototype" >
+		<property name="autoStartup" value="false" />
+		<property name="connectionFactory" ref="jmsConnectionFactory" />
+		<property name="messageListener" ref="serviceTopicMessageListener" />
+		<property name="destinationName"><null /></property>
+	</bean>
+</beans>
