@@ -1,5 +1,4 @@
 Registration Queue
 ------------------
 
-There will be one registration queue per running host. The cluster manager(s) will listen to this queue for registration requests. In case of running multiple CMs in single host, each CM will auto-load balance the incoming requests.
-
+There will be only one CM running per host, for a given broker URL. 
