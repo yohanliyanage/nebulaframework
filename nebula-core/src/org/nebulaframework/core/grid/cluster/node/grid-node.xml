@@ -9,21 +9,19 @@
 		http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core-5.1.0.xsd">
 
 	<context:property-placeholder location="nebula-client.properties" />
-	
 
-	<!-- Client Connection Factory [ FIX URL should be dynamic] -->
+	<!-- Client Connection Factory -->
 	<amq:connectionFactory id="jmsConnectionFactory"
 		brokerURL="${cluster.url}" />
 
-	<bean id="remoteClusterManager"
+	<bean id="clusterRegistrationService"
 		class="org.springframework.jms.remoting.JmsInvokerProxyFactoryBean">
 		<property name="serviceInterface"
-			value="org.nebulaframework.core.grid.cluster.manager.ClusterManager" />
+			value="org.nebulaframework.core.grid.cluster.manager.services.registration.NodeRegistrationService" />
 		<property name="connectionFactory" ref="jmsConnectionFactory" />
 		<property name="queueName"
 			value="nebula.cluster.registration.queue" />
 	</bean>
-
 
 	<bean id="localNode"
 		class="org.nebulaframework.core.grid.cluster.node.GridNode">
@@ -37,7 +35,7 @@
 				<property name="OS" value="Microsoft Windows XP SP2" />
 			</bean>
 		</constructor-arg>
-		<property name="clusterManager" ref="remoteClusterManager" />
+		<property name="clusterRegistrationService" ref="clusterRegistrationService" />
 	</bean>
 
 	<bean id="serviceTopicMessageListener"
@@ -46,12 +44,11 @@
 		<property name="defaultListenerMethod" value="onServiceMessage"/>
 	</bean>
 	
-	<!-- 
-	<bean id="serviceTopicJMSContainer" class="org.springframework.jms.listener.DefaultMessageListenerContainer" scope="prototype" >
-		<property name="autoStartup" value="false" />
+	<bean id="serviceTopicJMSContainer" class="org.springframework.jms.listener.DefaultMessageListenerContainer">
 		<property name="connectionFactory" ref="jmsConnectionFactory" />
 		<property name="messageListener" ref="serviceTopicMessageListener" />
-		<property name="destinationName"><null /></property>
+		<property name="destinationName" value="nebula.cluster.service.topic" />
+		<property name="pubSubDomain" value="true" />
 	</bean>
-	 -->
+
 </beans>

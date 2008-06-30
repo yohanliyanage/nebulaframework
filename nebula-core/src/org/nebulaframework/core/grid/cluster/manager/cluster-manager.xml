@@ -1,26 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:amq="http://activemq.apache.org/schema/core"
-	xmlns:util="http://www.springframework.org/schema/util"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core-5.1.0.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.0.xsd">
+	xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:amq="http://activemq.apache.org/schema/core"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd 
+		http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core-5.1.0.xsd">
 
+	<!-- External Configuration File Location -->
+	<context:property-placeholder location="nebula-cluster.properties" />
 	
 	<!-- Embedded ActiveMQ Broker -->
-	<amq:broker persistent="false">
+	<amq:broker persistent="false" useJmx="false">
 		<amq:transportConnectors>
-			<amq:transportConnector uri="tcp://localhost:61616"/>
+			<amq:transportConnector uri="${cluster.serviceUrl}"/>
 		</amq:transportConnectors>
-		
 	</amq:broker>
 
 	<!-- JMS Connection Factory -->
-	<amq:connectionFactory id="jmsConnectionFactory" brokerURL="tcp://localhost:61616" />
+	<amq:connectionFactory id="jmsConnectionFactory" brokerURL="${cluster.serviceUrl}" />
 	
 	<!-- ClusterManager -->
-	<bean id="clusterManager" class="org.nebulaframework.core.grid.cluster.manager.ClusterManagerImpl">
+	<bean id="clusterManager" class="org.nebulaframework.core.grid.cluster.manager.ClusterManager">
+		<property name="nodeRegistrationService" ref="nodeRegistrationService" />
 		<property name="serviceMessageSender">
-			<bean class="org.nebulaframework.core.grid.cluster.manager.messaging.ServiceMessageSenderImpl">
+			<bean class="org.nebulaframework.core.grid.cluster.manager.services.messaging.ServiceMessageSenderImpl">
 				<property name="jmsTemplate">
 					<bean class="org.springframework.jms.core.JmsTemplate">
 						<property name="connectionFactory" ref="jmsConnectionFactory" />
@@ -29,6 +34,11 @@
 				</property>
 			</bean>
 		</property>
+		<property name="brokerUrl" value="${cluster.serviceUrl}" />
+	</bean>
+	
+	<bean id="nodeRegistrationService" class="org.nebulaframework.core.grid.cluster.manager.services.registration.NodeRegistrationServiceImpl">
+		<constructor-arg ref="clusterManager" />
 	</bean>
 	
 	<!-- Create Registration Queue -->
@@ -38,10 +48,11 @@
 	<!-- Create Service Topic for ClusterManager -->
 	<amq:topic id="serviceTopic" physicalName="nebula.cluster.service.topic" />
 	
-	<!-- Spring JMS Remoting Service for Cluster Manager -->
+	  
+	<!-- Spring JMS Remoting Service for Cluster Manager Registraion Service -->
 	<bean id="clusterManagerService" class="org.springframework.jms.remoting.JmsInvokerServiceExporter">
-		<property name="serviceInterface" value="org.nebulaframework.core.grid.cluster.manager.NodeRegistrationService" />
-		<property name="service" ref="clusterManager" />
+		<property name="serviceInterface" value="org.nebulaframework.core.grid.cluster.manager.services.registration.NodeRegistrationService" />
+		<property name="service" ref="nodeRegistrationService" />
 	</bean>
 	
 	<!-- JMS Message Listener Container for Cluster Manager # Registration -->
