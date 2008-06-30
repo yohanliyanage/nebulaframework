@@ -1,4 +1,4 @@
-package org.nebulaframework.core.grid.cluster.manager.messaging;
+package org.nebulaframework.core.grid.cluster.manager.services.messaging;
 
 import javax.jms.JMSException;
 import javax.jms.Message;

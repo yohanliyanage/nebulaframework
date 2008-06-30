@@ -9,6 +9,7 @@
 		http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core-5.1.0.xsd">
 
 	<context:property-placeholder location="nebula-client.properties" />
+	
 
 	<!-- Client Connection Factory [ FIX URL should be dynamic] -->
 	<amq:connectionFactory id="jmsConnectionFactory"
@@ -45,10 +46,12 @@
 		<property name="defaultListenerMethod" value="onServiceMessage"/>
 	</bean>
 	
+	<!-- 
 	<bean id="serviceTopicJMSContainer" class="org.springframework.jms.listener.DefaultMessageListenerContainer" scope="prototype" >
 		<property name="autoStartup" value="false" />
 		<property name="connectionFactory" ref="jmsConnectionFactory" />
 		<property name="messageListener" ref="serviceTopicMessageListener" />
 		<property name="destinationName"><null /></property>
 	</bean>
+	 -->
 </beans>
