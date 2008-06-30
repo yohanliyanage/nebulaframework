@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:amq="http://activemq.apache.org/schema/core"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core-5.1.0.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.0.xsd">
+
+	<!-- Embedded ActiveMQ Broker -->
+	<amq:broker useJmx="false" persistent="false">
+		<amq:transportConnectors>
+			<amq:transportConnector uri="tcp://localhost:61616"/>
+		</amq:transportConnectors>
+	</amq:broker>
+	
+	<!-- JMS Connection Factory -->
+	<amq:connectionFactory id="jmsConnectionFactory" brokerURL="tcp://localhost:61616" />
+	
+	<!-- ClusterManager -->
+	<bean id="clusterManager" class="org.nebulaframework.core.grid.cluster.manager.ClusterManagerImpl">
+		<property name="serviceMessageSender">
+			<bean class="org.nebulaframework.core.grid.cluster.manager.messaging.ServiceMessageSenderImpl">
+				<property name="jmsTemplate">
+					<bean class="org.springframework.jms.core.JmsTemplate">
+						<property name="connectionFactory" ref="jmsConnectionFactory" />
+						<property name="defaultDestination" ref="serviceTopic" />
+					</bean>
+				</property>
+			</bean>
+		</property>
+	</bean>
+	
+	<!-- Create Registration Queue -->
+	<amq:queue id="registrationQueue" physicalName="nebula.cluster.registration.queue" />
+		
+	<!-- Create Service Topic for ClusterManager -->
+	<bean id="serviceTopic" class="org.apache.activemq.command.ActiveMQTopic">
+		<constructor-arg>
+			<bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+				<property name="targetObject" ref="clusterManager" />
+				<property name="targetMethod" value="getServiceTopicName" />
+			</bean>
+		</constructor-arg>
+	</bean>
+	
+	<!-- Spring JMS Remoting Service for Cluster Manager -->
+	<bean id="clusterManagerService" class="org.springframework.jms.remoting.JmsInvokerServiceExporter">
+		<property name="serviceInterface" value="org.nebulaframework.core.grid.cluster.manager.ClusterManager" />
+		<property name="service" ref="clusterManager" />
+	</bean>
+	
+	<!-- JMS Message Listener Container for Cluster Manager # Registration -->
+	<bean class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+		<property name="connectionFactory" ref="jmsConnectionFactory" />
+		<property name="destination" ref="registrationQueue" />
+		<property name="messageListener" ref="clusterManagerService" />
+	</bean>	
+	
+</beans>
