@@ -14,7 +14,6 @@
 package org.nebulaframework.core.task;
 
 import java.io.Serializable;
-import java.util.UUID;
 
 /**
  * Wraps a result of {@link GridTask} execution with meta data.
@@ -25,16 +24,16 @@ import java.util.UUID;
 public interface GridTaskResult extends Serializable {
 	
 	/**
-	 * Returns the Job UUID
-	 * @return UUID JobId
+	 * Returns the Job Id
+	 * @return String JobId
 	 */
-	public UUID getJobId();
+	public String getJobId();
 	
 	/**
-	 * Returns the Task UUID
-	 * @return UUID TaskId
+	 * Returns the Task Id
+	 * @return String TaskId
 	 */
-	public UUID getTaskId();
+	public String getTaskId();
 	
 	/**
 	 * Returns Worker Id

@@ -18,6 +18,7 @@ package org.nebulaframework.core.job;
  * @author Yohan Liyanage
  *
  */
+// TODO Remove if not needed
 public interface GridJobStateListener {
 	public void stateChanged(GridJobState newState);
 }

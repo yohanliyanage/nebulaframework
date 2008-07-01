@@ -14,7 +14,6 @@
 package org.nebulaframework.core.task;
 
 import java.io.Serializable;
-import java.util.UUID;
 
 /**
  * GridTaskResult Default Implementation.
@@ -27,13 +26,13 @@ public class GridTaskResultImpl implements GridTaskResult {
 
 	private Serializable result;
 	private Exception exception;
-	private UUID jobId;
-	private UUID taskId;
+	private String jobId;
+	private String taskId;
 	private String worker;
 	private boolean complete;
 	
 	
-	public GridTaskResultImpl(UUID jobId, UUID taskId, String worker) {
+	public GridTaskResultImpl(String jobId, String taskId, String worker) {
 		super();
 		this.jobId = jobId;
 		this.taskId = taskId;
@@ -62,7 +61,7 @@ public class GridTaskResultImpl implements GridTaskResult {
 		return this.exception;
 	}
 
-	public UUID getJobId() {
+	public String getJobId() {
 		return this.jobId;
 	}
 
@@ -70,7 +69,7 @@ public class GridTaskResultImpl implements GridTaskResult {
 		return this.result;
 	}
 
-	public UUID getTaskId() {
+	public String getTaskId() {
 		return this.taskId;
 	}
 

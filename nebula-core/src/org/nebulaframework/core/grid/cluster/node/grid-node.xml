@@ -11,23 +11,13 @@
 	<context:property-placeholder location="nebula-client.properties" />
 
 	<!-- Client Connection Factory -->
-	<amq:connectionFactory id="jmsConnectionFactory"
-		brokerURL="${cluster.url}" />
+	<amq:connectionFactory id="jmsConnectionFactory" brokerURL="${cluster.url}" />
 
-	<bean id="clusterRegistrationService"
-		class="org.springframework.jms.remoting.JmsInvokerProxyFactoryBean">
-		<property name="serviceInterface"
-			value="org.nebulaframework.core.grid.cluster.manager.services.registration.NodeRegistrationService" />
-		<property name="connectionFactory" ref="jmsConnectionFactory" />
-		<property name="queueName"
-			value="nebula.cluster.registration.queue" />
-	</bean>
-
-	<bean id="localNode"
-		class="org.nebulaframework.core.grid.cluster.node.GridNode">
+	<!-- Local Node Instance -->
+	<bean id="localNode" class="org.nebulaframework.core.grid.cluster.node.GridNode">
 		<constructor-arg>
-			<bean
-				class="org.nebulaframework.core.grid.cluster.node.GridNodeProfileImpl">
+			<!-- Create Grid Node Profile -->
+			<bean class="org.nebulaframework.core.grid.cluster.node.GridNodeProfileImpl">
 				<property name="clockSpeed" value="2000" />
 				<property name="memory" value="2048" />
 				<property name="name" value="Link" />
@@ -35,20 +25,45 @@
 				<property name="OS" value="Microsoft Windows XP SP2" />
 			</bean>
 		</constructor-arg>
-		<property name="clusterRegistrationService" ref="clusterRegistrationService" />
-	</bean>
-
-	<bean id="serviceTopicMessageListener"
-		class="org.springframework.jms.listener.adapter.MessageListenerAdapter">
-		<property name="delegate" ref="localNode" />
-		<property name="defaultListenerMethod" value="onServiceMessage"/>
+		<property name="nodeRegistrationService"> 
+			<!-- (Remote) Registration Service AP -->
+			<bean class="org.nebulaframework.core.grid.cluster.node.services.registration.NodeRegistrationServiceImpl">
+				<constructor-arg ref="localNode" />
+				<property name="clusterRegistrationService">
+					<bean class="org.springframework.jms.remoting.JmsInvokerProxyFactoryBean">
+						<property name="serviceInterface" value="org.nebulaframework.core.grid.cluster.manager.services.registration.ClusterRegistrationService" />
+						<property name="connectionFactory" ref="jmsConnectionFactory" />
+						<property name="queueName" value="nebula.cluster.registration.queue" />
+					</bean>
+				</property>
+			</bean>
+		</property>
+		<property name="servicesFacade">
+			<!-- (Remote) Cluster Services Facade Access Point -->
+			<bean class="org.springframework.jms.remoting.JmsInvokerProxyFactoryBean">
+				<property name="serviceInterface" value="org.nebulaframework.core.grid.cluster.manager.services.facade.ClusterManagerServicesFacade" />
+				<property name="connectionFactory" ref="jmsConnectionFactory" />
+				<property name="queueName" value="nebula.cluster.registration.queue" />
+			</bean>		
+		</property>
+		<property name="serviceMessageSupport" ref="serviceMessageSupport" />
 	</bean>
 	
-	<bean id="serviceTopicJMSContainer" class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+	<!-- Service Message Support -->
+	<bean id="serviceMessageSupport" class="org.nebulaframework.core.grid.cluster.node.services.message.ServiceMessageSupportImpl">
+		<constructor-arg ref="localNode" />
+	</bean>
+
+	<!-- Message Listener for Service Topic -->
+	<bean class="org.springframework.jms.listener.DefaultMessageListenerContainer">
 		<property name="connectionFactory" ref="jmsConnectionFactory" />
-		<property name="messageListener" ref="serviceTopicMessageListener" />
+		<property name="messageListener">
+			<bean class="org.springframework.jms.listener.adapter.MessageListenerAdapter">
+				<property name="delegate" ref="serviceMessageSupport" />
+				<property name="defaultListenerMethod" value="onServiceMessage" />
+			</bean>
+		</property>
 		<property name="destinationName" value="nebula.cluster.service.topic" />
 		<property name="pubSubDomain" value="true" />
 	</bean>
-
 </beans>
