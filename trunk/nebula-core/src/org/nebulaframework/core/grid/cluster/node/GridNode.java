@@ -4,10 +4,10 @@ import java.util.UUID;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nebulaframework.core.grid.cluster.ServiceMessage;
 import org.nebulaframework.core.grid.cluster.manager.services.facade.ClusterManagerServicesFacade;
 import org.nebulaframework.core.grid.cluster.node.services.message.ServiceMessagesSupport;
 import org.nebulaframework.core.grid.cluster.node.services.registration.NodeRegistrationService;
+import org.nebulaframework.core.servicemessage.ServiceMessage;
 import org.nebulaframework.core.support.ID;
 
 public class GridNode {

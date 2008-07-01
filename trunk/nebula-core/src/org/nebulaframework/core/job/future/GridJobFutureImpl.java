@@ -31,10 +31,12 @@ public class GridJobFutureImpl implements GridJobFuture {
 
 	private static Log log = LogFactory.getLog(GridJobFutureImpl.class);
 	private static final long serialVersionUID = 3998658173730612929L;
-	String jobId = null;
-	Serializable result = null;
-	GridJobState state = GridJobState.WAITING;
-	Object mutex = new Object(); // Synchronization Mutex
+	protected String jobId;
+	protected Serializable result;
+	protected Exception exception;
+	protected GridJobState state = GridJobState.WAITING;
+	protected Object mutex = new Object(); // Synchronization Mutex
+	
 
 	public GridJobFutureImpl(String jobId) {
 		super();
@@ -63,10 +65,15 @@ public class GridJobFutureImpl implements GridJobFuture {
 		}
 
 		if (this.getState().equals(GridJobState.COMPLETE)) {
-			log.info("Returning Result");
+			log.debug("Returning Result");
 			return this.result;
 		} else {
-			throw new GridExecutionException("Execution Failed");
+			if (this.exception != null) {
+				throw new GridExecutionException("Execution Failed", exception);
+			}
+			else {
+				throw new GridExecutionException("Execution Failed (Job State : " + this.getState() + ")");
+			}
 		}
 	}
 
@@ -94,6 +101,14 @@ public class GridJobFutureImpl implements GridJobFuture {
 			}
 		}
 
+	}
+
+	public Exception getException() {
+		return exception;
+	}
+
+	public void setException(Exception exception) {
+		this.exception = exception;
 	}
 
 

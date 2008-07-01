@@ -23,17 +23,17 @@ public class JMSSupport {
 	}
 
 	public void createTaskQueue(String jobId) {
-		new ActiveMQQueue("nebula.jobs." + jobId + ".task.queue");
+		new ActiveMQQueue(JMSNamingSupport.getTaskQueueName(jobId));
 	}
 
 	public void createResultQueue(String jobId) {
-		new ActiveMQQueue("nebula.jobs." + jobId + ".result.queue");
+		new ActiveMQQueue(JMSNamingSupport.getResultQueueName(jobId));
 	}
 
 	public GridJobFutureImpl createFuture(String jobId) {
 		
 		GridJobFutureImpl future = new GridJobFutureImpl(jobId);
-		future.setState(GridJobState.ENQUEUED);
+		future.setState(GridJobState.WAITING);
 		
 		// Export the Future to client side through Spring JMS Remoting
 		JmsInvokerServiceExporter exporter = new JmsInvokerServiceExporter();
@@ -43,7 +43,7 @@ public class JMSSupport {
 		// Create Message Listener Container
 		DefaultMessageListenerContainer container = new DefaultMessageListenerContainer();
 		container.setConnectionFactory(connectionFactory);
-		container.setDestination(new ActiveMQQueue("nebula.jobs." + jobId + ".future.queue"));
+		container.setDestination(new ActiveMQQueue(JMSNamingSupport.getFutureQueueName(jobId)));
 		container.setMessageListener(exporter);
 		
 		return future;

@@ -6,7 +6,7 @@ import javax.jms.Session;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nebulaframework.core.grid.cluster.ServiceMessage;
+import org.nebulaframework.core.servicemessage.ServiceMessage;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.core.MessageCreator;
 

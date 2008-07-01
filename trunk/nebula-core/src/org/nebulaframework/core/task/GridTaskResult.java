@@ -31,9 +31,9 @@ public interface GridTaskResult extends Serializable {
 	
 	/**
 	 * Returns the Task Id
-	 * @return String TaskId
+	 * @return int TaskId
 	 */
-	public String getTaskId();
+	public int getTaskId();
 	
 	/**
 	 * Returns Worker Id
