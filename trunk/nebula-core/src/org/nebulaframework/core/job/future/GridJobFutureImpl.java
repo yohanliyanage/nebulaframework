@@ -11,15 +11,15 @@
  * See the License for the specific language governing permissions and 
  * limitations under the License.
  */
-package org.nebulaframework.core.job;
+package org.nebulaframework.core.job.future;
 
 import java.io.Serializable;
-import java.util.UUID;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.GridExecutionException;
 import org.nebulaframework.core.GridTimeoutException;
+import org.nebulaframework.core.job.GridJobState;
 
 /**
  * Implementation of {@link GridJobFuture} interface.
@@ -31,13 +31,12 @@ public class GridJobFutureImpl implements GridJobFuture {
 
 	private static Log log = LogFactory.getLog(GridJobFutureImpl.class);
 	private static final long serialVersionUID = 3998658173730612929L;
-	UUID jobId = null;
+	String jobId = null;
 	Serializable result = null;
 	GridJobState state = GridJobState.WAITING;
-	GridJobStateListener listener = null;
 	Object mutex = new Object(); // Synchronization Mutex
 
-	public GridJobFutureImpl(UUID jobId) {
+	public GridJobFutureImpl(String jobId) {
 		super();
 	}
 
@@ -51,23 +50,22 @@ public class GridJobFutureImpl implements GridJobFuture {
 	}
 
 	public Serializable getResult() throws GridExecutionException {
-		if (result==null) {
-			synchronized(mutex) {
+		synchronized (mutex) {
+			if (result == null) {
 				try {
-					log.info("Waiting...");
+					log.debug("Waiting for Result...");
 					mutex.wait();
-					log.info("Resuming...");
+					log.debug("Resuming after Result...");
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
 			}
 		}
-		
+
 		if (this.getState().equals(GridJobState.COMPLETE)) {
 			log.info("Returning Result");
 			return this.result;
-		}
-		else {
+		} else {
 			throw new GridExecutionException("Execution Failed");
 		}
 	}
@@ -82,27 +80,21 @@ public class GridJobFutureImpl implements GridJobFuture {
 		return state;
 	}
 
-	public synchronized void setState(GridJobState state) {
-		log.info("Setting State to " + state);
-		this.state = state;
-		if (state == GridJobState.COMPLETE || state == GridJobState.FAILED || state == GridJobState.CANCELED) {
-			synchronized (mutex) {
+	public void setState(GridJobState state) {
+
+		synchronized (mutex) {
+
+			log.info("Setting State to " + state);
+
+			this.state = state;
+			if (state == GridJobState.COMPLETE || state == GridJobState.FAILED
+					|| state == GridJobState.CANCELED) {
 				log.info("Notifying....");
 				mutex.notifyAll();
 			}
-		}		
-		if (this.listener != null) {
-			this.listener.stateChanged(state);
 		}
-		
+
 	}
 
-	public GridJobStateListener getListener() {
-		return listener;
-	}
-
-	public void setListener(GridJobStateListener listener) {
-		this.listener = listener;
-	}
 
 }

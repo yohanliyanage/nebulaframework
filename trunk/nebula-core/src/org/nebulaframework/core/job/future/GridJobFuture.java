@@ -11,12 +11,14 @@
  * See the License for the specific language governing permissions and 
  * limitations under the License.
  */
-package org.nebulaframework.core.job;
+package org.nebulaframework.core.job.future;
 
 import java.io.Serializable;
 
 import org.nebulaframework.core.GridExecutionException;
 import org.nebulaframework.core.GridTimeoutException;
+import org.nebulaframework.core.job.GridJob;
+import org.nebulaframework.core.job.GridJobState;
 import org.nebulaframework.core.task.GridTask;
 
 /**
@@ -63,15 +65,17 @@ public interface GridJobFuture extends Serializable{
 	 */
 	public Serializable getResult(long timeout) throws GridExecutionException, GridTimeoutException;
 
-	/**
-	 * Returns the current {@link GridJobStateListener} assigned to the GridJobFuture.
-	 * @return {@link GridJobStateListener}
-	 */
-	public GridJobStateListener getListener();
 
-	/**
-	 * Sets the {@link GridJobStateListener} for this GridJobFuture.
-	 * @param listener {@link GridJobStateListener}
-	 */
-	public void setListener(GridJobStateListener listener);
+// TODO Check and remove if not needed
+//	/**
+//	 * Returns the current {@link GridJobStateListener} assigned to the GridJobFuture.
+//	 * @return {@link GridJobStateListener}
+//	 */
+//	public GridJobStateListener getListener();
+//
+//	/**
+//	 * Sets the {@link GridJobStateListener} for this GridJobFuture.
+//	 * @param listener {@link GridJobStateListener}
+//	 */
+//	public void setListener(GridJobStateListener listener);
 }

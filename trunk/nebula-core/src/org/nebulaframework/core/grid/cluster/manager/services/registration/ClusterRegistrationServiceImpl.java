@@ -11,16 +11,16 @@ import org.nebulaframework.core.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.core.grid.cluster.registration.Registration;
 import org.nebulaframework.core.grid.cluster.registration.RegistrationImpl;
 
-public class NodeRegistrationServiceImpl implements NodeRegistrationService {
+public class ClusterRegistrationServiceImpl implements ClusterRegistrationService {
 
 	private static Log log = LogFactory
-			.getLog(NodeRegistrationServiceImpl.class);
+			.getLog(ClusterRegistrationServiceImpl.class);
 
 	private ClusterManager cluster;
 	private Set<UUID> clusterNodes = new HashSet<UUID>();
 
 
-	public NodeRegistrationServiceImpl(ClusterManager cluster) {
+	public ClusterRegistrationServiceImpl(ClusterManager cluster) {
 		super();
 		this.cluster = cluster;
 	}

@@ -21,11 +21,11 @@ public class TestNodeRunner {
 			GridNode node = (GridNode) ctx.getBean("localNode");
 
 			log.debug("Registering Node");
-			node.register();
+			node.getNodeRegistrationService().register();
 			log.debug("Waiting...");
 			System.in.read();
 			log.debug("Unregistering Node");
-			node.unregister();
+			node.getNodeRegistrationService().unregister();
 		} catch (RegistrationException e) {
 			e.printStackTrace();
 		} catch (IOException e) {

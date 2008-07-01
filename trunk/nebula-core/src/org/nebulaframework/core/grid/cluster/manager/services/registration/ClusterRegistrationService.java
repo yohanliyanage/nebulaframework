@@ -25,7 +25,7 @@ import org.nebulaframework.core.grid.cluster.registration.Registration;
  * @author Yohan Liyanage
  *
  */
-public interface NodeRegistrationService {
+public interface ClusterRegistrationService {
 
 	/**
 	 * Registers a GridNode with ClusterManager
