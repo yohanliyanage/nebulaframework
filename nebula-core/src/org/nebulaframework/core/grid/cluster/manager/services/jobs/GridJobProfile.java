@@ -1,10 +1,14 @@
 package org.nebulaframework.core.grid.cluster.manager.services.jobs;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.future.GridJobFutureImpl;
+import org.nebulaframework.core.task.GridTask;
+import org.nebulaframework.core.task.GridTaskResult;
 
 public class GridJobProfile {
 	
@@ -13,6 +17,9 @@ public class GridJobProfile {
 	private GridJob<? extends Serializable> job;
 	private GridJobFutureImpl future;
 
+	private Map<Integer, GridTask<? extends Serializable>> taskMap = new HashMap<Integer, GridTask<? extends Serializable>>();
+	private Map<Integer, GridTaskResult> resultMap = new HashMap<Integer, GridTaskResult>();
+	
 	public String getJobId() {
 		return jobId;
 	}
@@ -45,5 +52,14 @@ public class GridJobProfile {
 		this.future = future;
 	}
 
+	public Map<Integer, GridTask<? extends Serializable>> getTaskMap() {
+		return taskMap;
+	}
+
+	public Map<Integer, GridTaskResult> getResultMap() {
+		return resultMap;
+	}
+	
+	
 
 }

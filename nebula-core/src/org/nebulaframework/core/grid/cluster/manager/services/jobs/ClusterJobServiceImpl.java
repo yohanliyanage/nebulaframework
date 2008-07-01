@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.nebulaframework.core.grid.cluster.manager.ClusterManager;
+import org.nebulaframework.core.grid.cluster.manager.services.jobs.aggregator.AggregatorService;
+import org.nebulaframework.core.grid.cluster.manager.services.jobs.splitter.SplitterService;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.support.JMSSupport;
 import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.future.GridJobFutureImpl;
@@ -17,6 +19,8 @@ public class ClusterJobServiceImpl implements ClusterJobService  {
 	
 	private Map<String, GridJobProfile> jobs = new HashMap<String, GridJobProfile>();
 	
+	private SplitterService splitterService;
+	private AggregatorService aggregatorService;
 	
 	public ClusterJobServiceImpl(ClusterManager cluster) {
 		super();
@@ -44,6 +48,9 @@ public class ClusterJobServiceImpl implements ClusterJobService  {
 		
 		this.jobs.put(jobId, profile);
 		
+		splitterService.startSplitter(profile);
+		aggregatorService.startAggregator(profile);
+		
 		return jobId;
 	}
 
@@ -51,6 +58,28 @@ public class ClusterJobServiceImpl implements ClusterJobService  {
 	public void setJmsSupport(JMSSupport jmsSupport) {
 		this.jmsSupport = jmsSupport;
 	}
+
+
+	public SplitterService getSplitterService() {
+		return splitterService;
+	}
+
+
+	public void setSplitterService(SplitterService splitterService) {
+		this.splitterService = splitterService;
+	}
+
+
+	public AggregatorService getAggregatorService() {
+		return aggregatorService;
+	}
+
+
+	public void setAggregatorService(AggregatorService aggregatorService) {
+		this.aggregatorService = aggregatorService;
+	}
+
+	
 
 	
 

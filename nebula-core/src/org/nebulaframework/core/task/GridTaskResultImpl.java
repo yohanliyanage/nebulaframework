@@ -27,12 +27,12 @@ public class GridTaskResultImpl implements GridTaskResult {
 	private Serializable result;
 	private Exception exception;
 	private String jobId;
-	private String taskId;
+	private int taskId;
 	private String worker;
 	private boolean complete;
 	
 	
-	public GridTaskResultImpl(String jobId, String taskId, String worker) {
+	public GridTaskResultImpl(String jobId, int taskId, String worker) {
 		super();
 		this.jobId = jobId;
 		this.taskId = taskId;
@@ -69,7 +69,7 @@ public class GridTaskResultImpl implements GridTaskResult {
 		return this.result;
 	}
 
-	public String getTaskId() {
+	public int getTaskId() {
 		return this.taskId;
 	}
 

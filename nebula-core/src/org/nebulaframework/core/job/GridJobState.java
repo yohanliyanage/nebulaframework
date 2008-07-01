@@ -26,6 +26,11 @@ public enum GridJobState {
 	WAITING,
 	
 	/**
+	 * GridJob is initializing for execution (Splitting).
+	 */
+	INITIALIZING,	
+	
+	/**
 	 * GridJob is enqueued for execution, but has not started yet.
 	 */
 	ENQUEUED,

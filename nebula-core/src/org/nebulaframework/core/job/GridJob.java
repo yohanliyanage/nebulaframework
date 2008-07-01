@@ -17,7 +17,6 @@ import java.io.Serializable;
 import java.util.List;
 
 import org.nebulaframework.core.task.GridTask;
-import org.nebulaframework.core.task.GridTaskResult;
 
 /**
  * Represents a Job which is to be executed on Grid. 
@@ -38,11 +37,11 @@ public interface GridJob<R extends Serializable> extends Serializable{
 	
 	/**
 	 * Logic to aggregate results from tasks into final result of job.
-	 * @param results A Collection of {@link GridTaskResult}s 
+	 * @param results A Collection of {@link Serializable}s 
 	 * which are the outcome of {@link GridTask} execution.
 	 * @return Final result of Job
 	 */
-	public R aggregate(List<GridTaskResult> results);
+	public R aggregate(List<Serializable> results);
 	
 
 

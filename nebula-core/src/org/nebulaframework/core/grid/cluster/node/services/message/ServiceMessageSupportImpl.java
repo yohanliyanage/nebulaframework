@@ -2,8 +2,8 @@ package org.nebulaframework.core.grid.cluster.node.services.message;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nebulaframework.core.grid.cluster.ServiceMessage;
 import org.nebulaframework.core.grid.cluster.node.GridNode;
+import org.nebulaframework.core.servicemessage.ServiceMessage;
 
 public class ServiceMessageSupportImpl implements ServiceMessagesSupport {
 

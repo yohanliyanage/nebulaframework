@@ -46,6 +46,11 @@
 							ref="jmsConnectionFactory" />
 					</bean>
 				</property>
+				<property name="splitterService">
+					<bean class="org.nebulaframework.core.grid.cluster.manager.services.jobs.splitter.SpliterServiceImpl">
+						<property name="connectionFactory" ref="jmsConnectionFactory" />
+					</bean>
+				</property>
 			</bean>
 		</property>
 		<property name="brokerUrl" value="${cluster.serviceUrl}" />
