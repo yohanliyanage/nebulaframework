@@ -14,6 +14,7 @@
 package org.nebulaframework.core.task;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 /**
  * GridTaskResult Default Implementation.
@@ -28,15 +29,15 @@ public class GridTaskResultImpl implements GridTaskResult {
 	private Exception exception;
 	private String jobId;
 	private int taskId;
-	private String worker;
+	private UUID workerId;
 	private boolean complete;
 	
 	
-	public GridTaskResultImpl(String jobId, int taskId, String worker) {
+	public GridTaskResultImpl(String jobId, int taskId, UUID workerId) {
 		super();
 		this.jobId = jobId;
 		this.taskId = taskId;
-		this.worker = worker;
+		this.workerId = workerId;
 	}
 
 	
@@ -73,8 +74,8 @@ public class GridTaskResultImpl implements GridTaskResult {
 		return this.taskId;
 	}
 
-	public String getWorkerId() {
-		return this.worker;
+	public UUID getWorkerId() {
+		return this.workerId;
 	}
 
 	public boolean isComplete() {
@@ -85,10 +86,10 @@ public class GridTaskResultImpl implements GridTaskResult {
 	@Override
 	public String toString() {
 		if (this.complete) {
-			return this.jobId + " | " + this.taskId + " @ " + this.worker + "Result : " + this.result;
+			return this.jobId + " | " + this.taskId + " @ " + this.workerId + "Result : " + this.result;
 		}
 		else {
-			return this.jobId + " | " + this.taskId + " @ " + this.worker + " Exception : " + this.exception;
+			return this.jobId + " | " + this.taskId + " @ " + this.workerId + " Exception : " + this.exception;
 		}
 	}
 	

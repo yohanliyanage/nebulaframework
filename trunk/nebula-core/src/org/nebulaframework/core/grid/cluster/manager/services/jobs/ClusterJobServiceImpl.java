@@ -11,6 +11,8 @@ import org.nebulaframework.core.grid.cluster.manager.services.jobs.splitter.Spli
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.support.JMSSupport;
 import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.future.GridJobFutureImpl;
+import org.nebulaframework.core.servicemessage.ServiceMessage;
+import org.nebulaframework.core.servicemessage.ServiceMessageType;
 
 public class ClusterJobServiceImpl implements ClusterJobService  {
 
@@ -51,9 +53,21 @@ public class ClusterJobServiceImpl implements ClusterJobService  {
 		splitterService.startSplitter(profile);
 		aggregatorService.startAggregator(profile);
 		
+		//Notify Job Start
+		ServiceMessage message = new ServiceMessage(jobId);
+		message.setType(ServiceMessageType.JOB_START);
+
+		cluster.getServiceMessageSender().sendServiceMessage(message);
 		return jobId;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
+	public boolean requestJob(String jobId) {
+		// FIXME hard coded to return true.
+		return true;
+	}
 
 	public void setJmsSupport(JMSSupport jmsSupport) {
 		this.jmsSupport = jmsSupport;
@@ -78,6 +92,9 @@ public class ClusterJobServiceImpl implements ClusterJobService  {
 	public void setAggregatorService(AggregatorService aggregatorService) {
 		this.aggregatorService = aggregatorService;
 	}
+
+
+
 
 	
 

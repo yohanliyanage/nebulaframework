@@ -9,7 +9,6 @@ import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.core.grid.cluster.registration.Registration;
 import org.nebulaframework.core.grid.cluster.registration.RegistrationImpl;
-import org.nebulaframework.core.servicemessage.ServiceMessage;
 
 public class ClusterRegistrationServiceImpl implements ClusterRegistrationService {
 
@@ -40,6 +39,8 @@ public class ClusterRegistrationServiceImpl implements ClusterRegistrationServic
 
 		log.info("Node registered [ID:" + nodeId + "]");
 
+		/*
+		 * TODO Remove
 		new Thread(new Runnable() {
 
 			public void run() {
@@ -54,7 +55,7 @@ public class ClusterRegistrationServiceImpl implements ClusterRegistrationServic
 			}
 
 		}).start();
-		
+		*/
 		// Return Registration Data to Node
 		return reg;
 	}

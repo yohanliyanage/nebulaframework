@@ -62,6 +62,7 @@ public class SpliterServiceImpl implements SplitterService {
 		}
 
 		profile.getFuture().setState(GridJobState.EXECUTING);
+		
 		log.debug("Enqueued. Waiting Execution");
 	}
 
@@ -86,6 +87,10 @@ public class SpliterServiceImpl implements SplitterService {
 	
 	public void setConnectionFactory(ConnectionFactory connectionFactory) {
 		this.jmsTemplate = new JmsTemplate(connectionFactory);
+		
+		/* TODO Remove if not needed
+		 * // Enable explicit client acknowledge
+		this.jmsTemplate.setSessionAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);*/
 	}
 
 }

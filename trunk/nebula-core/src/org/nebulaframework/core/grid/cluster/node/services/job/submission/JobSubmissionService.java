@@ -1,4 +1,4 @@
-package org.nebulaframework.core.grid.cluster.node.services.jobs;
+package org.nebulaframework.core.grid.cluster.node.services.job.submission;
 
 import java.io.Serializable;
 

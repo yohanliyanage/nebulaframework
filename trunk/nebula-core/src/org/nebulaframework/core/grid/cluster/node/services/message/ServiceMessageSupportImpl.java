@@ -26,6 +26,12 @@ public class ServiceMessageSupportImpl implements ServiceMessagesSupport {
 	public void onServiceMessage(ServiceMessage message) {
 		log.info("[Service] " + message);
 		this.message = message;
+		
+		//If Job Message
+		if (message.isJobMessage()) {
+			node.getJobExecutionService().onServiceMessage(message);
+		}
+		
 		// TODO Write the rest of code to manage message and notify relevant
 		// parties
 	}

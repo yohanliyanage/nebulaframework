@@ -43,9 +43,23 @@
 			<bean class="org.springframework.jms.remoting.JmsInvokerProxyFactoryBean">
 				<property name="serviceInterface" value="org.nebulaframework.core.grid.cluster.manager.services.facade.ClusterManagerServicesFacade" />
 				<property name="connectionFactory" ref="jmsConnectionFactory" />
-				<property name="queueName" value="nebula.cluster.registration.queue" />
+				<property name="queueName" value="nebula.cluster.services.facade.queue" />
 			</bean>		
 		</property>
+		<property name="jobExecutionService">
+			<!-- Job Execution Service -->
+			<bean class="org.nebulaframework.core.grid.cluster.node.services.job.execution.JobExecutionServiceImpl">
+				<constructor-arg ref="localNode" />
+				<property name="connectionFactory" ref="jmsConnectionFactory" />
+			</bean>		
+		</property>
+		<property name="jobSubmissionService">
+			<!-- Job Execution Service -->
+			<bean class="org.nebulaframework.core.grid.cluster.node.services.job.submission.JobSubmissionServiceImpl">
+				<constructor-arg ref="localNode" />
+				<property name="connectionFactory" ref="jmsConnectionFactory" />
+			</bean>		
+		</property>		
 		<property name="serviceMessageSupport" ref="serviceMessageSupport" />
 	</bean>
 	

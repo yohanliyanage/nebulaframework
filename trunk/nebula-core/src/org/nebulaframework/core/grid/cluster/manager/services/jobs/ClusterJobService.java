@@ -17,7 +17,14 @@ public interface ClusterJobService {
 	 *            Job
 	 * @return String indicating Job Id
 	 */
-	public abstract String submitJob(UUID owner,
+	public String submitJob(UUID owner,
 			GridJob<? extends Serializable> job);
 
+	/**
+	 * Requests permission to participate in specified Job
+	 * @param jobId JobId of Job
+	 * @return boolean value indicating permission (true for granted)
+	 */
+	// TODO Pass GridNode profile ?
+	public boolean requestJob(String jobId);
 }

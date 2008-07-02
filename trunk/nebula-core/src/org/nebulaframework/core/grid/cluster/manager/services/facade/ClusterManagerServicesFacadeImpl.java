@@ -19,4 +19,8 @@ public class ClusterManagerServicesFacadeImpl implements ClusterManagerServicesF
 		return this.cluster.getJobService().submitJob(owner, job);
 	}
 
+	public boolean requestJob(String jobId) {
+		return this.cluster.getJobService().requestJob(jobId);
+	}
+
 }

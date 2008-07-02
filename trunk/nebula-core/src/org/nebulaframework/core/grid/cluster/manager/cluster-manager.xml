@@ -37,25 +37,32 @@
 				</property>
 			</bean>
 		</property>
-		<property name="jobService">
-			<bean class="org.nebulaframework.core.grid.cluster.manager.services.jobs.ClusterJobServiceImpl">
-				<constructor-arg ref="clusterManager" />
-				<property name="jmsSupport">
-					<bean class="org.nebulaframework.core.grid.cluster.manager.services.jobs.support.JMSSupport">
-						<property name="connectionFactory"
-							ref="jmsConnectionFactory" />
-					</bean>
-				</property>
-				<property name="splitterService">
-					<bean class="org.nebulaframework.core.grid.cluster.manager.services.jobs.splitter.SpliterServiceImpl">
-						<property name="connectionFactory" ref="jmsConnectionFactory" />
-					</bean>
-				</property>
-			</bean>
-		</property>
+		<property name="jobService" ref="clusterJobService" />
 		<property name="brokerUrl" value="${cluster.serviceUrl}" />
 	</bean>
 
+	<!-- Cluster Job Service -->
+	<bean id="clusterJobService" class="org.nebulaframework.core.grid.cluster.manager.services.jobs.ClusterJobServiceImpl">
+		<constructor-arg ref="clusterManager" />
+		<property name="jmsSupport">
+			<bean class="org.nebulaframework.core.grid.cluster.manager.services.jobs.support.JMSSupport">
+				<property name="connectionFactory"
+					ref="jmsConnectionFactory" />
+			</bean>
+		</property>
+		<property name="splitterService">
+			<bean class="org.nebulaframework.core.grid.cluster.manager.services.jobs.splitter.SpliterServiceImpl">
+				<property name="connectionFactory" ref="jmsConnectionFactory" />
+			</bean>
+		</property>
+		<property name="aggregatorService">
+			<bean class="org.nebulaframework.core.grid.cluster.manager.services.jobs.aggregator.AggregatorServiceImpl">
+				<constructor-arg ref="clusterJobService" />
+				<property name="connectionFactory" ref="jmsConnectionFactory" />
+			</bean>
+		</property>				
+	</bean>
+	
 	<!-- Cluster Registration Service -->
 	<bean id="clusterRegistrationService" class="org.nebulaframework.core.grid.cluster.manager.services.registration.ClusterRegistrationServiceImpl">
 		<constructor-arg ref="clusterManager" />
