@@ -45,7 +45,7 @@ public class ServiceMessage implements Serializable {
 
 	@Override
 	public String toString() {
-		return message;
+		return type + " : " + message;
 	}
 
 }

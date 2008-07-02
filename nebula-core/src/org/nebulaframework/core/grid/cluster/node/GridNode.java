@@ -5,6 +5,8 @@ import java.util.UUID;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.grid.cluster.manager.services.facade.ClusterManagerServicesFacade;
+import org.nebulaframework.core.grid.cluster.node.services.job.execution.JobExecutionService;
+import org.nebulaframework.core.grid.cluster.node.services.job.submission.JobSubmissionService;
 import org.nebulaframework.core.grid.cluster.node.services.message.ServiceMessagesSupport;
 import org.nebulaframework.core.grid.cluster.node.services.registration.NodeRegistrationService;
 import org.nebulaframework.core.servicemessage.ServiceMessage;
@@ -20,6 +22,8 @@ public class GridNode {
 	private NodeRegistrationService nodeRegistrationService;
 	private ServiceMessagesSupport serviceMessageSupport;
 	private ClusterManagerServicesFacade servicesFacade;
+	private JobExecutionService jobExecutionService;
+	private JobSubmissionService jobSubmissionService;
 	
 	public GridNode(GridNodeProfile profile) {
 		super();
@@ -64,6 +68,22 @@ public class GridNode {
 
 	public void setServicesFacade(ClusterManagerServicesFacade servicesFacade) {
 		this.servicesFacade = servicesFacade;
+	}
+
+	public JobExecutionService getJobExecutionService() {
+		return jobExecutionService;
+	}
+
+	public void setJobExecutionService(JobExecutionService jobExecutionService) {
+		this.jobExecutionService = jobExecutionService;
+	}
+
+	public JobSubmissionService getJobSubmissionService() {
+		return jobSubmissionService;
+	}
+
+	public void setJobSubmissionService(JobSubmissionService jobSubmissionService) {
+		this.jobSubmissionService = jobSubmissionService;
 	}
 
 	

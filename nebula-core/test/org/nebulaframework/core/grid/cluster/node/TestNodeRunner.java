@@ -6,8 +6,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.xbean.spring.context.ClassPathXmlApplicationContext;
 import org.nebulaframework.core.grid.cluster.registration.RegistrationException;
+import org.nebulaframework.core.job.future.GridJobFuture;
 import org.springframework.context.ApplicationContext;
-import org.springframework.remoting.RemoteAccessException;
+
+import test.nebulaframework.simpleTest.TestJob;
 
 public class TestNodeRunner {
 	
@@ -15,6 +17,9 @@ public class TestNodeRunner {
 	
 	public static void main(String[] args) {
 
+		// Test Job
+		TestJob testJob = new TestJob();
+		
 		try {
 
 			ApplicationContext ctx = new ClassPathXmlApplicationContext("org/nebulaframework/core/grid/cluster/node/grid-node.xml");
@@ -22,6 +27,11 @@ public class TestNodeRunner {
 
 			log.debug("Registering Node");
 			node.getNodeRegistrationService().register();
+			
+			// Submit Job
+			log.debug("Submitting Job");
+			GridJobFuture future = node.getJobSubmissionService().submitJob(testJob);
+			//log.info("RESULT : " + future.getResult());
 			log.debug("Waiting...");
 			System.in.read();
 			log.debug("Unregistering Node");
@@ -30,8 +40,8 @@ public class TestNodeRunner {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
-		} catch (RemoteAccessException ex) {
-			log.error("Unable to connect to Cluster",ex);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 		
 	}
