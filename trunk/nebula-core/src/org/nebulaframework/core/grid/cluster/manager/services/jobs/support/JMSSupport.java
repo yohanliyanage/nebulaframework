@@ -8,6 +8,7 @@ import org.nebulaframework.core.job.future.GridJobFuture;
 import org.nebulaframework.core.job.future.GridJobFutureImpl;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 import org.springframework.jms.remoting.JmsInvokerServiceExporter;
+import org.springframework.util.Assert;
 
 public class JMSSupport {
 
@@ -40,12 +41,16 @@ public class JMSSupport {
 		exporter.setServiceInterface(GridJobFuture.class);
 		exporter.setService(future);
 		
+		exporter.afterPropertiesSet();
+		
+		Assert.notNull(future);
+		
 		// Create Message Listener Container
 		DefaultMessageListenerContainer container = new DefaultMessageListenerContainer();
 		container.setConnectionFactory(connectionFactory);
 		container.setDestination(new ActiveMQQueue(JMSNamingSupport.getFutureQueueName(jobId)));
 		container.setMessageListener(exporter);
-		
+		container.afterPropertiesSet();
 		return future;
 	}
 
