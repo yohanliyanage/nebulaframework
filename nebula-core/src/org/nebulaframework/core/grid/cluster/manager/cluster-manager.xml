@@ -40,6 +40,7 @@
 		</property>
 		<property name="jobService" ref="clusterJobService" />
 		<property name="brokerUrl" value="${cluster.serviceUrl}" />
+		<property name="connectionFactory" ref="jmsConnectionFactory" />
 	</bean>
 
 	<!-- Cluster Job Service -->
@@ -67,6 +68,7 @@
 	<!-- Cluster Registration Service -->
 	<bean id="clusterRegistrationService" class="org.nebulaframework.core.grid.cluster.manager.services.registration.ClusterRegistrationServiceImpl">
 		<constructor-arg ref="clusterManager" />
+		<property name="connectionFactory" ref="jmsConnectionFactory" />
 	</bean>
 					
 	<!-- JMS Remoting for Cluster Registration Service-->

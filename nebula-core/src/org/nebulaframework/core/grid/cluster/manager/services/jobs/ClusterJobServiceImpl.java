@@ -39,15 +39,18 @@ public class ClusterJobServiceImpl implements ClusterJobService {
 
 		GridJobProfile profile = new GridJobProfile();
 
-		jmsSupport.createTaskQueue(jobId);
-		jmsSupport.createResultQueue(jobId);
-		GridJobFutureImpl future = jmsSupport.createFuture(jobId);
+		profile.setTaskQueueRef(jmsSupport.createTaskQueue(jobId));
+		profile.setResultQueueRef(jmsSupport.createResultQueue(jobId));
+		profile.setFutureQueueRef(jmsSupport.createFutureQueue(jobId));
+		
+		GridJobFutureImpl future = jmsSupport.createFuture(jobId, profile.getFutureQueueRef());
 
 		profile.setJobId(jobId);
 		profile.setOwner(owner);
 		profile.setJob(job);
 		profile.setFuture(future);
-
+		profile.initCleanUpHandlers();
+		
 		this.jobs.put(jobId, profile);
 
 		splitterService.startSplitter(profile);
@@ -108,4 +111,15 @@ public class ClusterJobServiceImpl implements ClusterJobService {
 		cluster.getServiceMessageSender().sendServiceMessage(message);
 	}
 
+	public GridJobProfile getProfile(String jobId) {
+		return jobs.get(jobId);
+	}
+
+	public String requestJobClassName(String jobId) {
+		try {
+			return jobs.get(jobId).getJob().getClass().getName();
+		} catch (NullPointerException e) {
+			throw new IllegalArgumentException("No such Job with Id " + jobId);
+		}
+	}
 }

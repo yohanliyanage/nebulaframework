@@ -2,6 +2,8 @@ package org.nebulaframework.core.grid.cluster.node;
 
 import java.util.UUID;
 
+import javax.jms.ConnectionFactory;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.grid.cluster.manager.services.facade.ClusterManagerServicesFacade;
@@ -11,14 +13,18 @@ import org.nebulaframework.core.grid.cluster.node.services.message.ServiceMessag
 import org.nebulaframework.core.grid.cluster.node.services.registration.NodeRegistrationService;
 import org.nebulaframework.core.servicemessage.ServiceMessage;
 import org.nebulaframework.core.support.ID;
+import org.nebulaframework.deployment.classloading.node.exporter.support.GridNodeClassExporterSupport;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Required;
 
-public class GridNode {
+public class GridNode implements InitializingBean{
 
 	private static Log log = LogFactory.getLog(GridNode.class);
 
 	private UUID id;
 	private GridNodeProfile profile;
 
+	private ConnectionFactory connectionFactory;
 	private NodeRegistrationService nodeRegistrationService;
 	private ServiceMessagesSupport serviceMessageSupport;
 	private ClusterManagerServicesFacade servicesFacade;
@@ -85,6 +91,17 @@ public class GridNode {
 	public void setJobSubmissionService(JobSubmissionService jobSubmissionService) {
 		this.jobSubmissionService = jobSubmissionService;
 	}
+
+	@Required
+	public void setConnectionFactory(ConnectionFactory connectionFactory) {
+		this.connectionFactory = connectionFactory;
+	}
+
+	public void afterPropertiesSet() throws Exception {
+		GridNodeClassExporterSupport.startService(this.id, this.connectionFactory);
+	}
+	
+	
 
 	
 }
