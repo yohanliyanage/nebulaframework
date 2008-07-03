@@ -7,6 +7,7 @@ import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.grid.cluster.node.GridNode;
 import org.nebulaframework.core.servicemessage.ServiceMessage;
 import org.nebulaframework.core.servicemessage.ServiceMessageType;
+import org.springframework.beans.factory.annotation.Required;
 
 public class JobExecutionServiceImpl implements JobExecutionService {
 
@@ -23,7 +24,7 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 		this.node = node;
 	}
 
-	
+	@Required
 	public void setConnectionFactory(ConnectionFactory connectionFactory) {
 		this.connectionFactory = connectionFactory;
 	}
@@ -34,9 +35,16 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 		if (message.getType().equals(ServiceMessageType.JOB_START)) {
 			newJob(message.getMessage());
 		}
-		// TODO What to do in JOB_END ? CANCEL?
+		else if (message.getType().equals(ServiceMessageType.JOB_END)) {
+			endJob(message.getMessage());
+		}
+		else if (message.getType().equals(ServiceMessageType.JOB_CANCEL)) {
+			terminateJob(message.getMessage());
+		}
 	}
 
+
+	
 	private synchronized void newJob(String jobId) {
 		if (idle) {
 			// Request for Job
@@ -67,6 +75,29 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 		// Start TaskExecutor for TaskQueue
 		TaskExecutor.startForJob(jobId, node, connectionFactory);
 	}
+	
+	private synchronized void endJob(String jobId) {
+		if ((this.currentJobId != null) && (this.currentJobId.equals(jobId))) {
+			TaskExecutor.stopForJob(jobId);
+			this.currentJobId = null;
+			this.idle = true;
+		}
+		else {
+			log.debug("Job End Message Received [" + jobId + "], but ignoring as not applicable");
+		}
+	}
+
+	private synchronized void terminateJob(String jobId) {
+		if ((this.currentJobId != null) && (this.currentJobId.equals(jobId))) {
+			log.info("Terminating Job Execution " + jobId);
+			TaskExecutor.stopForJob(jobId);
+			this.currentJobId = null;
+			this.idle = true;
+		}
+		else {
+			log.debug("Job Terminate Message Received [" + jobId + "], but ignoring as not applicable");
+		}
+	}	
 
 	public String getCurrentJobId() {
 		return currentJobId;

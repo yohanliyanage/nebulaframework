@@ -52,7 +52,7 @@ public class AggregatorServiceImpl implements AggregatorService {
 		container.setDestinationName(JMSNamingSupport
 				.getResultQueueName(profile.getJobId()));
 		container.setMessageListener(adapter);
-
+		container.afterPropertiesSet();
 		collector.setContainer(container);
 
 	}
@@ -90,6 +90,12 @@ public class AggregatorServiceImpl implements AggregatorService {
 			return;
 		}
 
+		/*  -- Aggregation Complete : Job Complete -- */
+		
+		// Notify Workers
+		jobService.notifyJobEnd(profile.getJobId());
+		
+		// Update Future and Return Result
 		profile.getFuture().setResult(jobResult);
 		profile.getFuture().setState(GridJobState.COMPLETE);
 	}

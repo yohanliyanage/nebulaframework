@@ -14,6 +14,7 @@ import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.GridJobState;
 import org.nebulaframework.core.job.exceptions.SplitException;
 import org.nebulaframework.core.task.GridTask;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.core.MessagePostProcessor;
 
@@ -74,7 +75,8 @@ public class SpliterServiceImpl implements SplitterService {
 					public Message postProcessMessage(Message message)
 							throws JMSException {
 						message.setJMSCorrelationID(jobId); 		// Set Correlation ID to Job Id
-						message.setIntProperty("TaskId", taskId); 	// Put taskId as a property
+						message.setIntProperty("taskId", taskId); 	// Put taskId as a property
+						log.debug("Enqueued Task : " + taskId);
 						return message;
 					}
 
@@ -85,6 +87,7 @@ public class SpliterServiceImpl implements SplitterService {
 		enqueueTask(jobId, taskId, task);
 	}
 	
+	@Required
 	public void setConnectionFactory(ConnectionFactory connectionFactory) {
 		this.jmsTemplate = new JmsTemplate(connectionFactory);
 		

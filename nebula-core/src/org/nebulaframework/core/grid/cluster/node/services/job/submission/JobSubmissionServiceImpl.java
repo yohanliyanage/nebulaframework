@@ -27,7 +27,7 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
     // Create and return proxy for GridJobFuture
     public GridJobFuture submitJob(GridJob<? extends Serializable> job) {
             
-            //Submit Job to Cluster and retrieve JobId
+            // Submit Job to Cluster and retrieve JobId
             String jobId = this.node.getServicesFacade().submitJob(this.node.getId(), job);
             
             // Create local proxy to interface remote service
@@ -36,6 +36,10 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
             proxyFactory.setQueueName("nebula.jobs." + jobId + ".future.queue");
             proxyFactory.setServiceInterface(GridJobFuture.class);
             
+            // Manually call the afterPropertiesSet() to allow object to initialize
+            proxyFactory.afterPropertiesSet();
+            
+            // Return Proxy
             return (GridJobFuture) proxyFactory.getObject();
     }
 

@@ -52,6 +52,9 @@ public class GridJobFutureImpl implements GridJobFuture {
 	}
 
 	public Serializable getResult() throws GridExecutionException {
+		
+		log.debug("OK V are here"); // TODO Remove
+		
 		synchronized (mutex) {
 			if (result == null) {
 				try {
@@ -60,6 +63,7 @@ public class GridJobFutureImpl implements GridJobFuture {
 					log.debug("Resuming after Result...");
 				} catch (InterruptedException e) {
 					e.printStackTrace();
+					throw new RuntimeException("Interrupted while waiting for Result");
 				}
 			}
 		}

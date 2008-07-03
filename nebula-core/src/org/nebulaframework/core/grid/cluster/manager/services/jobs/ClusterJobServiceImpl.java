@@ -14,50 +14,48 @@ import org.nebulaframework.core.job.future.GridJobFutureImpl;
 import org.nebulaframework.core.servicemessage.ServiceMessage;
 import org.nebulaframework.core.servicemessage.ServiceMessageType;
 
-public class ClusterJobServiceImpl implements ClusterJobService  {
+public class ClusterJobServiceImpl implements ClusterJobService {
 
 	private ClusterManager cluster;
 	private JMSSupport jmsSupport;
-	
+
 	private Map<String, GridJobProfile> jobs = new HashMap<String, GridJobProfile>();
-	
+
 	private SplitterService splitterService;
 	private AggregatorService aggregatorService;
-	
+
 	public ClusterJobServiceImpl(ClusterManager cluster) {
 		super();
 		this.cluster = cluster;
 	}
 
-
 	/**
 	 * {@inheritDoc}
 	 */
 	public String submitJob(UUID owner, GridJob<? extends Serializable> job) {
-		
-		String jobId = this.cluster.getClusterId() + "." + owner + "." + UUID.randomUUID();
-		
+
+		String jobId = this.cluster.getClusterId() + "." + owner + "."
+				+ UUID.randomUUID();
+
 		GridJobProfile profile = new GridJobProfile();
-		
+
 		jmsSupport.createTaskQueue(jobId);
 		jmsSupport.createResultQueue(jobId);
 		GridJobFutureImpl future = jmsSupport.createFuture(jobId);
-		
+
 		profile.setJobId(jobId);
 		profile.setOwner(owner);
 		profile.setJob(job);
 		profile.setFuture(future);
-		
+
 		this.jobs.put(jobId, profile);
-		
+
 		splitterService.startSplitter(profile);
 		aggregatorService.startAggregator(profile);
-		
-		//Notify Job Start
-		ServiceMessage message = new ServiceMessage(jobId);
-		message.setType(ServiceMessageType.JOB_START);
 
-		cluster.getServiceMessageSender().sendServiceMessage(message);
+		// Notify Job Start
+		notifyJobStart(jobId);
+
 		return jobId;
 	}
 
@@ -73,31 +71,41 @@ public class ClusterJobServiceImpl implements ClusterJobService  {
 		this.jmsSupport = jmsSupport;
 	}
 
-
 	public SplitterService getSplitterService() {
 		return splitterService;
 	}
-
 
 	public void setSplitterService(SplitterService splitterService) {
 		this.splitterService = splitterService;
 	}
 
-
 	public AggregatorService getAggregatorService() {
 		return aggregatorService;
 	}
-
 
 	public void setAggregatorService(AggregatorService aggregatorService) {
 		this.aggregatorService = aggregatorService;
 	}
 
+	public void notifyJobStart(String jobId) {
+		ServiceMessage message = new ServiceMessage(jobId);
+		message.setType(ServiceMessageType.JOB_START);
 
+		cluster.getServiceMessageSender().sendServiceMessage(message);
+	}
 
+	public void notifyJobEnd(String jobId) {
+		ServiceMessage message = new ServiceMessage(jobId);
+		message.setType(ServiceMessageType.JOB_END);
 
-	
+		cluster.getServiceMessageSender().sendServiceMessage(message);
+	}
 
-	
+	public void notifyJobCancel(String jobId) {
+		ServiceMessage message = new ServiceMessage(jobId);
+		message.setType(ServiceMessageType.JOB_CANCEL);
+
+		cluster.getServiceMessageSender().sendServiceMessage(message);
+	}
 
 }

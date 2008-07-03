@@ -12,12 +12,13 @@
 	<context:property-placeholder location="nebula-cluster.properties" />
 
 	<!-- Embedded ActiveMQ Broker -->
+	
 	<amq:broker persistent="false" useJmx="false">
 		<amq:transportConnectors>
 			<amq:transportConnector uri="${cluster.serviceUrl}" />
 		</amq:transportConnectors>
 	</amq:broker>
-
+ 	
 	<!-- JMS Connection Factory -->
 	<amq:connectionFactory id="jmsConnectionFactory" brokerURL="${cluster.serviceUrl}" />
 

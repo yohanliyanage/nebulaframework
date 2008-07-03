@@ -1,6 +1,8 @@
 package org.nebulaframework.core.grid.cluster.node.services.job.execution;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
@@ -20,13 +22,19 @@ import org.springframework.jms.listener.DefaultMessageListenerContainer;
 public class TaskExecutor {
 
 	private static Log log = LogFactory.getLog(TaskExecutor.class);
+
+	private static Map<String, TaskExecutor> executors = new HashMap<String, TaskExecutor>();
 	
 	private GridNode node;
 	private ConnectionFactory connectionFactory;
 	private String jobId;
 	private JmsTemplate jmsTemplate;
+	private DefaultMessageListenerContainer container;
 	
-	private TaskExecutor(String jobId, GridNode node, ConnectionFactory connectionFactory) {
+	private int taskCount = 0;		// For statistical analysis
+	
+	private TaskExecutor(String jobId, GridNode node,
+			ConnectionFactory connectionFactory) {
 		super();
 		this.node = node;
 		this.connectionFactory = connectionFactory;
@@ -39,43 +47,68 @@ public class TaskExecutor {
 		new Thread(new Runnable() {
 
 			public void run() {
-				new TaskExecutor(jobId, node, connectionFactory).start();
+				TaskExecutor executor = new TaskExecutor(jobId, node, connectionFactory);
+				TaskExecutor.executors.put(jobId, executor);
+				executor.start();
 			}
-			
+
 		}).start();
 	}
 
+	public static void stopForJob(final String jobId) {
+		try {
+			TaskExecutor.executors.get(jobId).stop();
+		} catch (NullPointerException e) {
+			throw new IllegalArgumentException("No TaskExecutor found for JobId " + jobId);
+		}
+	}
+	
 	protected void start() {
-		
+
 		// Create Local Listeners for TaskQueue / ResultQueue
-		initializeTaskQueueListener();
 		initializeResultQueueWriter();
-		
+		initializeTaskQueueListener();
+
 		log.debug("TaskExecutor Started for Job " + jobId);
+	}
+
+	protected void stop() {
+		container.shutdown();
+		TaskExecutor.executors.remove(this.jobId);
+		log.debug("TaskExecutor stopped for Job " + jobId);
+		log.debug("TaskExecutor Stats : Executed " + taskCount + " tasks");
 	}
 	
 	private void initializeTaskQueueListener() {
-		DefaultMessageListenerContainer container = new DefaultMessageListenerContainer();
-		container.setMessageListener(new TaskMessageListener());
+		container = new DefaultMessageListenerContainer();
 		container.setConnectionFactory(connectionFactory);
 		container.setDestinationName(JMSNamingSupport.getTaskQueueName(jobId));
-	}
-	
-	private void initializeResultQueueWriter() {
-		jmsTemplate = new JmsTemplate(connectionFactory);
-		jmsTemplate.setDefaultDestinationName(JMSNamingSupport.getResultQueueName(jobId));
+		container.setMessageListener(new TaskMessageListener());
+		container.afterPropertiesSet();
 	}
 
-	
+	private void initializeResultQueueWriter() {
+		jmsTemplate = new JmsTemplate(connectionFactory);
+		jmsTemplate.setDefaultDestinationName(JMSNamingSupport
+				.getResultQueueName(jobId));
+	}
+
 	/**
 	 * Executes the given Task and returns the result to ResultQueue.
-	 * @param taskId Task Id
-	 * @param task GridTask
+	 * 
+	 * @param taskId
+	 *            Task Id
+	 * @param task
+	 *            GridTask
 	 */
 	protected void onTask(int taskId, GridTask<? extends Serializable> task) {
 		log.debug("Starting execution of task " + taskId);
-		GridTaskResultImpl taskResult = new GridTaskResultImpl(jobId, taskId, node.getId());
 		
+		taskCount++;	// Stats
+		
+		GridTaskResultImpl taskResult = new GridTaskResultImpl(jobId, taskId,
+				node.getId());
+
 		try {
 			Serializable result = task.execute();
 			taskResult.setResult(result);
@@ -84,38 +117,39 @@ public class TaskExecutor {
 			log.warn("Exception while executing GridTask", e);
 			taskResult.setException(e);
 			taskResult.setComplete(false);
-		}
-		finally {
+		} finally {
 			sendResult(taskResult);
 		}
 	}
-	
+
 	private void sendResult(GridTaskResultImpl result) {
 		jmsTemplate.convertAndSend(result);
 	}
-	
+
 	/**
-	 * Internal class which implements {@link javax.jms.MessageListener} interface to act as the 
-	 * message listener for Task Messages. Provides mechanisms to extract the taskId 
-	 * from the incoming Message. 
+	 * Internal class which implements {@link javax.jms.MessageListener}
+	 * interface to act as the message listener for Task Messages. Provides
+	 * mechanisms to extract the taskId from the incoming Message.
 	 * 
 	 * @author Yohan Liyanage
-	 *
+	 * 
 	 */
 	private class TaskMessageListener implements MessageListener {
 
-		@SuppressWarnings("unchecked") // Ignore Generics
+		@SuppressWarnings("unchecked")
+		// Ignore Generics
 		public void onMessage(Message message) {
 			try {
 				int taskId = message.getIntProperty("taskId");
-				GridTask task = (GridTask)((ObjectMessage) message).getObject();
-				
+				GridTask task = (GridTask) ((ObjectMessage) message)
+						.getObject();
+
 				// Do Execution
-				TaskExecutor.this.onTask(taskId,task);
+				TaskExecutor.this.onTask(taskId, task);
 			} catch (JMSException e) {
 				log.warn("Exception while reading TaskMessage", e);
 			}
 		}
 	}
-	
+
 }
