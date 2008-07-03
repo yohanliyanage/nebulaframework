@@ -7,6 +7,9 @@ import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.grid.cluster.node.GridNode;
 import org.nebulaframework.core.servicemessage.ServiceMessage;
 import org.nebulaframework.core.servicemessage.ServiceMessageType;
+import org.nebulaframework.deployment.classloading.GridNodeClassLoader;
+import org.nebulaframework.deployment.classloading.service.ClassLoadingService;
+import org.nebulaframework.deployment.classloading.service.support.ClassLoadingServiceSupport;
 import org.springframework.beans.factory.annotation.Required;
 
 public class JobExecutionServiceImpl implements JobExecutionService {
@@ -18,6 +21,7 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 	private GridNode node;
 	private ConnectionFactory connectionFactory;
 	
+	private ClassLoadingService classLoadingService;
 	
 	public JobExecutionServiceImpl(GridNode node) {
 		super();
@@ -46,11 +50,22 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 
 	
 	private synchronized void newJob(String jobId) {
+		
+		initalizeService();
+		
 		if (idle) {
 			// Request for Job
 			boolean permission = node.getServicesFacade().requestJob(jobId);
 			log.debug("Requesting Permission to Join Processing : " + permission);
 			if (permission) {
+				String className = node.getServicesFacade().requestJobClassName(jobId);
+				GridNodeClassLoader classLoader = new GridNodeClassLoader(jobId, classLoadingService);
+				try {
+					classLoader.loadClass(className);
+				} catch (ClassNotFoundException e) {
+					log.error("Unable to load class " + className + ". Not participating for Job");
+					return;
+				}
 				startNewJob(jobId);
 			}
 			else {
@@ -64,6 +79,7 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	private synchronized void startNewJob(String jobId) {
 
 		log.debug("Starting new Job Processing");
@@ -73,6 +89,18 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 		this.currentJobId = jobId;
 		
 		// Start TaskExecutor for TaskQueue
+		//GridNodeClassLoader classLoader = new GridNodeClassLoader(jobId, classLoadingService));
+		
+	/*	try {
+			
+			Class taskExecutorClass = classLoader.loadClass("org.nebulaframework.core.grid.cluster.node.services.job.execution.TaskExecutor");
+			Method method = taskExecutorClass.getDeclaredMethod("startForJob", String.class, GridNode.class, ConnectionFactory.class);
+			method.invoke(null, jobId, node, connectionFactory);
+			
+		} catch (Exception e) {
+			log.fatal("Exception while loading TaskExecutor", e);
+		}*/
+		
 		TaskExecutor.startForJob(jobId, node, connectionFactory);
 	}
 	
@@ -101,6 +129,12 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 
 	public String getCurrentJobId() {
 		return currentJobId;
+	}
+
+	public void initalizeService () {
+		if (classLoadingService == null) {
+			classLoadingService = ClassLoadingServiceSupport.createProxy(node.getNodeRegistrationService().getRegistration().getClusterId(), connectionFactory);
+		}
 	}
 	
 

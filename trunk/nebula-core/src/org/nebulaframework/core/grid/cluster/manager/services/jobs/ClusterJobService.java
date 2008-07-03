@@ -20,6 +20,7 @@ public interface ClusterJobService {
 	public String submitJob(UUID owner,
 			GridJob<? extends Serializable> job);
 
+	
 	/**
 	 * Requests permission to participate in specified Job
 	 * @param jobId JobId of Job
@@ -27,4 +28,12 @@ public interface ClusterJobService {
 	 */
 	// TODO Pass GridNode profile ?
 	public boolean requestJob(String jobId);
+
+	
+	/**
+	 * Requests the ClassName for specified Job, to do remote loading if needed
+	 * @param jobId JobId of Job
+	 * @return String name of GridJob Class
+	 */
+	public String requestJobClassName(String jobId);
 }

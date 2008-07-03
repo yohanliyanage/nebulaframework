@@ -14,12 +14,15 @@
 package org.nebulaframework.core.job.future;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.GridExecutionException;
 import org.nebulaframework.core.GridTimeoutException;
 import org.nebulaframework.core.job.GridJobState;
+import org.nebulaframework.core.job.GridJobStateListener;
 
 /**
  * Implementation of {@link GridJobFuture} interface.
@@ -31,12 +34,13 @@ public class GridJobFutureImpl implements GridJobFuture {
 
 	private static Log log = LogFactory.getLog(GridJobFutureImpl.class);
 	private static final long serialVersionUID = 3998658173730612929L;
+	
 	protected String jobId;
 	protected Serializable result;
 	protected Exception exception;
 	protected GridJobState state = GridJobState.WAITING;
+	protected List<GridJobStateListener> listeners = new ArrayList<GridJobStateListener>();
 	protected Object mutex = new Object(); // Synchronization Mutex
-	
 
 	public GridJobFutureImpl(String jobId) {
 		super();
@@ -52,8 +56,6 @@ public class GridJobFutureImpl implements GridJobFuture {
 	}
 
 	public Serializable getResult() throws GridExecutionException {
-		
-		log.debug("OK V are here"); // TODO Remove
 		
 		synchronized (mutex) {
 			if (result == null) {
@@ -102,9 +104,20 @@ public class GridJobFutureImpl implements GridJobFuture {
 					|| state == GridJobState.CANCELED) {
 				log.info("Notifying....");
 				mutex.notifyAll();
+				notifyListeners(state);
 			}
 		}
 
+	}
+
+	private void notifyListeners(final GridJobState state) {
+		new Thread(new Runnable() {
+			public void run() {
+				for (GridJobStateListener listener : listeners) {
+					listener.stateChanged(state);
+				}
+			}
+		}).start();
 	}
 
 	public Exception getException() {
@@ -115,5 +128,11 @@ public class GridJobFutureImpl implements GridJobFuture {
 		this.exception = exception;
 	}
 
-
+	public void addGridJobStateListener(GridJobStateListener listener) {
+		this.listeners.add(listener);
+	}
+	
+	public void removeGridJobStateListener(GridJobStateListener listener) {
+		this.listeners.remove(listener);
+	}
 }

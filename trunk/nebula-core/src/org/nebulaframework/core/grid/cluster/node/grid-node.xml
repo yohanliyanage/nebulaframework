@@ -60,6 +60,7 @@
 				<property name="connectionFactory" ref="jmsConnectionFactory" />
 			</bean>		
 		</property>		
+		<property name="connectionFactory" ref="jmsConnectionFactory" />
 		<property name="serviceMessageSupport" ref="serviceMessageSupport" />
 	</bean>
 	

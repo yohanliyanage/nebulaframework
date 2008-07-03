@@ -18,4 +18,6 @@ public interface ClusterManagerServicesFacade extends ClusterJobService{
 	 */
 	// TODO Pass GridNode profile ?
 	public boolean requestJob(String jobId);
+	
+	public String requestJobClassName(String jobId);
 }

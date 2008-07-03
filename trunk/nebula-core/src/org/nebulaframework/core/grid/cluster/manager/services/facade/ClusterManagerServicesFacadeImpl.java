@@ -23,4 +23,8 @@ public class ClusterManagerServicesFacadeImpl implements ClusterManagerServicesF
 		return this.cluster.getJobService().requestJob(jobId);
 	}
 
+	public String requestJobClassName(String jobId) {
+		return this.cluster.getJobService().requestJobClassName(jobId);
+	}
+
 }

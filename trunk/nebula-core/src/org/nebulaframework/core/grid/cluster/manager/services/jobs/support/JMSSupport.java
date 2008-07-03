@@ -23,15 +23,19 @@ public class JMSSupport {
 		this.connectionFactory = connectionFactory;
 	}
 
-	public void createTaskQueue(String jobId) {
-		new ActiveMQQueue(JMSNamingSupport.getTaskQueueName(jobId));
+	public ActiveMQQueue createTaskQueue(String jobId) {
+		return new ActiveMQQueue(JMSNamingSupport.getTaskQueueName(jobId));
 	}
 
-	public void createResultQueue(String jobId) {
-		new ActiveMQQueue(JMSNamingSupport.getResultQueueName(jobId));
+	public ActiveMQQueue createResultQueue(String jobId) {
+		return new ActiveMQQueue(JMSNamingSupport.getResultQueueName(jobId));
 	}
 
-	public GridJobFutureImpl createFuture(String jobId) {
+	public ActiveMQQueue createFutureQueue(String jobId) {
+		return new ActiveMQQueue(JMSNamingSupport.getFutureQueueName(jobId));
+	}
+	
+	public GridJobFutureImpl createFuture(String jobId, ActiveMQQueue futureQueue) {
 		
 		GridJobFutureImpl future = new GridJobFutureImpl(jobId);
 		future.setState(GridJobState.WAITING);
@@ -48,10 +52,9 @@ public class JMSSupport {
 		// Create Message Listener Container
 		DefaultMessageListenerContainer container = new DefaultMessageListenerContainer();
 		container.setConnectionFactory(connectionFactory);
-		container.setDestination(new ActiveMQQueue(JMSNamingSupport.getFutureQueueName(jobId)));
+		container.setDestination(futureQueue);
 		container.setMessageListener(exporter);
 		container.afterPropertiesSet();
 		return future;
 	}
-
 }
