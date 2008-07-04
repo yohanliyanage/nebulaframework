@@ -51,8 +51,10 @@ public class ClusterJobServiceImpl implements ClusterJobService {
 		profile.setFuture(future);
 		profile.initCleanUpHandlers();
 		
-		this.jobs.put(jobId, profile);
-
+		synchronized (this) {
+			this.jobs.put(jobId, profile);
+		}
+		
 		splitterService.startSplitter(profile);
 		aggregatorService.startAggregator(profile);
 
@@ -98,28 +100,37 @@ public class ClusterJobServiceImpl implements ClusterJobService {
 	}
 
 	public void notifyJobEnd(String jobId) {
-		ServiceMessage message = new ServiceMessage(jobId);
-		message.setType(ServiceMessageType.JOB_END);
+		try {
+			ServiceMessage message = new ServiceMessage(jobId);
+			message.setType(ServiceMessageType.JOB_END);
 
-		cluster.getServiceMessageSender().sendServiceMessage(message);
+			cluster.getServiceMessageSender().sendServiceMessage(message);
+		} finally {
+			jobs.remove(jobId);
+		}
 	}
 
 	public void notifyJobCancel(String jobId) {
-		ServiceMessage message = new ServiceMessage(jobId);
-		message.setType(ServiceMessageType.JOB_CANCEL);
-
-		cluster.getServiceMessageSender().sendServiceMessage(message);
-	}
-
-	public GridJobProfile getProfile(String jobId) {
-		return jobs.get(jobId);
-	}
-
-	public String requestJobClassName(String jobId) {
 		try {
-			return jobs.get(jobId).getJob().getClass().getName();
-		} catch (NullPointerException e) {
-			throw new IllegalArgumentException("No such Job with Id " + jobId);
+			ServiceMessage message = new ServiceMessage(jobId);
+			message.setType(ServiceMessageType.JOB_CANCEL);
+			
+			cluster.getServiceMessageSender().sendServiceMessage(message);
+		} finally {
+			jobs.remove(jobId);
 		}
 	}
+	
+	protected synchronized void removeJob(String jobId) {
+		this.jobs.remove(jobId);
+	}
+
+	public synchronized GridJobProfile getProfile(String jobId) {
+		return jobs.get(jobId);
+	}
+	
+	public synchronized boolean isActiveJob(String jobId) {
+		return this.jobs.containsKey(jobId);
+	}
+
 }

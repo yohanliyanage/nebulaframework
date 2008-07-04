@@ -16,6 +16,8 @@ import org.nebulaframework.core.grid.cluster.manager.services.jobs.support.JMSNa
 import org.nebulaframework.core.grid.cluster.node.GridNode;
 import org.nebulaframework.core.task.GridTask;
 import org.nebulaframework.core.task.GridTaskResultImpl;
+import org.nebulaframework.deployment.classloading.GridNodeClassLoader;
+import org.nebulaframework.deployment.classloading.service.ClassLoadingService;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 
@@ -43,12 +45,21 @@ public class TaskExecutor {
 	}
 
 	public static void startForJob(final String jobId, final GridNode node,
-			final ConnectionFactory connectionFactory) {
+			final ConnectionFactory connectionFactory, final ClassLoadingService classLoadingService) {
 		new Thread(new Runnable() {
 
 			public void run() {
+				
+				// Configure Thread Context Class Loader to use GridNodeClassLoader
+				ClassLoader classLoader = new GridNodeClassLoader(jobId,classLoadingService, Thread.currentThread().getContextClassLoader());
+				Thread.currentThread().setContextClassLoader(classLoader);
+				
+				// Create Executor
 				TaskExecutor executor = new TaskExecutor(jobId, node, connectionFactory);
-				TaskExecutor.executors.put(jobId, executor);
+				synchronized (TaskExecutor.class) {
+					TaskExecutor.executors.put(jobId, executor);
+				}
+				
 				executor.start();
 			}
 
@@ -57,7 +68,9 @@ public class TaskExecutor {
 
 	public static void stopForJob(final String jobId) {
 		try {
-			TaskExecutor.executors.get(jobId).stop();
+			synchronized (TaskExecutor.class) {
+				TaskExecutor.executors.get(jobId).stop();
+			}
 		} catch (NullPointerException e) {
 			throw new IllegalArgumentException("No TaskExecutor found for JobId " + jobId);
 		}
@@ -74,7 +87,9 @@ public class TaskExecutor {
 
 	protected void stop() {
 		container.shutdown();
-		TaskExecutor.executors.remove(this.jobId);
+		synchronized (TaskExecutor.class) {
+			TaskExecutor.executors.remove(this.jobId);
+		}
 		log.debug("TaskExecutor stopped for Job " + jobId);
 		log.debug("TaskExecutor Stats : Executed " + taskCount + " tasks");
 	}

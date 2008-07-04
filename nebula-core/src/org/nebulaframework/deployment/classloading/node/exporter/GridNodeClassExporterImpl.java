@@ -19,7 +19,7 @@ public class GridNodeClassExporterImpl implements GridNodeClassExporter {
 			
 			log.debug("Class.forName(" + name + ") = " + Class.forName(name));
 			
-			String resName = name.replaceAll("\\.", "/") + ".class";
+			String resName = "/" + name.replaceAll("\\.", "/") + ".class";
 			InputStream is = Class.forName(name).getResourceAsStream(resName);
 			
 			if (is==null) log.warn("InputStream is NULL for " + resName);
