@@ -14,8 +14,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.support.JMSNamingSupport;
 import org.nebulaframework.core.grid.cluster.node.GridNode;
+import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.core.task.GridTask;
 import org.nebulaframework.core.task.GridTaskResultImpl;
+import org.nebulaframework.deployment.classloading.GridArchiveClassLoader;
 import org.nebulaframework.deployment.classloading.GridNodeClassLoader;
 import org.nebulaframework.deployment.classloading.service.ClassLoadingService;
 import org.springframework.jms.core.JmsTemplate;
@@ -44,14 +46,23 @@ public class TaskExecutor {
 		log.debug("Task Executor Created for Job " + jobId);
 	}
 
+
 	public static void startForJob(final String jobId, final GridNode node,
-			final ConnectionFactory connectionFactory, final ClassLoadingService classLoadingService) {
+			final ConnectionFactory connectionFactory, final ClassLoadingService classLoadingService, final GridArchive archive) {
 		new Thread(new Runnable() {
 
 			public void run() {
 				
-				// Configure Thread Context Class Loader to use GridNodeClassLoader
+				// Configure Thread Context Class Loader to use GridNodeClassLoader,
 				ClassLoader classLoader = new GridNodeClassLoader(jobId,classLoadingService, Thread.currentThread().getContextClassLoader());
+				
+				if (archive!=null) {
+					// If its an archived Job, configure to use GridArchvieClassLoader
+					// chained to GridNodeClassLoader
+					ClassLoader archiveLoader = new GridArchiveClassLoader(archive, classLoader);
+					classLoader = archiveLoader;
+				}
+				
 				Thread.currentThread().setContextClassLoader(classLoader);
 				
 				// Create Executor
@@ -64,8 +75,8 @@ public class TaskExecutor {
 			}
 
 		}).start();
-	}
-
+	}	
+	
 	public static void stopForJob(final String jobId) {
 		try {
 			synchronized (TaskExecutor.class) {

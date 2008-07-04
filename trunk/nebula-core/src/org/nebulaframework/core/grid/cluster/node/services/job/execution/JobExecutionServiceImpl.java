@@ -5,6 +5,9 @@ import javax.jms.ConnectionFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.grid.cluster.node.GridNode;
+import org.nebulaframework.core.job.archive.GridArchive;
+import org.nebulaframework.core.job.deploy.GridJobInfo;
+import org.nebulaframework.core.job.exceptions.GridJobPermissionDeniedException;
 import org.nebulaframework.core.servicemessage.ServiceMessage;
 import org.nebulaframework.core.servicemessage.ServiceMessageType;
 import org.nebulaframework.deployment.classloading.service.ClassLoadingService;
@@ -54,15 +57,21 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 		
 		if (idle) {
 			// Request for Job
-			boolean permission = node.getServicesFacade().requestJob(jobId);
-			log.debug("Requesting Permission to Join Processing : " + permission);
-			if (permission) {
-				startNewJob(jobId);
-			}
-			else {
+			try {
+				
+				GridJobInfo jobInfo = node.getServicesFacade().requestJob(jobId);
+				
+				// Start it
+				if (jobInfo.isArchived()) {
+					startNewArchivedJob(jobId, jobInfo.getArchive());
+				}
+				else {
+					startNewJob(jobId);
+				}
+				
+			} catch (GridJobPermissionDeniedException e) {
 				log.info("Permission denied to participate in Job " + jobId);
-			}			
-
+			}		
 		}
 		else {
 			log.debug("New Job notified, ignoring as Local Node is busy : " + jobId);
@@ -74,26 +83,22 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 	private synchronized void startNewJob(String jobId) {
 
 		log.debug("Starting new Job Processing");
-		// FIXME Take the JAR file from Server & Validate & load classes
 		
 		this.idle = false;
 		this.currentJobId = jobId;
+
+		TaskExecutor.startForJob(jobId, node, connectionFactory, classLoadingService, null);
+	}
+	
+	@SuppressWarnings("unchecked")
+	private synchronized void startNewArchivedJob(String jobId, GridArchive archive) {
+
+		log.debug("Starting new Archived Job Processing");
 		
-		
-		// Start TaskExecutor for TaskQueue
-		//GridNodeClassLoader classLoader = new GridNodeClassLoader(jobId, classLoadingService));
-		
-	/*	try {
-			
-			Class taskExecutorClass = classLoader.loadClass("org.nebulaframework.core.grid.cluster.node.services.job.execution.TaskExecutor");
-			Method method = taskExecutorClass.getDeclaredMethod("startForJob", String.class, GridNode.class, ConnectionFactory.class);
-			method.invoke(null, jobId, node, connectionFactory);
-			
-		} catch (Exception e) {
-			log.fatal("Exception while loading TaskExecutor", e);
-		}*/
-		
-		TaskExecutor.startForJob(jobId, node, connectionFactory, classLoadingService);
+		this.idle = false;
+		this.currentJobId = jobId;
+
+		TaskExecutor.startForJob(jobId, node, connectionFactory, classLoadingService, archive);
 	}
 	
 	private synchronized void endJob(String jobId) {

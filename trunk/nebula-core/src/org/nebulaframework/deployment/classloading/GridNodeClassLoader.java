@@ -14,10 +14,10 @@ public class GridNodeClassLoader extends ClassLoader {
 
 	private static Log log = LogFactory.getLog(GridNodeClassLoader.class);
 	
-	private String jobId;
-	private ClassLoadingService classLoadingService;
+	protected String jobId;
+	protected ClassLoadingService classLoadingService;
 	
-	private static Map<String, Class<?>> loaded = new HashMap<String, Class<?>>();
+	protected static Map<String, Class<?>> loaded = new HashMap<String, Class<?>>();
 	
 	public GridNodeClassLoader(String jobId,
 			ClassLoadingService classLoadingService, final ClassLoader parent) {
@@ -34,14 +34,13 @@ public class GridNodeClassLoader extends ClassLoader {
 	
 	@Override
 	public Class<?> loadClass(String name) throws ClassNotFoundException {
-		log.debug("GridNodeClassLoader loading Class : " + name);
-		return super.loadClass(name);
+		Class<?> cls = findLoadedClass(name);
+		return (cls != null) ? cls : super.loadClass(name);
 	}
-
 
 	@Override
 	protected Class<?> findClass(String name) throws ClassNotFoundException {
-		log.debug("GridNodeClassLoader finding Class : " + name);
+		log.debug("GridNodeClassLoader Finding Class : " + name);
 		
 		// Check local cache
 		synchronized(GridNodeClassLoader.class) {

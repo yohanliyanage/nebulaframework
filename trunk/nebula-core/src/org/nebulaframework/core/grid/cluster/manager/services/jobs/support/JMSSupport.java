@@ -35,7 +35,7 @@ public class JMSSupport {
 		return new ActiveMQQueue(JMSNamingSupport.getFutureQueueName(jobId));
 	}
 	
-	public GridJobFutureImpl createFuture(String jobId, ActiveMQQueue futureQueue) {
+	public GridJobFutureImpl createFuture(String jobId) {
 		
 		GridJobFutureImpl future = new GridJobFutureImpl(jobId);
 		future.setState(GridJobState.WAITING);
@@ -52,7 +52,7 @@ public class JMSSupport {
 		// Create Message Listener Container
 		DefaultMessageListenerContainer container = new DefaultMessageListenerContainer();
 		container.setConnectionFactory(connectionFactory);
-		container.setDestination(futureQueue);
+		container.setDestination(createFutureQueue(jobId));
 		container.setMessageListener(exporter);
 		container.afterPropertiesSet();
 		return future;
