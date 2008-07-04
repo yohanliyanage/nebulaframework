@@ -2,10 +2,10 @@ package org.nebulaframework.deployment.classloading.node.exporter;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nebulaframework.util.io.IOSupport;
 
 
 public class GridNodeClassExporterImpl implements GridNodeClassExporter {
@@ -23,22 +23,9 @@ public class GridNodeClassExporterImpl implements GridNodeClassExporter {
 			InputStream is = Class.forName(name).getResourceAsStream(resName);
 			
 			if (is==null) log.warn("InputStream is NULL for " + resName);
-			
-			int byteRead = -1;
-			ArrayList<Byte> list = new ArrayList<Byte>();
-			
-			// Read all bytes
-			while(( byteRead = is.read())!=-1) {
-				list.add((byte) byteRead);
-			}
-			
-			// Convert Byte[] to byte[] and return
-			byte[] bytes = new byte[list.size()];
-			for (int i=0; i<list.size(); i++) {
-				bytes[i] = list.get(i);
-			}
+
 			log.debug("Exporting " + name);
-			return bytes;
+			return IOSupport.readBytes(is);
 		}
 		catch (IOException ex) {
 			log.warn("Unable to export class due to IOException",ex);
