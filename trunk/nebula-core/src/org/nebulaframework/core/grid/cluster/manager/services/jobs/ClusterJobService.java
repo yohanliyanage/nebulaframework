@@ -28,12 +28,5 @@ public interface ClusterJobService {
 	 */
 	// TODO Pass GridNode profile ?
 	public boolean requestJob(String jobId);
-
 	
-	/**
-	 * Requests the ClassName for specified Job, to do remote loading if needed
-	 * @param jobId JobId of Job
-	 * @return String name of GridJob Class
-	 */
-	public String requestJobClassName(String jobId);
 }
