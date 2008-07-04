@@ -8,6 +8,9 @@ import org.springframework.util.Assert;
 public class GridArchive implements Serializable {
 
 	private static final long serialVersionUID = 3354082308238249555L;
+
+	public static final String NEBULA_INF = "NEBULA-INF"; 
+	public static final String LIBRARY_PATH = NEBULA_INF + "/lib";
 	
 	private String[] jobClassNames;
 	private byte[] bytes;
