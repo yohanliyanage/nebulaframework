@@ -2,8 +2,8 @@ package org.nebulaframework.core.grid.cluster.node.services.job.submission;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.jms.ConnectionFactory;
 
@@ -12,6 +12,7 @@ import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.grid.cluster.node.GridNode;
 import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.archive.GridArchive;
+import org.nebulaframework.core.job.exceptions.GridJobRejectionException;
 import org.nebulaframework.core.job.future.GridJobFuture;
 import org.springframework.jms.remoting.JmsInvokerProxyFactoryBean;
 
@@ -33,16 +34,16 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
     }
 
     // Create and return proxy for GridJobFuture
-    public GridJobFuture submitJob(GridJob<? extends Serializable> job) {
+    public GridJobFuture submitJob(GridJob<? extends Serializable> job) throws GridJobRejectionException {
             return submitJob(job, null);
 
     }
 
-	public GridJobFuture[] submitArchive(GridArchive archive) {
+	public Map<String, GridJobFuture> submitArchive(GridArchive archive) {
+		
+		Map<String, GridJobFuture> futureMap = new HashMap<String, GridJobFuture>();
 		
 		String[] classNames= archive.getJobClassNames();
-		
-		List<GridJobFuture> futures = new ArrayList<GridJobFuture>();
 		
 		// Use Reflection to create GridJob instances and pass it to the submitJob method.
 		for(String className : classNames) {
@@ -50,13 +51,16 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
 				Class<?> cls = Class.forName(className);
 				Constructor<?> constructor = cls.getConstructor();
 				Object job = constructor.newInstance();
-				futures.add(submitJob((GridJob<?>)job, archive));
+				futureMap.put(className, submitJob((GridJob<?>)job, archive));
+			} catch (GridJobRejectionException e) {
+				log.warn("GridJob Rejected : " + className, e);
+				futureMap.put(className, null);	// Put null to FutureMap
 			} catch (Exception e) {
-				log.fatal("Unable to submit GridJob(s) in archive", e);
+				log.fatal("Unable to submit GridJob " + className + " due to exception", e);
+				futureMap.put(className, null); // Put null to FutureMap
 			}
 		}
-		
-		return futures.toArray(new GridJobFuture[] {});
+		return futureMap;
 	}
 	
 	/**
@@ -65,7 +69,9 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
 	 * @param archive Archive, if applicable. This may be <tt>null</tt>
 	 * @return GridJobFuture for the submitted job
 	 */
-	protected GridJobFuture submitJob(GridJob<? extends Serializable> job, GridArchive archive) {
+	protected GridJobFuture submitJob(GridJob<? extends Serializable> job, GridArchive archive) throws GridJobRejectionException {
+		
+		log.info("Submitting GridJob " + job.getClass().getName());
 		
         // Submit Job to Cluster and retrieve JobId
         String jobId = this.node.getServicesFacade().submitJob(this.node.getId(), job, archive);

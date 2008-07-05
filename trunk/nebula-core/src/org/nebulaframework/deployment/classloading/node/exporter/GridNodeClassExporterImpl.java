@@ -15,16 +15,12 @@ public class GridNodeClassExporterImpl implements GridNodeClassExporter {
 	public byte[] exportClass(String name) throws ClassNotFoundException {
 		try {
 			
-			log.debug("Export request received for class " + name);
-			
-			log.debug("Class.forName(" + name + ") = " + Class.forName(name));
-			
 			String resName = "/" + name.replaceAll("\\.", "/") + ".class";
 			InputStream is = Class.forName(name).getResourceAsStream(resName);
 			
 			if (is==null) log.warn("InputStream is NULL for " + resName);
 
-			log.debug("Exporting " + name);
+			log.debug("[GridNodeClassExporter] Exporting " + name);
 			return IOSupport.readBytes(is);
 		}
 		catch (IOException ex) {

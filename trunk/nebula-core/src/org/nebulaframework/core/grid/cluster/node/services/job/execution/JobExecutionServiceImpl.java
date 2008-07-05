@@ -82,7 +82,7 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 	@SuppressWarnings("unchecked")
 	private synchronized void startNewJob(String jobId) {
 
-		log.debug("Starting new Job Processing");
+		log.info("Starting new Job Processing [" + jobId + "]");
 		
 		this.idle = false;
 		this.currentJobId = jobId;
@@ -93,7 +93,7 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 	@SuppressWarnings("unchecked")
 	private synchronized void startNewArchivedJob(String jobId, GridArchive archive) {
 
-		log.debug("Starting new Archived Job Processing");
+		log.info("Starting new Archived Job Processing [" + jobId + "]");
 		
 		this.idle = false;
 		this.currentJobId = jobId;
@@ -103,6 +103,7 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 	
 	private synchronized void endJob(String jobId) {
 		if ((this.currentJobId != null) && (this.currentJobId.equals(jobId))) {
+			log.info("Ending Job Execution " + jobId);
 			TaskExecutor.stopForJob(jobId);
 			this.currentJobId = null;
 			this.idle = true;

@@ -26,6 +26,7 @@ public class TestNodeWorker {
 			System.in.read();
 			log.debug("Unregistering Node");
 			node.getNodeRegistrationService().unregister();
+			System.exit(0);
 		} catch (RegistrationException e) {
 			e.printStackTrace();
 		} catch (IOException e) {

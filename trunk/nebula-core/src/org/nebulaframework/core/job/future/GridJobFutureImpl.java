@@ -47,7 +47,7 @@ public class GridJobFutureImpl implements GridJobFuture {
 	}
 
 	public boolean cancel() {
-		// TODO Auto-generated method stub
+		// TODO Implement Cancel
 		return false;
 	}
 
@@ -85,7 +85,7 @@ public class GridJobFutureImpl implements GridJobFuture {
 
 	public Serializable getResult(long timeout) throws GridExecutionException,
 			GridTimeoutException {
-		// TODO Auto-generated method stub
+		// TODO Implement getResult TimeOut
 		return null;
 	}
 
