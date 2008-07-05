@@ -22,7 +22,7 @@ import org.nebulaframework.core.job.GridJobState;
 import org.nebulaframework.core.task.GridTask;
 
 /**
- * <p>TaskFuture is returned by {@link GridJob#start()} method. This class allows to 
+ * <p><tt>GridJobFuture</tt> is returned by {@link GridJob#start()} method. This class allows to 
  * check the status of a {@link GridJob}, to cancel execution of a {@link GridJob}, 
  * and to obtain the result of a {@link GridJob}. </p> 
  * 

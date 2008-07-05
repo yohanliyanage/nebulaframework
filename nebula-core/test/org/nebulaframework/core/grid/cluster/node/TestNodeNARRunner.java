@@ -1,7 +1,6 @@
 package org.nebulaframework.core.grid.cluster.node;
 
 import java.io.File;
-import java.util.Date;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -11,6 +10,7 @@ import org.nebulaframework.core.job.archive.support.GridArchiveSupport;
 import org.nebulaframework.core.job.future.GridJobFuture;
 import org.springframework.context.ApplicationContext;
 import org.springframework.remoting.RemoteInvocationFailureException;
+import org.springframework.util.StopWatch;
 
 public class TestNodeNARRunner {
 	
@@ -22,28 +22,32 @@ public class TestNodeNARRunner {
 
 			ApplicationContext ctx = new ClassPathXmlApplicationContext("org/nebulaframework/core/grid/cluster/node/grid-node.xml");
 			GridNode node = (GridNode) ctx.getBean("localNode");
-
+			
 			log.debug("Registering Node");
 			node.getNodeRegistrationService().register();
 			
-			Date dStart = new Date();
+			StopWatch sw = new StopWatch();
+			sw.start();
+			
 			// Submit Job
 			log.debug("Submitting Job");
-			GridArchive archive =  GridArchiveSupport.createGridArchive(new File("test\\simpletestjob.nar"));
-			GridJobFuture future = node.getJobSubmissionService().submitArchive(archive)[0];
+			GridArchive archive =  GridArchiveSupport.createGridArchive(new File("simpletestjob.nar"));
+			GridJobFuture future = (GridJobFuture) node.getJobSubmissionService().submitArchive(archive).values().toArray()[0];
 			
 			try {
 				log.info("RESULT : " + future.getResult());
 			} catch (RemoteInvocationFailureException e) {
 				e.getCause().printStackTrace();
 			}
-			Date dEnd = new Date();
+
+			sw.stop();
 			
-			log.debug("Job Duration : " + (dEnd.getTime() - dStart.getTime()) + " ms");
+			log.debug("Job Duration : " + (sw.getLastTaskTimeMillis()) + " ms");
 			log.debug("Waiting...");
 			System.in.read();
 			log.debug("Unregistering Node");
 			node.getNodeRegistrationService().unregister();
+			System.exit(0);
 		} 
 		catch (Exception e) {
 			log.error(e);

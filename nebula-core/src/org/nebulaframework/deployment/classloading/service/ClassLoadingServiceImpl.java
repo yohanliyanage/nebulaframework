@@ -19,8 +19,8 @@ import org.springframework.util.StopWatch;
 public class ClassLoadingServiceImpl implements ClassLoadingService {
 
 	private static final int MAX_CACHE_SIZE_KB = 512;
-	private static final int CACHE_GC_INITIAL_DELAY_SECS = 10;
-	private static final int CACHE_GC_SEQ_DELAY_SECS = 10;
+	private static final int CACHE_GC_INITIAL_DELAY_SECS = 2*60;
+	private static final int CACHE_GC_SEQ_DELAY_SECS = 2*60;
 	
 	private static Log log = LogFactory.getLog(ClassLoadingServiceImpl.class);
 	private ClusterJobServiceImpl jobServiceImpl;
@@ -143,7 +143,6 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 		}
 		
 		public void run() {
-			log.debug("[Cache GC] Running");
 			
 			// QoS Timing Statistics
 			StopWatch stopWatch = new StopWatch();
@@ -170,7 +169,7 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 			}
 			
 			stopWatch.stop();
-			log.debug("[Cache GC] Finished [Released " + released + " bytes. "+ stopWatch.getTotalTimeMillis() +" ms]");
+			log.debug("[Cache GC] [Released " + released + " bytes. "+ stopWatch.getTotalTimeMillis() +" ms]");
 		}
 		
 	}

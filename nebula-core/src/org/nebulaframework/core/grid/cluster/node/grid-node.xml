@@ -10,6 +10,9 @@
 
 	<context:property-placeholder location="nebula-client.properties" />
 
+	<!-- Enable AspectJ Load Time Weaver -->
+	<context:load-time-weaver/>
+	
 	<!-- Client Connection Factory -->
 	<amq:connectionFactory id="jmsConnectionFactory" brokerURL="${cluster.url}" />
 
