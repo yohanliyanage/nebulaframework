@@ -1,4 +1,4 @@
-package org.nebulaframework.util.profiling.aspects;
+package org.nebulaframework.util.profiling;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

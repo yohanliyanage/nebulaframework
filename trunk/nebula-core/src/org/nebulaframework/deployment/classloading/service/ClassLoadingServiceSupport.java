@@ -1,4 +1,4 @@
-package org.nebulaframework.deployment.classloading.service.support;
+package org.nebulaframework.deployment.classloading.service;
 
 import java.util.UUID;
 
@@ -8,8 +8,6 @@ import org.apache.activemq.command.ActiveMQQueue;
 import org.nebulaframework.core.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.ClusterJobServiceImpl;
 import org.nebulaframework.core.grid.cluster.manager.services.registration.ClusterRegistrationServiceImpl;
-import org.nebulaframework.deployment.classloading.service.ClassLoadingService;
-import org.nebulaframework.deployment.classloading.service.ClassLoadingServiceImpl;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 import org.springframework.jms.remoting.JmsInvokerProxyFactoryBean;
 import org.springframework.jms.remoting.JmsInvokerServiceExporter;

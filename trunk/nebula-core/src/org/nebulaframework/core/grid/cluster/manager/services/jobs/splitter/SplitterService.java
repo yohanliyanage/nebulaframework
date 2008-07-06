@@ -18,15 +18,14 @@ import java.io.Serializable;
 
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.ClusterJobService;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.GridJobProfile;
-import org.nebulaframework.core.grid.cluster.node.GridNode;
 import org.nebulaframework.core.task.GridTask;
 
 /**
- * <p><tt>SplitterService</tt> splits a given {@link GridJob} to {@link GridTask}s which can be
- * executed on remote {@link GridNode}s. Furthermore, it enqueues the {@link GridTask}s in the
- * <tt>TaskQueue</tt> for the <tt>GridJob</tt>. </p>
- * 
- * <p>This is a support service of {@link ClusterJobService}.</p>
+ * {@code SplitterService} splits a given {@code GridJob} to {@code GridTask}s which can be
+ * executed on remote {@code GridNode}s. Furthermore, it enqueues the {@code GridTask}s in the
+ * {@code TaskQueue} for the {@code GridJob}. 
+ * <p>
+ * This is a support service of {@code ClusterJobService}.
  * 
  * @author Yohan Liyanage
  * @version 1.0
@@ -36,19 +35,19 @@ import org.nebulaframework.core.task.GridTask;
 public interface SplitterService {
 	
 	/**
-	 * Starts Splitter for given <tt>GridJob</tt>, denoted by {@link GridJobProfile}.
+	 * Starts Splitter for given {@code GridJob}, denoted by {@code GridJobProfile}.
 	 * 
-	 * @param profile {@link GridJobProfile} for the <tt>GridJob</tt>
+	 * @param profile {@code GridJobProfile} for the {@code GridJob}
 	 */
 	public void startSplitter(GridJobProfile profile);
 	
 	/**
-	 * Re-enqueues a given GridTask in the <tt>TaskQueue</tt>. Usually this is used to re-enqueue
+	 * Re-enqueues a given GridTask in the {@code TaskQueue}. Usually this is used to re-enqueue
 	 * failed tasks.
 	 * 
 	 * @param jobId JobId of GridJob
 	 * @param taskId TaskId of Task to be re-enqueued
-	 * @param task {@link GridTask} to be re-enqueued
+	 * @param task {@code GridTask} to be re-enqueued
 	 */
 	public void reEnqueueTask(final String jobId, final int taskId, GridTask<? extends Serializable> task);
 }

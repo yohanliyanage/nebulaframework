@@ -1,4 +1,4 @@
-package org.nebulaframework.core.job.archive.support;
+package org.nebulaframework.core.job.archive;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -12,8 +12,6 @@ import java.util.zip.ZipFile;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJob;
-import org.nebulaframework.core.job.archive.GridArchive;
-import org.nebulaframework.core.job.archive.GridArchiveException;
 import org.nebulaframework.deployment.classloading.GridArchiveClassLoader;
 import org.nebulaframework.util.io.IOSupport;
 import org.springframework.util.Assert;
@@ -30,7 +28,7 @@ public class GridArchiveSupport {
 			Assert.notNull(file);
 			
 			// Verify file integrity
-			if (! verify(file)) {
+			if (!verify(file)) {
 				throw new SecurityException("Grid Archive Verification failed of " + file);
 			}
 			
@@ -111,7 +109,7 @@ public class GridArchiveSupport {
 	}
 
 	private static String toClassName(String fileName) {
-		String name = fileName.substring(0, fileName.length()- ".class".length());
+		String name = fileName.substring(0, fileName.length() - ".class".length());
 		return name.replaceAll("\\/|\\\\", "."); // Replace all path separators (Win/Linux)
 	}
 

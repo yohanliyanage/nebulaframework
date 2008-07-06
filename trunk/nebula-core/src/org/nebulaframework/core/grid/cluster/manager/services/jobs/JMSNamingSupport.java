@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package org.nebulaframework.core.grid.cluster.manager.services.jobs.support;
+package org.nebulaframework.core.grid.cluster.manager.services.jobs;
 
 /**
  * A support class which returns JMS Resource Names bound to a given
@@ -24,7 +24,7 @@ package org.nebulaframework.core.grid.cluster.manager.services.jobs.support;
 public class JMSNamingSupport {
 	
 	/**
-	 * Returns the TaskQueue Name for a given JobId.
+	 * Returns the {@code TaskQueue} Name for a given JobId.
 	 * 
 	 * @param jobId JobId
 	 * @return String TaskQueue Name
@@ -34,7 +34,7 @@ public class JMSNamingSupport {
 	}
 
 	/**
-	 * Returns the ResultQueue Name for a given JobId.
+	 * Returns the {@code ResultQueue} Name for a given JobId.
 	 * 
 	 * @param jobId JobId
 	 * @return String ResultQueue Name
@@ -44,7 +44,7 @@ public class JMSNamingSupport {
 	}
 
 	/**
-	 * Returns the FutureQueue Name for a given JobId.
+	 * Returns the {@code FutureQueue} Name for a given JobId.
 	 * 
 	 * @param jobId JobId
 	 * @return String FutureQueue Name

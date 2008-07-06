@@ -14,49 +14,50 @@
 package org.nebulaframework.core.job;
 
 /**
- * Represents the various states a Grid Job can exist.
+ * Represents the various states a {@code GridJob} can exist.
+ * 
  * @author Yohan Liyanage
- *
+ * @version 1.0
  */
 public enum GridJobState {
 	
 	/**
-	 * GridJob is in waiting state (to be enqueued). 
+	 * {@code GridJob} is in waiting state (to be enqueued). 
 	 */
 	WAITING,
 	
 	/**
-	 * GridJob is initializing for execution (Splitting).
+	 * {@code GridJob} is initializing for execution (Splitting).
 	 */
 	INITIALIZING,	
 	
 	/**
-	 * GridJob is enqueued for execution, but has not started yet.
+	 * {@code GridJob} is enqueued for execution, but has not started yet.
 	 */
 	ENQUEUED,
 	
 	/**
-	 * GridJob has been rejected by System.
+	 * {@code GridJob} has been rejected by Grid.
 	 */
 	REJECTED,
 	
 	/**
-	 * GridJob is executing on the Grid.
+	 * {@code GridJob} is executing on the Grid.
 	 */
 	EXECUTING,
 	
 	/**
-	 * GridJob has completed successfully.
+	 * {@code GridJob} has completed successfully.
 	 */
 	COMPLETE,
 	
 	/**
-	 * GridJob has been canceled.
+	 * {@code GridJob} has been canceled.
 	 */
 	CANCELED,
 	
 	/**
-	 * GridJob has failed during execution.
+	 * {@code GridJob} has failed during execution.
 	 */
 	FAILED;
 }

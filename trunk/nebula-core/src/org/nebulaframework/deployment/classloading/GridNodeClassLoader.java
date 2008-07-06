@@ -71,7 +71,7 @@ public class GridNodeClassLoader extends ClassLoader {
 			return cls;
 		} catch (Exception ex) {
 			log.warn("Exception while loading remote class", ex);
-			throw new ClassNotFoundException("ClassNotFound due to Exception",ex);
+			throw new ClassNotFoundException("ClassNotFound due to Exception", ex);
 		}
 	}
 

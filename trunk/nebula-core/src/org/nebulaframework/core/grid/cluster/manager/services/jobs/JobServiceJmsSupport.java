@@ -12,13 +12,11 @@
  * limitations under the License.
  */
 
-package org.nebulaframework.core.grid.cluster.manager.services.jobs.support;
+package org.nebulaframework.core.grid.cluster.manager.services.jobs;
 
 import javax.jms.ConnectionFactory;
 
 import org.apache.activemq.command.ActiveMQQueue;
-import org.nebulaframework.core.grid.cluster.manager.services.jobs.ClusterJobServiceImpl;
-import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.GridJobState;
 import org.nebulaframework.core.job.future.GridJobFuture;
 import org.nebulaframework.core.job.future.GridJobFutureImpl;
@@ -27,10 +25,10 @@ import org.springframework.jms.listener.DefaultMessageListenerContainer;
 import org.springframework.jms.remoting.JmsInvokerServiceExporter;
 
 /**
- * Provides support methods which assists {@link ClusterJobServiceImpl} in 
- * creating JMS Resources attached with {@link GridJob}s.
- * 
- * <p><i>Spring Managed</i></p>
+ * Provides support methods which assists {@code ClusterJobServiceImpl} in 
+ * creating JMS Resources attached with {@code GridJob}s.
+ * <p>
+ * <i>Spring Managed</i>
  * 
  * @author Yohan Liyanage
  * @version 1.0
@@ -42,14 +40,14 @@ public class JobServiceJmsSupport {
 	private ConnectionFactory connectionFactory;
 
 	/**
-	 * Sets the JMS {@link ConnectionFactory} used by this class to 
+	 * Sets the JMS {@code ConnectionFactory} used by this class to 
 	 * communicate with Cluster Broker.
+	 * <p>
+	 * <b>Note : </b>This is a <b>required</b> dependency.
+	 * <p>
+	 * <i>Spring Injected</i>
 	 * 
-	 * <p><b>Note :</b>This is a <b>required</b> dependency.</p>
-	 * 
-	 * <p><i>Spring Injected</i></p>
-	 * 
-	 * @param connectionFactory {@link ConnectionFactory}
+	 * @param connectionFactory {@code ConnectionFactory}
 	 */
 	@Required
 	public void setConnectionFactory(ConnectionFactory connectionFactory) {
@@ -60,7 +58,7 @@ public class JobServiceJmsSupport {
 	 * Creates an returns the TaskQueue for given Job.
 	 * 
 	 * @param jobId JobId
-	 * @return {@link ActiveMQQueue} TaskQueue
+	 * @return {@code ActiveMQQueue} TaskQueue
 	 */
 	public ActiveMQQueue createTaskQueue(String jobId) {
 		return new ActiveMQQueue(JMSNamingSupport.getTaskQueueName(jobId));
@@ -70,7 +68,7 @@ public class JobServiceJmsSupport {
 	 * Creates an returns the ResultQueue for given Job.
 	 * 
 	 * @param jobId JobId
-	 * @return {@link ActiveMQQueue} ResultQueue
+	 * @return {@code ActiveMQQueue} ResultQueue
 	 */
 	public ActiveMQQueue createResultQueue(String jobId) {
 		return new ActiveMQQueue(JMSNamingSupport.getResultQueueName(jobId));
@@ -81,18 +79,18 @@ public class JobServiceJmsSupport {
 	 * communication of given Job.
 	 * 
 	 * @param jobId JobId
-	 * @return {@link ActiveMQQueue} FutureQueue
+	 * @return {@code ActiveMQQueue} FutureQueue
 	 */
 	public ActiveMQQueue createFutureQueue(String jobId) {
 		return new ActiveMQQueue(JMSNamingSupport.getFutureQueueName(jobId));
 	}
 	
 	/**
-	 * Returns {@link GridJobFutureImpl} for given Job, and also remote-enables
+	 * Returns {@code GridJobFutureImpl} for given Job, and also remote-enables
 	 * the GridJobFuture using Spring's JMS Remoting facilities.
 	 * 
 	 * @param jobId JobId
-	 * @return {@link GridJobFutureImpl} Future
+	 * @return {@code GridJobFutureImpl} Future
 	 */
 	public GridJobFutureImpl createFuture(String jobId) {
 		

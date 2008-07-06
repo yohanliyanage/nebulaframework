@@ -1,4 +1,4 @@
-package org.nebulaframework.util.profiling.annotations;
+package org.nebulaframework.util.profiling;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

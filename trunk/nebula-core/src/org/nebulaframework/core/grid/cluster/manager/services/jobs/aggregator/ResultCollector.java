@@ -16,25 +16,18 @@ package org.nebulaframework.core.grid.cluster.manager.services.jobs.aggregator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nebulaframework.core.grid.cluster.manager.services.jobs.ClusterJobService;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.ClusterJobServiceImpl;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.GridJobProfile;
-import org.nebulaframework.core.grid.cluster.node.GridNode;
-import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.task.GridTaskResult;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 
 /**
+ * {@code ResultCollector} is responsible of collecting
+ * {@code GridTaskResult}s from participating {@code GridNode}s, for a given
+ * {@code GridJob}.
  * <p>
- * <tt>ResultCollector</tt> is responsible of collecting
- * {@link GridTaskResult}s from participating {@link GridNode}s, for a given
- * {@link GridJob}.
- * </p>
- * 
- * <p>
- * This class assists the {@link AggregatorService}, which in turn assists
- * {@link ClusterJobService}.
- * </p>
+ * This class assists the {@code AggregatorService}, which in turn assists
+ * {@code ClusterJobService}.
  * 
  * @author Yohan Liyanage
  * @version 1.0
@@ -48,11 +41,11 @@ public class ResultCollector {
 	private DefaultMessageListenerContainer container;
 
 	/**
-	 * Constructs a {@link ResultCollector} instance for given <tt>GridJob</tt>.
+	 * Constructs a {@code ResultCollector} instance for given {@code GridJob}.
 	 * 
-	 * @param profile <tt>GridJobProfile</tt> for <tt>GridJob</tt>
-	 * @param jobService {@link ClusterJobServiceImpl} JobService Implementation
-	 * @param container Spring {@link DefaultMessageListenerContainer} for <tt>ResultsQueue</tt>
+	 * @param profile {@code GridJobProfile} for {@code GridJob}
+	 * @param jobService {@code ClusterJobServiceImpl} JobService Implementation
+	 * @param container Spring {@code DefaultMessageListenerContainer} for {@code ResultsQueue}
 	 */
 	public ResultCollector(GridJobProfile profile,
 			ClusterJobServiceImpl jobService,
@@ -64,10 +57,10 @@ public class ResultCollector {
 	}
 
 	/**
-	 * Called by {@link DefaultMessageListenerContainer}, when a {@link GridTaskResult} arrives
-	 * to the <tt>ResultQueue</tt> for the <tt>GridJob</tt>.
+	 * Called by {@code DefaultMessageListenerContainer}, when a {@code GridTaskResult} arrives
+	 * to the {@code ResultQueue} for the {@code GridJob}.
 	 * 
-	 * @param result {@link GridTaskResult}
+	 * @param result {@code GridTaskResult}
 	 */
 	public void onResult(GridTaskResult result) {
 
@@ -107,10 +100,10 @@ public class ResultCollector {
 	}
 	
 	/**
-	 * Returns the {@link GridJobProfile} for the <tt>GridJob</tt>
-	 * of the <tt>ResultCollector</tt>.
+	 * Returns the {@code GridJobProfile} for the {@code GridJob}
+	 * of the {@code ResultCollector}.
 	 * 
-	 * @return {@link GridJobProfile} for the <tt>GridJob</tt>
+	 * @return GridJobProfile for the GridJob
 	 */
 	public GridJobProfile getProfile() {
 		return profile;

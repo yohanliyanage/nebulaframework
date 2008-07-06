@@ -34,13 +34,13 @@ public class ServiceMessage implements Serializable {
 	}
 
 	public boolean isJobMessage() {
-		return 	(type == ServiceMessageType.JOB_START) ||
-				(type == ServiceMessageType.JOB_END) ||
-				(type == ServiceMessageType.JOB_CANCEL);
+		return (type == ServiceMessageType.JOB_START)
+				|| (type == ServiceMessageType.JOB_END)
+				|| (type == ServiceMessageType.JOB_CANCEL);
 	}
 
 	public boolean isClusterMessage() {
-		return 	(type == ServiceMessageType.CLUSTER_SHUTDOWN);
+		return (type == ServiceMessageType.CLUSTER_SHUTDOWN);
 	}
 
 	@Override

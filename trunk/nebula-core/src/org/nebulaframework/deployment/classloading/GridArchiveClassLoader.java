@@ -13,7 +13,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.util.io.IOSupport;
-import org.nebulaframework.util.profiling.annotations.ProfileExecution;
+import org.nebulaframework.util.profiling.ProfileExecution;
 
 public class GridArchiveClassLoader extends ClassLoader {
 

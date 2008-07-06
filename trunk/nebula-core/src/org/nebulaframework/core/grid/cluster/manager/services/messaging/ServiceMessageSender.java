@@ -16,6 +16,28 @@ package org.nebulaframework.core.grid.cluster.manager.services.messaging;
 
 import org.nebulaframework.core.servicemessage.ServiceMessage;
 
+/**
+ * Allows {@code ClusterManager} to send messages to its {@code GridNode}s,
+ * using the Service Topic. 
+ * <p>
+ * The service messages will be delivered to all registered nodes, through
+ * a special JMS {@code Topic}, referred to as {@code ServiceTopic}. 
+ * <p>
+ * Messages will be delivered using a special Data Transfer Object, implemented
+ * as {@link ServiceMessage}.
+ * 
+ * @author Yohan Liyanage
+ * @version 1.0
+
+ * @see ServiceMessage
+ */
 public interface ServiceMessageSender {
+	
+	/**
+	 * Sends the given {@code ServiceMessage} to all {@code GridNode}s
+	 * registered with the {@code ClusterManager}.
+	 * 
+	 * @param message ServiceMessage
+	 */
 	public void sendServiceMessage(ServiceMessage message);
 }

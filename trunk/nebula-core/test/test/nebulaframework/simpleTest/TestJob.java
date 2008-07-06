@@ -43,7 +43,7 @@ public class TestJob implements GridJob<Integer>{
 		System.out.println("Splitting...");
 		List<TestTask> tasks = new ArrayList<TestTask>();
 		
-		for(int i=0 ; i < 50; i++) {
+		for(int i=0; i < 50; i++) {
 			tasks.add(new TestTask());
 		}
 		System.out.println("Splitting...Done");

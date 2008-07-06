@@ -18,7 +18,6 @@ import java.io.Serializable;
 import java.util.UUID;
 
 import org.nebulaframework.core.grid.cluster.manager.ClusterManager;
-import org.nebulaframework.core.grid.cluster.node.GridNode;
 import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.core.job.deploy.GridJobInfo;
@@ -26,24 +25,27 @@ import org.nebulaframework.core.job.exceptions.GridJobPermissionDeniedException;
 import org.nebulaframework.core.job.exceptions.GridJobRejectionException;
 
 /**
- * <tt>ClusterJobService</tt> is responsible for the {@link GridJob} submission and
- * execution, with in a {@link ClusterManager}. This interface defines the API for 
+ * {@code ClusterJobService} is responsible for the {@code GridJob} submission and
+ * execution, with in a {@code ClusterManager}. This interface defines the API for 
  * implementations of this service.
  * 
  * @author Yohan Liyanage
  * @version 1.0
+ * 
+ * @see ClusterManager
+ * @see GridJob
  *
  */
 public interface ClusterJobService {
 
 	/**
-	 * Submits a {@link GridJob} to the {@link ClusterManager}, which results in job enqueue and
-	 * infrastructure allocation.
+	 * Submits a {@code GridJob} to the {@code ClusterManager}, which 
+	 * results in job enqueue and infrastructure allocation.
 	 * 
 	 * @param owner Owner of Job (Node Id)
 	 * @param job GridJob
 	 * 
-	 * @return String <tt>JobId</tt> assigned for the submitted Job
+	 * @return String JobId assigned for the submitted Job
 	 * 
 	 * @throws GridJobRejectionException if job is rejected
 	 */
@@ -51,15 +53,16 @@ public interface ClusterJobService {
 			GridJob<? extends Serializable> job) throws GridJobRejectionException;
 	
 	/**
-	 * Submits a {@link GridJob} to the {@link ClusterManager}, which results in job enqueue and
-	 * infrastructure allocation. This overloaded version accepts a {@link GridArchive}, 
-	 * which contains the submitted {@link GridJob}.
+	 * Submits an <i>archived</i> {@code GridJob} to the {@code ClusterManager}, 
+	 * which results in job enqueue and infrastructure allocation. 
+	 * This overloaded version accepts a {@code GridArchive}, 
+	 * which contains the submitted {@code GridJob}.
 	 * 
 	 * @param owner Owner of Job (Node Id)
 	 * @param job GridJob
-	 * @param archive GridArchive, if applicable. This may be <tt>null</tt>.
+	 * @param archive GridArchive, if applicable. This may be {@code null}.
 	 * 
-	 * @return String <tt>JobId</tt> assigned for the submitted Job
+	 * @return String JobId assigned for the submitted Job
 	 * 
 	 * @throws GridJobRejectionException if job is rejected
 	 */	
@@ -67,12 +70,12 @@ public interface ClusterJobService {
 			GridJob<? extends Serializable> job, GridArchive archive) throws GridJobRejectionException;
 	
 	/**
-	 * Requests permission for the invoking {@link GridNode} 
-	 * to participate in specified {@link GridJob}.
+	 * Requests permission for the invoking {@code GridNode} 
+	 * to participate in specified {@code GridJob}.
 	 * 
-	 * @param jobId JobId of GridJob, which the invoking {@link GridNode} expects to join.
+	 * @param jobId JobId of GridJob, which the invoking {@code GridNode} expects to join.
 	 * 
-	 * @return {@link GridJobInfo} Grid Job Information, if request accepted.
+	 * @return GridJobInfo Grid Job Information, if request accepted.
 	 * 
 	 * @throws GridJobPermissionDeniedException if permission denied
 	 */

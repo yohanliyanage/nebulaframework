@@ -24,11 +24,11 @@ public class GridNodeClassExporterImpl implements GridNodeClassExporter {
 			return IOSupport.readBytes(is);
 		}
 		catch (IOException ex) {
-			log.warn("Unable to export class due to IOException",ex);
+			log.warn("Unable to export class due to IOException", ex);
 			throw new ClassNotFoundException("Unable to export class due to IOException", ex);
 		}
 		catch (NullPointerException ex) {
-			log.warn("Unable to locate class with in Node",ex);
+			log.warn("Unable to locate class with in Node", ex);
 			throw new ClassNotFoundException("Unable to locate class with in Node", ex);
 		}
 	}
