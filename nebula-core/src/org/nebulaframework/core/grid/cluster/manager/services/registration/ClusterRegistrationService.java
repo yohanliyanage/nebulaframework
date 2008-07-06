@@ -15,28 +15,42 @@ package org.nebulaframework.core.grid.cluster.manager.services.registration;
 
 import java.util.UUID;
 
+import org.nebulaframework.core.grid.cluster.manager.services.facade.ClusterManagerServicesFacade;
 import org.nebulaframework.core.grid.cluster.registration.Registration;
 
 /**
- * ClusterManager API Interface. A ClusterManager manages a 
- * local cluster and supports node addition and removal, 
- * and management of local cluster.
+ * {@code ClusterRegistrationService} is responsible for handling {@code GridNode}
+ * registration with in the cluster. 
+ * <p>
+ * Each {@code GridNode} which requires to be registered as a node of the 
+ * cluster will invoke the {@code registerNode} method of the implementation 
+ * of this service, and each node which requires to leave the cluster will invoke 
+ * the {@code unregisterNode} method.
+ * <p>
+ * This service is to be exposed directly as a Remote Service, which can be accessed by
+ * remote {@code GridNode}s. This is <b>not</b> exposed as a part of the 
+ * {@link ClusterManagerServicesFacade}.
  * 
  * @author Yohan Liyanage
- *
+ * @version 1.0
  */
 public interface ClusterRegistrationService {
 
 	/**
-	 * Registers a GridNode with ClusterManager
-	 * @param id Identifier of Node
-	 * @return Registration Details
+	 * Registers a {@code GridNode} with given {@code nodeId} 
+	 * in {@code ClusterManager}
+	 * 
+	 * @param id {@code UUID} Identifier of Node
+	 * 
+	 * @return {@code Registration} Registration Details
 	 */
 	public Registration registerNode(UUID id);
 	
 	/**
-	 * Unregisters a GridNode with ClusterManager
-	 * @param id Identifier of Node
+	 * Unregisters a {@code GridNode} with given {@code nodeId} 
+	 * from {@code ClusterManager}
+	 * 
+	 * @param id {@code UUID} Identifier of Node
 	 */
 	public void unregisterNode(UUID id);
 	

@@ -24,7 +24,7 @@ import org.nebulaframework.core.task.GridTask;
  * executed on remote nodes.
  * 
  * @author Yohan Liyanage
- *
+ * @version 1.0
  * @param <R> Type of Result of execution of the Job
  */
 public interface GridJob<R extends Serializable> extends Serializable{

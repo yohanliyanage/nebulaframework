@@ -22,8 +22,6 @@ import java.util.UUID;
 import org.nebulaframework.core.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.aggregator.AggregatorService;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.splitter.SplitterService;
-import org.nebulaframework.core.grid.cluster.manager.services.jobs.support.JobServiceJmsSupport;
-import org.nebulaframework.core.grid.cluster.node.GridNode;
 import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.core.job.deploy.GridJobInfo;
@@ -32,16 +30,15 @@ import org.nebulaframework.core.job.exceptions.GridJobRejectionException;
 import org.nebulaframework.core.job.future.GridJobFutureImpl;
 import org.nebulaframework.core.servicemessage.ServiceMessage;
 import org.nebulaframework.core.servicemessage.ServiceMessageType;
-import org.nebulaframework.core.task.GridTask;
 import org.nebulaframework.util.hashing.SHA1Generator;
 import org.springframework.beans.factory.annotation.Required;
 
 /**
- * Default implementation of {@link ClusterJobService}. This class allows {@link GridNode}s to
- * submit {@link GridJob}s to the {@link ClusterManager}, and also handles the execution of the
- * <tt>GridJobs</tt>, with the support of {@link SplitterService} and {@link AggregatorService}.
- * 
- * <p><i>Spring Managed</i></p>
+ * Default implementation of {@code ClusterJobService}. This class allows {@code GridNode}s to
+ * submit {@code GridJob}s to the {@code ClusterManager}, and also handles the execution of the
+ * {@code GridJobs}, with the support of {@code SplitterService} and {@code AggregatorService}.
+ * <p>
+ * <i>Spring Managed</i>
  * 
  * @author Yohan Liyanage
  * @version 1.0
@@ -64,9 +61,9 @@ public class ClusterJobServiceImpl implements ClusterJobService {
 	private Map<String, GridJobProfile> jobs = new HashMap<String, GridJobProfile>();
 	
 	/**
-	 * Instantiates a ClusterJobServiceImpl for the given {@link ClusterManager} instance.
+	 * Instantiates a ClusterJobServiceImpl for the given {@code ClusterManager} instance.
 	 * 
-	 * @param cluster Owner <tt>ClusterManager</tt>
+	 * @param cluster Owner {@code ClusterManager}
 	 */
 	public ClusterJobServiceImpl(ClusterManager cluster) {
 		super();
@@ -74,6 +71,8 @@ public class ClusterJobServiceImpl implements ClusterJobService {
 	}
 
 	/**
+	 * Implementation of {@link ClusterJobService#submitJob(UUID, GridJob).
+	 * <p>
 	 * {@inheritDoc}
 	 */
 	public String submitJob(UUID owner, GridJob<? extends Serializable> job) throws GridJobRejectionException {
@@ -82,6 +81,8 @@ public class ClusterJobServiceImpl implements ClusterJobService {
 	}
 
 	/**
+	 * Implementation of {@link ClusterJobService#submitJob(UUID, GridJob, GridArchive)).
+	 * <p>
 	 * {@inheritDoc}
 	 */
 	public String submitJob(UUID owner, GridJob<? extends Serializable> job,
@@ -109,7 +110,7 @@ public class ClusterJobServiceImpl implements ClusterJobService {
 		profile.setJob(job);
 		profile.setFuture(future);
 		
-		if (archive!=null) {
+		if (archive != null) {
 			// If Job has a GridArchive, verify integrity
 			if (!verifyArchive(archive)) throw new GridJobRejectionException("Archive verification failed");
 			
@@ -133,11 +134,11 @@ public class ClusterJobServiceImpl implements ClusterJobService {
 	}
 
 	/**
-	 * Verifies the {@link GridArchive} by comparing its provided SHA1 Hash against 
+	 * Verifies the {@code GridArchive} by comparing its provided SHA1 Hash against 
 	 * generated SHA1 Hash for the bytes of the GridArchive.
 	 *  
-	 * @param archive {@link GridArchive} to be verified
-	 * @return <tt>true</tt> if success, <tt>false</tt> otherwise
+	 * @param archive {@code GridArchive} to be verified
+	 * @return if success {@code true}, otherwise {@code false}
 	 */
 	private boolean verifyArchive(GridArchive archive) {
 		// Try to compare SHA1 Digests for bytes
@@ -145,6 +146,8 @@ public class ClusterJobServiceImpl implements ClusterJobService {
 	}
 
 	/**
+	 * Implementation of {@link ClusterJobService#requestJob(String)}.
+	 * <p>
 	 * {@inheritDoc}
 	 */
 	public GridJobInfo requestJob(String jobId) throws GridJobPermissionDeniedException {
@@ -222,7 +225,8 @@ public class ClusterJobServiceImpl implements ClusterJobService {
 	}
 
 	/**
-	 * Removes a given {@link GridJob} from the active GridJobs collection of this service.
+	 * Removes a given {@code GridJob} from the active GridJobs 
+	 * collection of this service.
 	 * 
 	 * @param jobId JobId of the GridJob to remove from collection
 	 */
@@ -231,38 +235,38 @@ public class ClusterJobServiceImpl implements ClusterJobService {
 	}
 
 	/**
-	 * Returns the {@link GridJobProfile} for a given {@link GridJob}.
+	 * Returns the {@code GridJobProfile} for a given {@code GridJob}.
 	 * 
-	 * @param jobId JobId of the {@link GridJob}
-	 * @return {@link GridJobProfile} for the specified {@link GridJob}.
+	 * @param jobId JobId of the {@code GridJob}
+	 * @return {@code GridJobProfile} for the specified {@code GridJob}.
 	 */
 	public synchronized GridJobProfile getProfile(String jobId) {
 		return jobs.get(jobId);
 	}
 
 	/**
-	 * Returns a <tt>boolean</tt> value indicating whether a given JobId refers
-	 * to an active {@link GridJob} of this service instance.
+	 * Returns a {@code boolean} value indicating whether a given JobId refers
+	 * to an active {@code GridJob} of this service instance.
 	 * 
-	 * @param jobId JobId of the {@link GridJob}
+	 * @param jobId JobId of the {@code GridJob}
 	 * 
-	 * @return <tt>true</tt> if the {@link GridJob} is active, <tt>false</tt> otherwise.
+	 * @return {@code true} if the {@code GridJob} is active, {@code false} otherwise.
 	 */
 	public synchronized boolean isActiveJob(String jobId) {
 		return this.jobs.containsKey(jobId);
 	}
 	
 	/**
-	 * <p>Sets the {@link JobServiceJmsSupport} instance for this service.</p> 
+	 * Sets the {@code JobServiceJmsSupport} instance for this service. 
+	 * <p>
+	 * {@code JobServicesJmsSupport} provides support methods which handles 
+	 * JMS specific activities in Job handling, such as creation of JMS {@code Queues}, etc.
+	 * <p>
+	 * <b>Note : </b>This is a <b>required</b> dependency.
+	 * <p>
+	 * <i>Spring Injected</i>
 	 * 
-	 * <p><tt>JobServicesJmsSupport</tt> provides support methods which handles 
-	 * JMS specific activities in Job handling, such as creation of JMS <tt>Queues</tt>, etc.</p>
-	 * 
-	 * <p><b>Note :</b>This is a <b>required</b> dependency.</p>
-	 * 
-	 * <p><i>Spring Injected</i></p>
-	 * 
-	 * @param jmsSupport {@link JobServiceJmsSupport} instance
+	 * @param jmsSupport {@code JobServiceJmsSupport} instance
 	 */
 	@Required
 	public void setJmsSupport(JobServiceJmsSupport jmsSupport) {
@@ -270,28 +274,28 @@ public class ClusterJobServiceImpl implements ClusterJobService {
 	}
 
 	/**
-	 * <p>Returns the {@link SplitterService} used by the <tt>ClusterJobServiceImpl</tt></p>.
+	 * Returns the {@code SplitterService} used by the {@code ClusterJobServiceImpl}.
+	 * <p>
+	 * {@code SplitterService} is responsible for splitting a given {@code GridJob} into
+	 * {@code GridTask}s which are to be executed remotely.
 	 * 
-	 * <p>{@link SplitterService} is responsible for splitting a given {@link GridJob} into
-	 * {@link GridTask}s which are to be executed remotely.</p>
-	 * 
-	 * @return {@link SplitterService} reference.
+	 * @return {@code SplitterService} reference.
 	 */
 	public SplitterService getSplitterService() {
 		return splitterService;
 	}
 
 	/**
-	 * <p>Sets the {@link SplitterService} used by the <tt>ClusterJobServiceImpl</tt></p>.
+	 * Sets the {@code SplitterService} used by the {@code ClusterJobServiceImpl}.
+	 * <p>
+	 * {@code SplitterService} is responsible for splitting a given {@code GridJob} into
+	 * {@code GridTask}s which are to be executed remotely.
+	 * <p>
+	 * <b>Note : </b>This is a <b>required</b> dependency.
+	 * <p>
+	 * <i>Spring Injected</i>
 	 * 
-	 * <p>{@link SplitterService} is responsible for splitting a given {@link GridJob} into
-	 * {@link GridTask}s which are to be executed remotely.</p>
-	 * 
-	 * <p><b>Note :</b>This is a <b>required</b> dependency.</p>
-	 * 
-	 * <p><i>Spring Injected</i></p>
-	 * 
-	 * @param splitterService SplitterService for the <tt>ClusterJobServiceImpl</tt>
+	 * @param splitterService SplitterService for the {@code ClusterJobServiceImpl}
 	 */
 	@Required
 	public void setSplitterService(SplitterService splitterService) {
@@ -299,30 +303,30 @@ public class ClusterJobServiceImpl implements ClusterJobService {
 	}
 
 	/**
-	 * <p>Returns the {@link AggregatorService} used by the <tt>ClusterJobServiceImpl</tt></p>.
+	 * Returns the {@code AggregatorService} used by the {@code ClusterJobServiceImpl}.
+	 * <p>
+	 * {@code AggregatorService} is responsible for collecting results returned by each 
+	 * {@code GridTask} which was executed on a remote node, and to aggregate the results
+	 * to provide the final result for the {@code GridJob}.
 	 * 
-	 * <p>{@link AggregatorService} is responsible for collecting results returned by each 
-	 * {@link GridTask} which was executed on a remote node, and to aggregate the results
-	 * to provide the final result for the {@link GridJob}.</p>
-	 * 
-	 * @return {@link AggregatorService} reference.
+	 * @return {@code AggregatorService} reference.
 	 */
 	public AggregatorService getAggregatorService() {
 		return aggregatorService;
 	}
 
 	/**
-	 * <p>Returns the {@link AggregatorService} used by the <tt>ClusterJobServiceImpl</tt></p>.
-	 * 
-	 * <p>{@link AggregatorService} is responsible for collecting results returned by each 
-	 * {@link GridTask} which was executed on a remote node, and to aggregate the results
-	 * to provide the final result for the {@link GridJob}.</p>
-	 * 
-	 * <p><b>Note :</b>This is a <b>required</b> dependency.</p>
-	 * 
-	 * <p><i>Spring Injected</i></p>
-	 * 
-	 * @param aggregatorService {@link AggregatorService} for the service
+	 * Returns the {@code AggregatorService} used by the {@code ClusterJobServiceImpl}.
+	 * <p>
+	 * {@code AggregatorService} is responsible for collecting results returned by each 
+	 * {@code GridTask} which was executed on a remote node, and to aggregate the results
+	 * to provide the final result for the {@code GridJob}.
+	 * <p>
+	 * <b>Note : </b>This is a <b>required</b> dependency.
+	 * <p>
+	 * <i>Spring Injected</i>
+
+	 * @param aggregatorService {@code AggregatorService} for the service
 	 */
 	@Required
 	public void setAggregatorService(AggregatorService aggregatorService) {

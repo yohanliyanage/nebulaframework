@@ -67,7 +67,7 @@
 		<constructor-arg ref="clusterManager" />
 		<property name="jmsSupport">
 			<!-- JMSSupport Reference -->
-			<bean class="org.nebulaframework.core.grid.cluster.manager.services.jobs.support.JobServiceJmsSupport">
+			<bean class="org.nebulaframework.core.grid.cluster.manager.services.jobs.JobServiceJmsSupport">
 				<property name="connectionFactory"
 					ref="jmsConnectionFactory" />
 			</bean>

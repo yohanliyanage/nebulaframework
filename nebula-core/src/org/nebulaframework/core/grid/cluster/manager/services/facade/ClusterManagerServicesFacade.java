@@ -19,15 +19,18 @@ import org.nebulaframework.core.grid.cluster.manager.services.jobs.ClusterJobSer
 import org.nebulaframework.core.grid.cluster.node.GridNode;
 
 /**
- * <p><tt>ClusterManagerServicesFacade</tt> is the facade for services of {@link ClusterManager}, 
- * which are to be exposed to the {@link GridNode}s. <tt>GridNode</tt>s access these services through the 
- * facade implementation.</p>
- * 
- * <p>The <tt>ClusterManagerServicesFacade</tt> implementation is exposed to the <tt>GridNode</tt>s as a 
- * JMS Remote Service, through Spring Framework's JMS Remoting support.</p>
+ * {@code ClusterManagerServicesFacade} is the facade for services of {@link ClusterManager}, 
+ * which are to be exposed to the {@link GridNode}s. {@code GridNode}s access these services through the 
+ * facade implementation.
+ * <p>
+ * The {@code ClusterManagerServicesFacade} implementation is exposed to the {@code GridNode}s as a 
+ * JMS Remote Service, through Spring Framework's JMS Remoting support.
  * 
  * @author Yohan Liyanage
  * @version 1.0
+ * 
+ * @see ClusterManager
+ * @see GridNode
  */
 public interface ClusterManagerServicesFacade extends ClusterJobService {
 	// Methods are inherited from extended interfaces

@@ -28,7 +28,7 @@ public class GridJobInfo implements Serializable {
 	}
 	
 	public boolean isArchived() {
-		return this.archive!=null;
+		return this.archive != null;
 	}
 
 }

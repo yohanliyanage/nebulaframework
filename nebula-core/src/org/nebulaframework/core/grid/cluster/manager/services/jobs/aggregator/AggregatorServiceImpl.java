@@ -26,25 +26,22 @@ import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.ClusterJobService;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.ClusterJobServiceImpl;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.GridJobProfile;
-import org.nebulaframework.core.grid.cluster.manager.services.jobs.support.JMSNamingSupport;
-import org.nebulaframework.core.grid.cluster.node.GridNode;
-import org.nebulaframework.core.job.GridJob;
+import org.nebulaframework.core.grid.cluster.manager.services.jobs.JMSNamingSupport;
 import org.nebulaframework.core.job.GridJobState;
 import org.nebulaframework.core.job.exceptions.AggregateException;
-import org.nebulaframework.core.task.GridTask;
 import org.nebulaframework.core.task.GridTaskResult;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 import org.springframework.jms.listener.adapter.MessageListenerAdapter;
 
 /**
- * <p>Implementation of {@link AggregatorService}.</p>
- * 
- * <p><tt>AggregatorService</tt> collects results of {@link GridTask}s from 
- * participating {@link GridNode}s and aggregates results to calculate
- * the final result for the {@link GridJob}.</p>
- * 
- * <p><i>Spring Managed</i></p>
+ * Implementation of {@code AggregatorService}.
+ * <p>
+ * {@code AggregatorService} collects results of {@code GridTask}s from 
+ * participating {@code GridNode}s and aggregates results to calculate
+ * the final result for the {@code GridJob}.
+ * <p>
+ * <i>Spring Managed</i>
  * 
  * @author Yohan Liyanage
  * @version 1.0
@@ -60,9 +57,10 @@ public class AggregatorServiceImpl implements AggregatorService {
 	private ClusterJobServiceImpl jobService;
 
 	/**
-	 * Constructs an AggregatorServiceImpl instance, for the given {@link ClusterJobServiceImpl}.
+	 * Constructs an AggregatorServiceImpl instance, for the 
+	 * given {@code ClusterJobServiceImpl}.
 	 * 
-	 * @param jobService <tt>ClusterJobServiceImpl</tt> owner service.
+	 * @param jobService {@code ClusterJobServiceImpl} owner service.
 	 */
 	public AggregatorServiceImpl(ClusterJobServiceImpl jobService) {
 		super();
@@ -70,16 +68,16 @@ public class AggregatorServiceImpl implements AggregatorService {
 	}
 	
 	/**
-	 * <p>Sets the JMS {@link ConnectionFactory} for the Cluster.</p>
+	 * Sets the JMS {@code ConnectionFactory} for the Cluster.
+	 * <p>
+	 * This is used to access the JMS resources of the {@code GridJob}, 
+	 * such as {@code ResultQueues}, etc.
+	 * <p>
+	 * <b>Note : </b>This is a <b>required</b> dependency.
+	 * <p>
+	 * <i>Spring Injected</i>
 	 * 
-	 * <p>This is used to access the JMS resources of the {@link GridJob}, 
-	 * such as <tt>ResultQueues</tt>, etc.</p>
-	 * 
-	 * <p><b>Note :</b>This is a <b>required</b> dependency.</p>
-	 * 
-	 * <p><i>Spring Injected</i></p>
-	 * 
-	 * @param connectionFactory JMS <tt>ConnectionFactory</tt>
+	 * @param connectionFactory JMS {@code ConnectionFactory}
 	 */
 	@Required
 	public void setConnectionFactory(ConnectionFactory connectionFactory) {
@@ -89,9 +87,9 @@ public class AggregatorServiceImpl implements AggregatorService {
 
 	/**
 	 * {@inheritDoc}
-	 * 
-	 * <p>This method simply delegates to {@link #doStartAggregator(GridJobProfile)} method,
-	 * invoked on a separate <tt>Thread</tt>.</p>
+	 * <p>
+	 * This method simply delegates to {@code #doStartAggregator(GridJobProfile)} method,
+	 * invoked on a separate {@code Thread}.
 	 */
 	public void startAggregator(final GridJobProfile profile) {
 		
@@ -104,14 +102,14 @@ public class AggregatorServiceImpl implements AggregatorService {
 	}
 
 	/**
-	 * <p>Internal method which handles the aggregator start-up for 
-	 * a given {@link GridJobProfile}.</p>
+	 * Internal method which handles the aggregator start-up for 
+	 * a given {@code GridJobProfile}.
+	 * <p>
+	 * Creates and starts a {@code ResultCollector} instance for
+	 * the given {@code GridJob}, and also creates necessary JMS message
+	 * handling infrastructure.
 	 * 
-	 * <p>Creates and starts a {@link ResultCollector} instance for
-	 * the given <tt>GridJob</tt>, and also creates necessary JMS message
-	 * handling infrastructure.</p>
-	 * 
-	 * @param profile <tt>GridJobProfile</tt> jobProfile
+	 * @param profile {@code GridJobProfile} jobProfile
 	 */
 	protected void doStartAggregator(GridJobProfile profile) {
 		
@@ -136,9 +134,9 @@ public class AggregatorServiceImpl implements AggregatorService {
 
 	/**
 	 * {@inheritDoc}
-	 * 
-	 * <p>This method simply delegates to {@link #doAggregateResults(GridJobProfile)} method,
-	 * invoked on a separate <tt>Thread</tt>.</p>
+	 * <p>
+	 * This method simply delegates to {@code #doAggregateResults(GridJobProfile)} method,
+	 * invoked on a separate {@code Thread}.
 	 */
 	public void aggregateResults(final GridJobProfile profile) {
 
@@ -147,18 +145,18 @@ public class AggregatorServiceImpl implements AggregatorService {
 			public void run() {
 				doAggregateResults(profile);
 			}
-		},"Aggregator[Aggregate]-" + profile.getJobId()).start();
+		}, "Aggregator[Aggregate]-" + profile.getJobId()).start();
 
 	}
 
 	/**
-	 * <p>Internal method which does the aggregation of {@link GridTaskResult}s for a 
-	 * given {@link GridJob}, denoted by corresponding {@link GridJobProfile}.</p>
-	 * 
-	 * <p>Furthermore, this method invokes necessary methods of {@link ClusterJobServiceImpl}
+	 * Internal method which does the aggregation of {@code GridTaskResult}s for a 
+	 * given {@code GridJob}, denoted by corresponding {@code GridJobProfile}.
+	 * <p>
+	 * Furthermore, this method invokes necessary methods of {@code ClusterJobServiceImpl}
 	 * to notify workers about events such as End of Job Execution.<p>
 	 * 
-	 * @param profile <tt>GridJobProfile</tt> of <tt>GridJob</tt>
+	 * @param profile {@code GridJobProfile} of {@code GridJob}
 	 */
 	protected void doAggregateResults(GridJobProfile profile) {
 		

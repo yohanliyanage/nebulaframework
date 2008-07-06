@@ -15,10 +15,17 @@ package org.nebulaframework.core.job;
 
 /**
  * Allows to track GridJobState changes.
+ * 
  * @author Yohan Liyanage
- *
+ * @version 1.0
  */
 // TODO Remove if not needed
 public interface GridJobStateListener {
+	
+	/**
+	 * Invoked when {@code GridJob} state has changed.
+	 * 
+	 * @param newState updated state
+	 */
 	public void stateChanged(GridJobState newState);
 }

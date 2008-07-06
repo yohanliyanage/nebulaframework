@@ -21,10 +21,11 @@ import org.nebulaframework.core.task.GridTask;
 
 /**
  * Task Implementation for Test Job.
+ * 
  * @author Yohan Liyanage
- *
+ * 
  */
-public class TestTask implements GridTask<Integer>{
+public class TestTask implements GridTask<Integer> {
 
 	private static final long serialVersionUID = -4826864297461445244L;
 
@@ -35,14 +36,14 @@ public class TestTask implements GridTask<Integer>{
 
 	public Integer execute() throws GridExecutionException {
 		Integer val = new Random().nextInt(100);
-		
-		//Lets c if they can load ant xD
+
+		// Lets c if they can load ant xD
 		AntClassLoader.class.getName();
-		
+
 		System.out.println("Random Value : " + val);
 
 		try {
-			//Wait for 1 second, to simulate a large work unit
+			// Wait for 1 second, to simulate a large work unit
 			Thread.sleep(1000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();

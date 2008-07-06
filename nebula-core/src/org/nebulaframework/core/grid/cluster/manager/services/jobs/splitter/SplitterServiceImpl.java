@@ -24,8 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.ClusterJobServiceImpl;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.GridJobProfile;
-import org.nebulaframework.core.grid.cluster.manager.services.jobs.support.JMSNamingSupport;
-import org.nebulaframework.core.grid.cluster.node.GridNode;
+import org.nebulaframework.core.grid.cluster.manager.services.jobs.JMSNamingSupport;
 import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.GridJobState;
 import org.nebulaframework.core.job.exceptions.SplitException;
@@ -35,13 +34,13 @@ import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.core.MessagePostProcessor;
 
 /**
- * <p>Implementation of {@link SplitterService}.</p>
- * 
- * <p><tt>SplitterService</tt> splits a given {@link GridJob} to {@link GridTask}s which can be
- * executed on remote {@link GridNode}s. Furthermore, it enqueues the {@link GridTask}s in the
- * <tt>TaskQueue</tt> for the <tt>GridJob</tt>.</p>
- * 
- * <p><i>Spring Managed</i></p>
+ * Implementation of {@code SplitterService}.
+ * <p>
+ * {@code SplitterService} splits a given {@code GridJob} to {@code GridTask}s which can be
+ * executed on remote {@code GridNode}s. Furthermore, it enqueues the {@code GridTask}s in the
+ * {@code TaskQueue} for the {@code GridJob}.
+ * <p>
+ * <i>Spring Managed</i>
  *  
  * @author Yohan Liyanage
  * @version 1.0
@@ -56,10 +55,10 @@ public class SplitterServiceImpl implements SplitterService {
 	private ClusterJobServiceImpl jobServiceImpl;
 	
 	/**
-	 * Constructor for <tt>SplitterServiceImpl</tt>. This constructs a SplitterServiceImpl
+	 * Constructor for {@code SplitterServiceImpl}. This constructs a SplitterServiceImpl
 	 * for given JobService Implementation.
 	 * 
-	 * @param jobServiceImpl {@link ClusterJobServiceImpl) owner
+	 * @param jobServiceImpl {@code ClusterJobServiceImpl) owner
 	 */
 	public SplitterServiceImpl(ClusterJobServiceImpl jobServiceImpl) {
 		super();
@@ -67,14 +66,14 @@ public class SplitterServiceImpl implements SplitterService {
 	}
 
 	/**
-	 * Sets the JMS {@link ConnectionFactory} for the Cluster. This will be used to
-	 * instantiate the {@link JmsTemplate} used by the class.
+	 * Sets the JMS {@code ConnectionFactory} for the Cluster. This will be used to
+	 * instantiate the {@code JmsTemplate} used by the class.
+	 * <p>
+	 * <b>Note : </b>This is a <b>required</b> dependency.
+	 * <p>
+	 * <i>Spring Injected</i>
 	 * 
-	 * <p><b>Note :</b>This is a <b>required</b> dependency.</p>
-	 * 
-	 * <p><i>Spring Injected</i></p>
-	 * 
-	 * @param connectionFactory JMS <tt>ConnectionFactory</tt>
+	 * @param connectionFactory JMS {@code ConnectionFactory}
 	 */
 	@Required
 	public void setConnectionFactory(ConnectionFactory connectionFactory) {
@@ -84,8 +83,8 @@ public class SplitterServiceImpl implements SplitterService {
 	/**
 	 * {@inheritDoc}
 	 * 
-	 * <p>This method simply delegates to {@link #doStartSplitter(GridJobProfile)} method,
-	 * invoked on a separate <tt>Thread</tt>.</p>
+	 * <p>This method simply delegates to {@code #doStartSplitter(GridJobProfile)} method,
+	 * invoked on a separate {@code Thread}.
 	 */
 	public void startSplitter(final GridJobProfile profile) {
 		
@@ -99,9 +98,9 @@ public class SplitterServiceImpl implements SplitterService {
 	}
 
 	/**
-	 * Internal method which handles splitting of a {@link GridJob}.
+	 * Internal method which handles splitting of a {@code GridJob}.
 	 * 
-	 * @param profile {@link GridJobProfile} of the <tt>GridJob</tt> to be splitted.
+	 * @param profile {@code GridJobProfile} of the {@code GridJob} to be splitted.
 	 */
 	protected void doStartSplitter(final GridJobProfile profile) {
 
@@ -146,11 +145,11 @@ public class SplitterServiceImpl implements SplitterService {
 	}
 
 	/**
-	 * Enqueues a given Task with in the <tt>TaskQueue</tt>.
+	 * Enqueues a given Task with in the {@code TaskQueue}.
 	 * 
 	 * @param jobId String JobId
 	 * @param taskId int TaskId (Sequence Number of Task)
-	 * @param task {@link GridTask} task
+	 * @param task {@code GridTask} task
 	 */
 	private void enqueueTask(final String jobId, final int taskId, GridTask<?> task) {
 
@@ -172,6 +171,8 @@ public class SplitterServiceImpl implements SplitterService {
 
 	/**
 	 * {@inheritDoc}
+	 * <p>
+	 * Simply delegates to {@link #enqueueTask(String, int, GridTask) method.
 	 */
 	public void reEnqueueTask(final String jobId, final int taskId, GridTask<?> task) {
 		enqueueTask(jobId, taskId, task);

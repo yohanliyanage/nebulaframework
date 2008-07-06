@@ -21,33 +21,36 @@ import org.apache.commons.logging.LogFactory;
 
 /**
  * Executes a Sequential Job to Demonstrate Sequential Running Time.
+ * 
  * @author Yohan Liyanage
- *
+ * 
  */
 public class SequentialRunner {
 
 	private static Log log = LogFactory.getLog(SequentialRunner.class);
+
 	public static void main(String[] args) {
 		Date start = new Date();
 		int sum = 0;
 		log.info("Starting Job...");
-		for(int i=0 ; i < 50; i++) {
+		for (int i = 0; i < 50; i++) {
 			sum += execute();
 		}
 		Date end = new Date();
 		log.info("Job Complete. RESULT : " + sum);
-		log.info("Execution Time : " + (end.getTime() - start.getTime()) + " milliseconds");
+		log.info("Execution Time : " + (end.getTime() - start.getTime())
+				+ " milliseconds");
 	}
-	
+
 	private static int execute() {
 		Integer val = new Random().nextInt(100);
 		System.out.println("Got Random Value : " + val);
 		try {
-			//Wait for 1 second, to simulate a large work unit
+			// Wait for 1 second, to simulate a large work unit
 			Thread.sleep(1000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		return val;		
+		return val;
 	}
 }

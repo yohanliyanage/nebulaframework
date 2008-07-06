@@ -14,9 +14,10 @@
 package org.nebulaframework.core;
 
 /**
- * This exception denotes a TimeOut event occurred with in Grid.
+ * Denotes a TimeOut event occurred with in Grid.
+ * 
  * @author Yohan Liyanage
- *
+ * @version 1.0
  */
 public class GridTimeoutException extends Exception {
 

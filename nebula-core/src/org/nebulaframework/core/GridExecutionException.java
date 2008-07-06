@@ -14,15 +14,13 @@
 
 package org.nebulaframework.core;
 
-import org.nebulaframework.core.task.GridTask;
-
 /**
- * This exception denotes a failure at the time of execution of a
- * {@link GridTask}. This may be a wrap-around exception for a more specific
+ * Denotes a failure at the time of execution of a {@code GridTask}. 
+ * This may be a wrap-around exception for a more specific
  * exception in most of the cases.
  * 
  * @author Yohan Liyanage
- * 
+ * @version 1.0
  */
 public class GridExecutionException extends Exception {
 
@@ -36,7 +34,7 @@ public class GridExecutionException extends Exception {
 	}
 
 	/**
-	 * Create a GridExecutionException with the given message
+	 * Create a GridExecutionException with the given message.
 	 * 
 	 * @param message
 	 *            Message
@@ -46,7 +44,7 @@ public class GridExecutionException extends Exception {
 	}
 
 	/**
-	 * Create a GridExecutionException with the given cause
+	 * Create a GridExecutionException with the given cause.
 	 * 
 	 * @param cause
 	 *            Cause
@@ -56,7 +54,7 @@ public class GridExecutionException extends Exception {
 	}
 
 	/**
-	 * Create a GridExecutionException with the given message and cause
+	 * Create a GridExecutionException with the given message and cause.
 	 * 
 	 * @param message
 	 *            Message
