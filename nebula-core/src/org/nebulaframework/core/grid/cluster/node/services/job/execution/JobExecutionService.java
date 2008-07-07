@@ -16,7 +16,7 @@ package org.nebulaframework.core.grid.cluster.node.services.job.execution;
 
 import org.nebulaframework.core.grid.cluster.node.GridNode;
 import org.nebulaframework.core.grid.cluster.node.services.message.ServiceMessagesSupport;
-import org.nebulaframework.core.servicemessage.ServiceMessage;
+import org.nebulaframework.core.service.message.ServiceMessage;
 
 /**
  * {@code JobExecutionService} is responsible of joining new jobs,

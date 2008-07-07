@@ -14,7 +14,6 @@
 
 package org.nebulaframework.core.grid.cluster.manager.services.jobs;
 
-import java.io.Serializable;
 import java.util.UUID;
 
 import org.nebulaframework.core.grid.cluster.manager.ClusterManager;
@@ -50,7 +49,7 @@ public interface ClusterJobService {
 	 * @throws GridJobRejectionException if job is rejected
 	 */
 	public String submitJob(UUID owner,
-			GridJob<? extends Serializable> job) throws GridJobRejectionException;
+			GridJob<?,?> job) throws GridJobRejectionException;
 	
 	/**
 	 * Submits an <i>archived</i> {@code GridJob} to the {@code ClusterManager}, 
@@ -67,7 +66,7 @@ public interface ClusterJobService {
 	 * @throws GridJobRejectionException if job is rejected
 	 */	
 	public String submitJob(UUID owner,
-			GridJob<? extends Serializable> job, GridArchive archive) throws GridJobRejectionException;
+			GridJob<?,?> job, GridArchive archive) throws GridJobRejectionException;
 	
 	/**
 	 * Requests permission for the invoking {@code GridNode} 

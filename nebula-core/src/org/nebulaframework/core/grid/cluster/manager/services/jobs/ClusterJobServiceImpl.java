@@ -14,7 +14,6 @@
 
 package org.nebulaframework.core.grid.cluster.manager.services.jobs;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -28,8 +27,8 @@ import org.nebulaframework.core.job.deploy.GridJobInfo;
 import org.nebulaframework.core.job.exceptions.GridJobPermissionDeniedException;
 import org.nebulaframework.core.job.exceptions.GridJobRejectionException;
 import org.nebulaframework.core.job.future.GridJobFutureImpl;
-import org.nebulaframework.core.servicemessage.ServiceMessage;
-import org.nebulaframework.core.servicemessage.ServiceMessageType;
+import org.nebulaframework.core.service.message.ServiceMessage;
+import org.nebulaframework.core.service.message.ServiceMessageType;
 import org.nebulaframework.util.hashing.SHA1Generator;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -75,7 +74,7 @@ public class ClusterJobServiceImpl implements ClusterJobService {
 	 * <p>
 	 * {@inheritDoc}
 	 */
-	public String submitJob(UUID owner, GridJob<? extends Serializable> job) throws GridJobRejectionException {
+	public String submitJob(UUID owner, GridJob<?,?> job) throws GridJobRejectionException {
 		// Delegate to overloaded version
 		return submitJob(owner, job, null);
 	}
@@ -85,7 +84,7 @@ public class ClusterJobServiceImpl implements ClusterJobService {
 	 * <p>
 	 * {@inheritDoc}
 	 */
-	public String submitJob(UUID owner, GridJob<? extends Serializable> job,
+	public String submitJob(UUID owner, GridJob<?,?> job,
 			GridArchive archive) throws GridJobRejectionException {
 		
 		// Create JobId [ClusterID.OwnerID.RandomUUID]
@@ -142,7 +141,7 @@ public class ClusterJobServiceImpl implements ClusterJobService {
 	 */
 	private boolean verifyArchive(GridArchive archive) {
 		// Try to compare SHA1 Digests for bytes
-		return SHA1Generator.bytesToString(SHA1Generator.generate(archive.getBytes())).equals(archive.getHash());
+		return SHA1Generator.generateAsString(archive.getBytes()).equals(archive.getHash());
 	}
 
 	/**
@@ -179,8 +178,7 @@ public class ClusterJobServiceImpl implements ClusterJobService {
 	protected void notifyJobStart(String jobId) {
 		
 		// Create ServiceMessage for Job Start Notification
-		ServiceMessage message = new ServiceMessage(jobId);
-		message.setType(ServiceMessageType.JOB_START);
+		ServiceMessage message = new ServiceMessage(jobId, ServiceMessageType.JOB_START);
 
 		// Send ServiceMessage to GridNodes
 		cluster.getServiceMessageSender().sendServiceMessage(message);
@@ -194,8 +192,7 @@ public class ClusterJobServiceImpl implements ClusterJobService {
 	public void notifyJobEnd(String jobId) {
 		try {
 			// Create ServiceMessage for Job End Notification
-			ServiceMessage message = new ServiceMessage(jobId);
-			message.setType(ServiceMessageType.JOB_END);
+			ServiceMessage message = new ServiceMessage(jobId, ServiceMessageType.JOB_END);
 
 			// Send ServiceMessage to GridNodes
 			cluster.getServiceMessageSender().sendServiceMessage(message);
@@ -213,8 +210,7 @@ public class ClusterJobServiceImpl implements ClusterJobService {
 	public void notifyJobCancel(String jobId) {
 		try {
 			// Create ServiceMessage for Job Cancel Notification
-			ServiceMessage message = new ServiceMessage(jobId);
-			message.setType(ServiceMessageType.JOB_CANCEL);
+			ServiceMessage message = new ServiceMessage(jobId, ServiceMessageType.JOB_CANCEL);
 
 			// Send ServiceMessage to GridNodes
 			cluster.getServiceMessageSender().sendServiceMessage(message);

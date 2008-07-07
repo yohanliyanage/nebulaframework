@@ -41,7 +41,7 @@ public class GridJobProfile {
 
 	private String jobId; // JobId of GridJob
 	private UUID owner; // Owner Node Id (Submitter)
-	private GridJob<? extends Serializable> job; // GridJob class Reference
+	private GridJob<? extends Serializable, ? extends Serializable> job; // GridJob class Reference
 	private GridJobFutureImpl future; // GridJobFuture for the Job
 	private GridArchive archive; // If exists, the GridArchive of Job
 
@@ -93,7 +93,7 @@ public class GridJobProfile {
 	 * 
 	 * @return {@code GridJob} instance for the Job
 	 */
-	public GridJob<? extends Serializable> getJob() {
+	public GridJob<?,?> getJob() {
 		return job;
 	}
 
@@ -103,7 +103,7 @@ public class GridJobProfile {
 	 * @param job
 	 *            {@code GridJob} instance
 	 */
-	public void setJob(GridJob<? extends Serializable> job) {
+	public void setJob(GridJob<?,?> job) {
 		this.job = job;
 	}
 

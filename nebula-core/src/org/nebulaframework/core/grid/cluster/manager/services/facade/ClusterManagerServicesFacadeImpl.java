@@ -14,7 +14,6 @@
 
 package org.nebulaframework.core.grid.cluster.manager.services.facade;
 
-import java.io.Serializable;
 import java.util.UUID;
 
 import org.nebulaframework.core.grid.cluster.manager.ClusterManager;
@@ -60,7 +59,7 @@ public class ClusterManagerServicesFacadeImpl implements ClusterManagerServicesF
 	 * 
 	 * @see ClusterJobService#submitJob(UUID, GridJob)
 	 */
-	public String submitJob(UUID owner, GridJob<? extends Serializable> job) throws  GridJobRejectionException {
+	public String submitJob(UUID owner, GridJob<?,?> job) throws  GridJobRejectionException {
 		return this.cluster.getJobService().submitJob(owner, job);
 	}
 
@@ -72,7 +71,7 @@ public class ClusterManagerServicesFacadeImpl implements ClusterManagerServicesF
 	 * @see GridArchive
 	 * @see ClusterJobService#submitJob(UUID, GridJob, GridArchive)
 	 */
-	public String submitJob(UUID owner, GridJob<? extends Serializable> job,
+	public String submitJob(UUID owner, GridJob<?,?> job,
 			GridArchive archive) throws GridJobRejectionException {
 		return this.cluster.getJobService().submitJob(owner, job, archive);
 	}

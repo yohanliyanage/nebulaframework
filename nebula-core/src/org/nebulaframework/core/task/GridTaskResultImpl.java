@@ -13,52 +13,105 @@
  */
 package org.nebulaframework.core.task;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.io.Serializable;
 import java.util.UUID;
 
+import org.springframework.util.Assert;
+
 /**
- * GridTaskResult Default Implementation.
+ * Implementation of {@code GridTaskResult}, wrapper class for a result of
+ * {@link GridTask} execution, including related meta-data.
+ * <p>
+ * This class implements {@link Externalizable} interface, instead of
+ * {@link Serializable} to improve performance in communications, by reducing
+ * the data transfer amount and serialization time [Grosso, W. 2001. "Java RMI",
+ * Section 10.7.1].
+ * 
  * @author Yohan Liyanage
- *
+ * @version 1.0
+ * 
+ * @see GridTaskResult
+ * @see Externalizable
  */
-public class GridTaskResultImpl implements GridTaskResult {
+public class GridTaskResultImpl implements GridTaskResult, Externalizable {
 
-	private static final long serialVersionUID = 2844189489176795349L;
+	private Serializable result; // Result of execution
+	private Exception exception; // Exceptions, if any
+	private String jobId; // Parent Job Id
+	private int taskId; // TaskId of task
+	private UUID workerId; // Node ID of Worker
+	private boolean complete; // Status flag, true if result available
 
-	private Serializable result;
-	private Exception exception;
-	private String jobId;
-	private int taskId;
-	private UUID workerId;
-	private boolean complete;
-	
-	
-	public GridTaskResultImpl(String jobId, int taskId, UUID workerId) {
+	/**
+	 * Constructs a {@link GridTaskResultImpl} instance for the given JobId,
+	 * TaskId and WorkerId.
+	 * 
+	 * @param jobId
+	 *            Parent {@code GridJob} Id
+	 * @param taskId
+	 *            Task Id of the {@code GridTask}
+	 * @param workerId
+	 *            Node Id of worker {@code GridNode}
+	 */
+	public GridTaskResultImpl(String jobId, int taskId, UUID workerId)
+			throws IllegalArgumentException {
+		
 		super();
+		
+		//Check for null
+		Assert.notNull(jobId);
+		Assert.notNull(taskId);
+		Assert.notNull(workerId);
+		
 		this.jobId = jobId;
 		this.taskId = taskId;
 		this.workerId = workerId;
 	}
 
-	
+	/**
+	 * Sets the result of execution of the {@code GridTask}.
+	 * 
+	 * @param result {@code Serializable} result of execution
+	 */
 	public void setResult(Serializable result) {
 		this.result = result;
 		this.complete = true;
 	}
 
-
+	/**
+	 * {@inheritDoc}
+	 */
+	public Serializable getResult() throws IllegalStateException {
+		if (!complete) {
+			throw new IllegalStateException(
+					"No result available, as Job is not complete", exception);
+		}
+		return this.result;
+	}
+	
+	/**
+	 * Sets the exception of the {@code GridTask} execution,
+	 * if it has failed, and if applicable.
+	 * 
+	 * @param result {@code Exception} exception
+	 */	
 	public void setException(Exception exception) {
 		this.exception = exception;
 		this.complete = false;
 	}
 
-
-	public void setComplete(boolean complete) {
-		this.complete = complete;
-	}
-
-
-	public Exception getException() {
+	/**
+	 * {@inheritDoc}
+	 */	
+	public Exception getException() throws IllegalStateException {
+		if (complete) {
+			throw new IllegalStateException(
+					"No exception available, as Job is complete");
+		}		
 		return this.exception;
 	}
 
@@ -66,33 +119,83 @@ public class GridTaskResultImpl implements GridTaskResult {
 		return this.jobId;
 	}
 
-	public Serializable getResult() throws IllegalStateException {
-		return this.result;
-	}
-
+	/**
+	 * {@inheritDoc}
+	 */	
 	public int getTaskId() {
 		return this.taskId;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */	
 	public UUID getWorkerId() {
 		return this.workerId;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */	
 	public boolean isComplete() {
 		return this.complete;
 	}
 
-
+	/**
+	 * Returns a String representation of this {@code GridTaskResultImpl}. The
+	 * formats of String representation are
+	 * <ul>
+	 * <li><code><i>JobId</i>|<i>TaskId</i>@<i>WorkerId</i>&gt;
+	 * Result:<i>result</i></code></li>
+	 * <li><code><i>JobId</i>|<i>TaskId</i>@<i>WorkerId</i>&gt;
+	 * Exception:<i>exception</i></code></li>
+	 * </ul>
+	 */
 	@Override
 	public String toString() {
 		if (this.complete) {
-			return this.jobId + " | " + this.taskId + " @ " + this.workerId + "Result : " + this.result;
-		}
-		else {
-			return this.jobId + " | " + this.taskId + " @ " + this.workerId + " Exception : " + this.exception;
+			return this.jobId + "|" + this.taskId + "@" + this.workerId
+					+ "> Result:" + this.result;
+		} else {
+			return this.jobId + "|" + this.taskId + "@" + this.workerId
+					+ "> Exception:" + this.exception;
 		}
 	}
-	
-	
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public void readExternal(ObjectInput in) throws IOException,
+			ClassNotFoundException {
+
+		jobId = in.readUTF();
+		taskId = in.readInt();
+		workerId = (UUID) in.readObject();
+		complete = in.readBoolean();
+
+		if (complete) { // Read result if complete
+			result = (Serializable) in.readObject();
+			exception = null;
+		} else { // Read exception if failed
+			exception = (Exception) in.readObject();
+			result = null;
+		}
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public void writeExternal(ObjectOutput out) throws IOException {
+
+		out.writeUTF(jobId);
+		out.writeInt(taskId);
+		out.writeObject(workerId);
+		out.writeBoolean(complete);
+
+		if (complete) { // Write result if complete
+			out.writeObject(result);
+		} else { // Write exception if failed
+			out.writeObject(exception);
+		}
+	}
 
 }

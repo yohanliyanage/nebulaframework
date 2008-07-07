@@ -108,7 +108,7 @@ public class SplitterServiceImpl implements SplitterService {
 		profile.getFuture().setState(GridJobState.INITIALIZING);
 
 		try {
-			GridJob<?> job = profile.getJob();
+			GridJob<?,?> job = profile.getJob();
 
 			// Split to Tasks
 			log.debug("[Splitter] Splitting Tasks");

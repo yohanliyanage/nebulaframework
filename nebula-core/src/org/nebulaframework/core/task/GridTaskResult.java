@@ -17,46 +17,65 @@ import java.io.Serializable;
 import java.util.UUID;
 
 /**
- * Wraps a result of {@link GridTask} execution with meta data.
+ * Wrapper class interface for a result of {@link GridTask} 
+ * execution, including related meta-data.
+ * 
  * @author Yohan Liyanage
- *
- * @param <T> Type of Result of execution
+ * @version 1.0
+ * 
+ * @see GridTask
  */
 public interface GridTaskResult extends Serializable {
 	
 	/**
-	 * Returns the Job Id
+	 * Returns the JobId of {@code GridJob}, to which this 
+	 * {@link GridTaskResult} belongs.
+	 * 
 	 * @return String JobId
 	 */
 	public String getJobId();
 	
 	/**
-	 * Returns the Task Id
-	 * @return int TaskId
+	 * Returns the Task Id (Sequence Number) of the 
+	 * {@code GridTask} which produced the result.
+	 * 
+	 * @return taskId
 	 */
 	public int getTaskId();
 	
 	/**
-	 * Returns Worker Id
-	 * @return Worker Id
+	 * Returns NodeId of the {@code GridNode} which
+	 * executed the {@code GridTask}.
+	 * 
+	 * @return WorkerId (NodeID of  Worker)
 	 */
 	public UUID getWorkerId();
 	
 	/**
-	 * Returns the exception thrown at execution, if any
-	 * @return Exception thrown, or <tt>null</tt>
+	 * If the {@code GridTask} has failed, returns the exception 
+	 * thrown at execution, if available. Otherwise, returns
+	 * {@code null}.
+	 * 
+	 * @return Exception thrown
+	 * 
+	 * @throws IllegalStateException if execution has succeeded
 	 */
-	public Exception getException();
+	public Exception getException() throws IllegalStateException;
 	
 	/**
 	 * Returns the result of execution, if completed
-	 * @return Result of execution, or IllegalStateException if execution was failed
+	 * 
+	 * @return Result of execution
+	 *  
+	 * @throws IllegalStateException if execution was failed
 	 */
 	public Serializable getResult() throws IllegalStateException;
 	
 	/**
-	 * Returns true if the Task has completed successfully without exceptions.
-	 * @return true if Task completed
+	 * Returns {@code true} if the {@code GridTask} has completed successfully 
+	 * without exceptions.
+	 * 
+	 * @return Value {@code true} if {@code GridTask} completed.
 	 */
 	public boolean isComplete();
 	

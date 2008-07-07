@@ -19,27 +19,26 @@ import org.nebulaframework.core.GridExecutionException;
 import org.nebulaframework.core.job.GridJob;
 
 /**
- * <p>This interface defines the contract for a task which can be executed on a remote node of the grid.
- * The remote code should be given under {@link GridTask#execute(Serializable...)} method.</p>
- * <p>{@link GridJob}s will be split into <tt>GridTask</tt>s at the time of <tt>split</tt> operation.</p>
+ * This interface defines the contract for a task which can be executed on a remote node of the grid.
+ * The remote code should be given under {@link GridTask#execute()} method.
+ * <p>
+ * {@link GridJob}s will be split into {@code GridTask}s at the time of {@code split} operation.
  * 
  * @author Yohan Liyanage
- *
- * @param <T> Type of the result of execution
+ * @version 1.0
+ * 
+ * @param <T> Type of the result of {@code GridTask} execution
  */
 public interface GridTask<T extends Serializable> extends Serializable{
 	
 	/**
-	 * Executes the GridTask on a remote node.
+	 * Executes the GridTask on a remote node. Logic of each Task should be
+	 * specified in the implementation of this method.
 	 * 
 	 * @return Result of execution.
-	 * @throws GridExecutionException If an exception was thrown at the time of execution.
+	 * 
+	 * @throws GridExecutionException If an exception is to be thrown at the 
+	 * time of execution, it should be wrapped by a {@link GridExecutionException}.
 	 */
 	public T execute() throws GridExecutionException;
-	
-	/**
-	 * Cancels the execution of this Task.
-	 * @return <tt>true</tt> if task was successfully canceled.
-	 */
-	public boolean cancel();
 }
