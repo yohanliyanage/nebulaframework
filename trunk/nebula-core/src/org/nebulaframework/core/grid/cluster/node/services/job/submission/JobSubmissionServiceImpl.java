@@ -14,7 +14,6 @@
 
 package org.nebulaframework.core.grid.cluster.node.services.job.submission;
 
-import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
@@ -90,7 +89,7 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
      * This method delegates to internal overloaded version of 
      * method {@link #submitJob(GridJob, GridArchive)}
      */
-    public GridJobFuture submitJob(GridJob<? extends Serializable> job) throws GridJobRejectionException {
+    public GridJobFuture submitJob(GridJob<?,?> job) throws GridJobRejectionException {
         
     	// Delegate to overloaded version    
     	return submitJob(job, null);
@@ -117,7 +116,7 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
 				//Instantiate GridJob
 				Class<?> cls = Class.forName(className);
 				Constructor<?> constructor = cls.getConstructor();
-				GridJob<?> job = (GridJob<?>)constructor.newInstance();
+				GridJob<?,?> job = (GridJob<?,?>)constructor.newInstance();
 				
 				// Submit and get GridJobFuture
 				futureMap.put(className, submitJob(job, archive));
@@ -145,7 +144,7 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
 	 * @param archive Archive, if applicable. This may be <tt>null</tt>
 	 * @return GridJobFuture for the submitted job
 	 */
-	protected GridJobFuture submitJob(GridJob<? extends Serializable> job, GridArchive archive) throws GridJobRejectionException {
+	protected GridJobFuture submitJob(GridJob<?,?> job, GridArchive archive) throws GridJobRejectionException {
 		
 		log.info("Submitting GridJob " + job.getClass().getName());
 		

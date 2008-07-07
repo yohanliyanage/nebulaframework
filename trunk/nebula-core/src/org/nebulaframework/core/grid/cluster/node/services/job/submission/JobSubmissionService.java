@@ -14,7 +14,6 @@
 
 package org.nebulaframework.core.grid.cluster.node.services.job.submission;
 
-import java.io.Serializable;
 import java.util.Map;
 
 import org.nebulaframework.core.grid.cluster.manager.services.facade.ClusterManagerServicesFacade;
@@ -48,7 +47,7 @@ public interface JobSubmissionService {
 	 * @return {@code GridJobFuture} proxy
 	 * @throws GridJobRejectionException if submission failed
 	 */
-	public GridJobFuture submitJob(GridJob<? extends Serializable> job) throws GridJobRejectionException;
+	public GridJobFuture submitJob(GridJob<?,?> job) throws GridJobRejectionException;
 	
 	/**
 	 * Submits the given {@code GridArchive} to the Grid through {@code ClusterManager}.

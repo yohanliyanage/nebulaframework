@@ -20,28 +20,48 @@ import org.nebulaframework.core.task.GridTask;
 
 /**
  * Represents a Job which is to be executed on Grid. 
+ * <p>
  * A Job will be split into multiple {@link GridTask}s and 
- * executed on remote nodes.
+ * executed on remote nodes, using the {@link #split()} method.
+ * <p>
+ * All intermediate results returned after the executions of
+ * {@code GridTask}s will be then aggregated using the
+ * {@link #aggregate(List)} method, and final result will be
+ * returned.
+ * 
+ * @param <T> Type of intermediate results of {@code GridTask}s
+ * @param <R> Type of Final Result of the {@code GridJob}
  * 
  * @author Yohan Liyanage
  * @version 1.0
- * @param <R> Type of Result of execution of the Job
+ * 
+ * @see GridTask
  */
-public interface GridJob<R extends Serializable> extends Serializable{
+public interface GridJob<T extends Serializable, R extends Serializable> extends Serializable{
 	
 	/**
-	 * Logic to split the Job into multiple tasks.
+	 * Logic to split this {@code GridJob} into multiple 
+	 * {@code GridTask}s.
+	 * <p>
+	 * Should be overridden by all {@code GridJob}s, as it states
+	 * the {@code Split} operation of the {@code Split-Aggregate} model.
+	 * 
 	 * @return A Collection of {@link GridTask}s.
 	 */
-	public List<? extends GridTask<R>> split();
+	public List<? extends GridTask<T>> split();
 	
 	/**
 	 * Logic to aggregate results from tasks into final result of job.
-	 * @param results A Collection of {@link Serializable}s 
-	 * which are the outcome of {@link GridTask} execution.
-	 * @return Final result of Job
+	 * <p>
+	 * Should be overridden by all {@code GridJob}s, as it states
+	 * the {@code Aggregate} operation of the {@code Split-Aggregate} model.
+	 * 
+	 * @param results {@code List} of results by {@code GridTask} executions
+	 * at remote nodes.
+	 * 
+	 * @return Final result of {@code GridJob}, after aggregation
 	 */
-	public R aggregate(List<Serializable> results);
+	public R  aggregate(List<? extends Serializable> results);
 	
 
 

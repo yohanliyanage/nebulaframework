@@ -12,24 +12,36 @@
  * limitations under the License.
  */
 
-package org.nebulaframework.util.profiling;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package org.nebulaframework.core.service.message;
 
 /**
- * A marker annotation which enables profiling of the marked method.
- * Methods marked with this annotation will be profiled using AOP and
- * execution times will be logged. 
+ * Enumeration which represents possible types of
+ * {@code ServiceMessage}s.
  * 
  * @author Yohan Liyanage
  * @version 1.0
  * 
- * @see ProfilingAspect
+ * @see ServiceMessage
  */
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface ProfileExecution {
+public enum ServiceMessageType {
+	
+	/**
+	 * Start of a new {@code GridJob}.
+	 */
+	JOB_START,
+	
+	/**
+	 * End of an executing {@code GridJob}.
+	 */
+	JOB_END,
+	
+	/**
+	 * Cancellation of an executing {@code GridJob}.
+	 */
+	JOB_CANCEL,
+	
+	/**
+	 * {@code ClusterManager} is shutting down.
+	 */
+	CLUSTER_SHUTDOWN
 }

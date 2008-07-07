@@ -13,11 +13,20 @@
  */
 package org.nebulaframework.core.job;
 
+import org.nebulaframework.core.job.future.GridJobFuture;
+
+
 /**
- * Allows to track GridJobState changes.
+ * Allows to track GridJobState changes. Classes which requires to track changes
+ * of a JobState should implement this listener interface. To register as a 
+ * listener, {@link GridJobFuture#addGridJobStateListener(GridJobStateListener)}
+ * should be used.
  * 
  * @author Yohan Liyanage
  * @version 1.0
+ * 
+ * @see GridJobFuture#addGridJobStateListener(GridJobStateListener)
+ * @see GridJobFuture#removeGridJobStateListener(GridJobStateListener)
  */
 // TODO Remove if not needed
 public interface GridJobStateListener {

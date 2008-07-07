@@ -279,7 +279,6 @@ public class TaskExecutor {
 			
 			// Put result into Result Wrapper
 			taskResult.setResult(result);
-			taskResult.setComplete(true);
 			
 		} catch (Exception e) {
 			
@@ -287,7 +286,6 @@ public class TaskExecutor {
 
 			// Exception, send exception details instead of result
 			taskResult.setException(e);
-			taskResult.setComplete(false);
 			
 		} finally {
 			

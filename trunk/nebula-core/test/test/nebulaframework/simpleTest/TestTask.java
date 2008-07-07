@@ -29,15 +29,10 @@ public class TestTask implements GridTask<Integer> {
 
 	private static final long serialVersionUID = -4826864297461445244L;
 
-	public boolean cancel() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
 	public Integer execute() throws GridExecutionException {
 		Integer val = new Random().nextInt(100);
 
-		// Lets c if they can load ant xD
+		// Test loading an external library
 		AntClassLoader.class.getName();
 
 		System.out.println("Random Value : " + val);

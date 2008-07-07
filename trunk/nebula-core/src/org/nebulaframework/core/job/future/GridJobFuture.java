@@ -14,37 +14,41 @@
 package org.nebulaframework.core.job.future;
 
 import java.io.Serializable;
+import java.util.concurrent.Future;
 
 import org.nebulaframework.core.GridExecutionException;
 import org.nebulaframework.core.GridTimeoutException;
-import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.GridJobState;
-import org.nebulaframework.core.task.GridTask;
 
 /**
- * <p><tt>GridJobFuture</tt> is returned by {@link GridJob#start()} method. This class allows to 
- * check the status of a {@link GridJob}, to cancel execution of a {@link GridJob}, 
- * and to obtain the result of a {@link GridJob}. </p> 
+ * Defines the interface of {@ code GridJobFuture} implementations, which represents the 
+ * result of a deployed {@code GridJob}.
+ * <p>
+ * {@code GridJobFuture} is returned after submitting the {@code GridJob} to the Grid. 
+ * This class allows to check the status of a {@code GridJob}, to cancel 
+ * execution of a {@code GridJob}, and to obtain the result of a {@code GridJob}, 
+ * blocking until result is available. A {@code GridJob} can be requested to be 
+ * canceled using the {@link #cancel()} method.  
+ * <p>
+ * The implementation of this interface resides at the {@code ClusterManager}'s JVM,
+ * and is exposed as a remote service to the submitter node, using proxy classes.
+ * <p>
+ * <i>Note :</i> This class was modeled after the {@link Future} class of 
+ * {@code java.util.concurrent} package.
  * 
  * @author Yohan Liyanage
- *
- * @param <T> Type of result of execution of GridTask.
+ * @version 1.0
+ * 
+ * @see Future
+ * @see GridJob
  */
-public interface GridJobFuture extends Serializable{
+public interface GridJobFuture {
 	
 	/**
-	 * Returns the Job State through {@link GridJobState} enum.
+	 * Returns the Job State through {@link GridJobState} enumeration.
 	 * @return JobState of the Grid Job
 	 */
 	public GridJobState getState();
-	
-	/**
-	 * Attempts to cancel execution of this job. The cancellation of the job is not a guaranteed behavior.
-	 * This method attempts to cancel each GridTask by calling {@link GridTask#cancel()} method.
-	 * 
-	 * @return true if cancellation succeeded.
-	 */
-	public boolean cancel();
 	
 	/**
 	 * Returns the result of Job. This method blocks until the job execution is complete.
@@ -65,17 +69,20 @@ public interface GridJobFuture extends Serializable{
 	 */
 	public Serializable getResult(long timeout) throws GridExecutionException, GridTimeoutException;
 
-
-// TODO Check and remove if not needed
-//	/**
-//	 * Returns the current {@link GridJobStateListener} assigned to the GridJobFuture.
-//	 * @return {@link GridJobStateListener}
-//	 */
-//	public GridJobStateListener getListener();
-//
-//	/**
-//	 * Sets the {@link GridJobStateListener} for this GridJobFuture.
-//	 * @param listener {@link GridJobStateListener}
-//	 */
-//	public void setListener(GridJobStateListener listener);
+	/**
+	 * Returns the exception attached to the execution of this {@code GridJob},
+	 * if applicable, or {@code null}.
+	 * 
+	 * @return Assigned {@code Exception), or {@code null}
+	 */
+	public Exception getException();
+	
+	/**
+	 * Attempts to cancel execution of this job. Note that the cancellation 
+	 * of the job is <b>not a guaranteed behavior</b>.
+	 * 
+	 * @return if cancellation succeeded , {@code true}.
+	 */
+	public boolean cancel();
+	
 }
