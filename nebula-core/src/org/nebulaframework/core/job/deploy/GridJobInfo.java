@@ -15,9 +15,6 @@
 package org.nebulaframework.core.job.deploy;
 
 import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 import java.io.Serializable;
 
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.ClusterJobService;
@@ -37,8 +34,10 @@ import org.nebulaframework.core.job.archive.GridArchive;
  * 
  * @see ClusterJobService#requestJob(String)
  */
-public class GridJobInfo implements Externalizable {
+public class GridJobInfo implements Serializable {
 
+	private static final long serialVersionUID = 1792194789111207025L;
+	
 	private String jobId;
 	private GridArchive archive;
 
@@ -90,21 +89,22 @@ public class GridJobInfo implements Externalizable {
 		return this.archive != null;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	public void readExternal(ObjectInput in) throws IOException,
-			ClassNotFoundException {
-		this.jobId = in.readUTF();
-		this.archive = (GridArchive) in.readObject();
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */	
-	public void writeExternal(ObjectOutput out) throws IOException {
-		out.writeUTF(jobId);
-		out.writeObject(archive);
-	}
+	// TODO Externalizable ?
+//	/**
+//	 * {@inheritDoc}
+//	 */
+//	public void readExternal(ObjectInput in) throws IOException,
+//			ClassNotFoundException {
+//		this.jobId = in.readUTF();
+//		this.archive = (GridArchive) in.readObject();
+//	}
+//
+//	/**
+//	 * {@inheritDoc}
+//	 */	
+//	public void writeExternal(ObjectOutput out) throws IOException {
+//		out.writeUTF(jobId);
+//		out.writeObject(archive);
+//	}
 
 }

@@ -24,6 +24,6 @@
     </weaver>
     <aspects>
         <!-- Aspects to be Weaved -->        
-        <aspect name="org.nebulaframework.util.profiling.aspects.ProfilingAspect"/>
+        <aspect name="org.nebulaframework.util.profiling.ProfilingAspect"/>
     </aspects>
   </aspectj>

@@ -71,7 +71,7 @@ public class ServiceMessageSupportImpl implements ServiceMessagesSupport {
 	 */
 	public void onServiceMessage(ServiceMessage message) {
 		
-		log.info("[Service] " + message);
+		log.debug("[Service] " + message);
 		
 		this.message = message;
 		

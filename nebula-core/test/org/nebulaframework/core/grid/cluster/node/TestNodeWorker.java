@@ -7,6 +7,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.xbean.spring.context.ClassPathXmlApplicationContext;
 import org.nebulaframework.core.grid.cluster.registration.RegistrationException;
 import org.springframework.context.ApplicationContext;
+import org.springframework.util.StopWatch;
 
 public class TestNodeWorker {
 	
@@ -16,16 +17,26 @@ public class TestNodeWorker {
 
 		try {
 
+			log.info("GridNode Starting...");
+			StopWatch sw = new StopWatch();
+			sw.start();
+			
 			ApplicationContext ctx = new ClassPathXmlApplicationContext("org/nebulaframework/core/grid/cluster/node/grid-node.xml");
 			GridNode node = (GridNode) ctx.getBean("localNode");
-
-			log.debug("Registering Node");
-			node.getNodeRegistrationService().register();
 			
-			log.debug("Waiting...");
+			sw.stop();
+			log.info("GridNode Started Up. [" + sw.getLastTaskTimeMillis() + " ms]");
+			
+			log.info("GridNode ID : " + node.getId());
+			
+			node.getNodeRegistrationService().register();
+			log.info("Registered in Cluster : " + node.getNodeRegistrationService().getRegistration().getClusterId());
+			
+			log.debug("Press any key to unregister GridNode and terminate");
 			System.in.read();
-			log.debug("Unregistering Node");
 			node.getNodeRegistrationService().unregister();
+			
+			log.info("Unregistered, Terminating...");
 			System.exit(0);
 		} catch (RegistrationException e) {
 			e.printStackTrace();

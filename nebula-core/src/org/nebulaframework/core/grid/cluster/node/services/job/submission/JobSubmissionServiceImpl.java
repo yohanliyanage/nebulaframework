@@ -151,6 +151,8 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
         // Submit Job to Cluster and retrieve JobId
         String jobId = this.node.getServicesFacade().submitJob(this.node.getId(), job, archive);
         
+        log.debug("Submitted");
+        
         // Create local proxy to interface remote service
         JmsInvokerProxyFactoryBean proxyFactory = new JmsInvokerProxyFactoryBean();
         proxyFactory.setConnectionFactory(connectionFactory);

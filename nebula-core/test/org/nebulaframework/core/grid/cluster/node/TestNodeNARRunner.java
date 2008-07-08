@@ -19,17 +19,27 @@ public class TestNodeNARRunner {
 	public static void main(String[] args) {
 		try {
 
-			ApplicationContext ctx = new ClassPathXmlApplicationContext("org/nebulaframework/core/grid/cluster/node/grid-node.xml");
-			GridNode node = (GridNode) ctx.getBean("localNode");
-			
-			log.debug("Registering Node");
-			node.getNodeRegistrationService().register();
-			
+			log.info("GridNode Starting...");
 			StopWatch sw = new StopWatch();
 			sw.start();
 			
+			ApplicationContext ctx = new ClassPathXmlApplicationContext("org/nebulaframework/core/grid/cluster/node/grid-node.xml");
+			GridNode node = (GridNode) ctx.getBean("localNode");
+			
+			log.info("GridNode ID : " + node.getId());
+			
+			node.getNodeRegistrationService().register();
+			log.info("Registered in Cluster : " + node.getNodeRegistrationService().getRegistration().getClusterId());
+			
+			sw.stop();
+
+			log.info("GridNode Started Up. [" + sw.getLastTaskTimeMillis() + " ms]");
+			
 			// Submit Job
 			log.debug("Submitting Job");
+			
+			sw.start();
+			
 			GridArchive archive =  GridArchive.fromFile(new File("simpletestjob.nar"));
 			GridJobFuture future = (GridJobFuture) node.getJobSubmissionService().submitArchive(archive).values().toArray()[0];
 			
@@ -38,15 +48,18 @@ public class TestNodeNARRunner {
 			} catch (RemoteInvocationFailureException e) {
 				e.getCause().printStackTrace();
 			}
-
-			sw.stop();
 			
-			log.debug("Job Duration : " + (sw.getLastTaskTimeMillis()) + " ms");
-			log.debug("Waiting...");
+			sw.stop();
+			log.info("GridJob Finished. Duration " + sw.getLastTaskTimeMillis() + " ms");
+			
+			log.debug("Press any key to unregister GridNode and terminate");
 			System.in.read();
-			log.debug("Unregistering Node");
 			node.getNodeRegistrationService().unregister();
+			
+			log.info("Unregistered, Terminating...");
 			System.exit(0);
+			
+			
 		} 
 		catch (Exception e) {
 			log.error(e);

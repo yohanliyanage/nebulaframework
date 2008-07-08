@@ -22,8 +22,8 @@ import javax.jms.Message;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nebulaframework.core.grid.cluster.manager.services.jobs.ClusterJobServiceImpl;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.GridJobProfile;
+import org.nebulaframework.core.grid.cluster.manager.services.jobs.InternalClusterJobService;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.JMSNamingSupport;
 import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.GridJobState;
@@ -52,7 +52,7 @@ public class SplitterServiceImpl implements SplitterService {
 
 	private static Log log = LogFactory.getLog(SplitterServiceImpl.class);
 	private JmsTemplate jmsTemplate;
-	private ClusterJobServiceImpl jobServiceImpl;
+	private InternalClusterJobService jobServiceImpl;
 	
 	/**
 	 * Constructor for {@code SplitterServiceImpl}. This constructs a SplitterServiceImpl
@@ -60,7 +60,7 @@ public class SplitterServiceImpl implements SplitterService {
 	 * 
 	 * @param jobServiceImpl {@code ClusterJobServiceImpl) owner
 	 */
-	public SplitterServiceImpl(ClusterJobServiceImpl jobServiceImpl) {
+	public SplitterServiceImpl(InternalClusterJobService jobServiceImpl) {
 		super();
 		this.jobServiceImpl = jobServiceImpl;
 	}
