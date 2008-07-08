@@ -15,9 +15,6 @@
 package org.nebulaframework.core.service.message;
 
 import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 import java.io.Serializable;
 
 import org.springframework.util.Assert;
@@ -41,8 +38,10 @@ import org.springframework.util.Assert;
  * @author Yohan Liyanage
  * @version 1.0
  */
-public class ServiceMessage implements Externalizable {
+public class ServiceMessage implements Serializable {
 
+	private static final long serialVersionUID = 1971655973546408806L;
+	
 	private ServiceMessageType type;
 	private String message;
 
@@ -119,20 +118,21 @@ public class ServiceMessage implements Externalizable {
 		return type + " : " + message;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	public void readExternal(ObjectInput in) throws IOException,
-			ClassNotFoundException {
-		this.type = ServiceMessageType.valueOf(in.readUTF());
-		this.message = in.readUTF();
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public void writeExternal(ObjectOutput out) throws IOException {
-		out.writeUTF(type.name());
-		out.writeUTF((message==null)?"":message);
-	}
+	// TODO Externalizable ?
+//	/**
+//	 * {@inheritDoc}
+//	 */
+//	public void readExternal(ObjectInput in) throws IOException,
+//			ClassNotFoundException {
+//		this.type = ServiceMessageType.valueOf(in.readUTF());
+//		this.message = in.readUTF();
+//	}
+//
+//	/**
+//	 * {@inheritDoc}
+//	 */
+//	public void writeExternal(ObjectOutput out) throws IOException {
+//		out.writeUTF(type.name());
+//		out.writeUTF((message==null)?"":message);
+//	}
 }

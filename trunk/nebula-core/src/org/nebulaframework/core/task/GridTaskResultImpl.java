@@ -14,9 +14,6 @@
 package org.nebulaframework.core.task;
 
 import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 import java.io.Serializable;
 import java.util.UUID;
 
@@ -37,8 +34,10 @@ import org.springframework.util.Assert;
  * @see GridTaskResult
  * @see Externalizable
  */
-public class GridTaskResultImpl implements GridTaskResult, Externalizable {
+public class GridTaskResultImpl implements GridTaskResult {
 
+	private static final long serialVersionUID = 4411158166154492107L;
+	
 	private Serializable result; // Result of execution
 	private Exception exception; // Exceptions, if any
 	private String jobId; // Parent Job Id
@@ -161,41 +160,43 @@ public class GridTaskResultImpl implements GridTaskResult, Externalizable {
 		}
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	public void readExternal(ObjectInput in) throws IOException,
-			ClassNotFoundException {
-
-		jobId = in.readUTF();
-		taskId = in.readInt();
-		workerId = (UUID) in.readObject();
-		complete = in.readBoolean();
-
-		if (complete) { // Read result if complete
-			result = (Serializable) in.readObject();
-			exception = null;
-		} else { // Read exception if failed
-			exception = (Exception) in.readObject();
-			result = null;
-		}
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public void writeExternal(ObjectOutput out) throws IOException {
-
-		out.writeUTF(jobId);
-		out.writeInt(taskId);
-		out.writeObject(workerId);
-		out.writeBoolean(complete);
-
-		if (complete) { // Write result if complete
-			out.writeObject(result);
-		} else { // Write exception if failed
-			out.writeObject(exception);
-		}
-	}
+	// TODO Externalizable ?
+	
+//	/**
+//	 * {@inheritDoc}
+//	 */
+//	public void readExternal(ObjectInput in) throws IOException,
+//			ClassNotFoundException {
+//
+//		jobId = in.readUTF();
+//		taskId = in.readInt();
+//		workerId = (UUID) in.readObject();
+//		complete = in.readBoolean();
+//
+//		if (complete) { // Read result if complete
+//			result = (Serializable) in.readObject();
+//			exception = null;
+//		} else { // Read exception if failed
+//			exception = (Exception) in.readObject();
+//			result = null;
+//		}
+//	}
+//
+//	/**
+//	 * {@inheritDoc}
+//	 */
+//	public void writeExternal(ObjectOutput out) throws IOException {
+//
+//		out.writeUTF(jobId);
+//		out.writeInt(taskId);
+//		out.writeObject(workerId);
+//		out.writeBoolean(complete);
+//
+//		if (complete) { // Write result if complete
+//			out.writeObject(result);
+//		} else { // Write exception if failed
+//			out.writeObject(exception);
+//		}
+//	}
 
 }

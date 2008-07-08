@@ -24,8 +24,8 @@ import javax.jms.ConnectionFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.ClusterJobService;
-import org.nebulaframework.core.grid.cluster.manager.services.jobs.ClusterJobServiceImpl;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.GridJobProfile;
+import org.nebulaframework.core.grid.cluster.manager.services.jobs.InternalClusterJobService;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.JMSNamingSupport;
 import org.nebulaframework.core.job.GridJobState;
 import org.nebulaframework.core.job.exceptions.AggregateException;
@@ -54,7 +54,7 @@ public class AggregatorServiceImpl implements AggregatorService {
 	private static Log log = LogFactory.getLog(AggregatorServiceImpl.class);
 	
 	private ConnectionFactory connectionFactory;
-	private ClusterJobServiceImpl jobService;
+	private InternalClusterJobService jobService;
 
 	/**
 	 * Constructs an AggregatorServiceImpl instance, for the 
@@ -62,7 +62,7 @@ public class AggregatorServiceImpl implements AggregatorService {
 	 * 
 	 * @param jobService {@code ClusterJobServiceImpl} owner service.
 	 */
-	public AggregatorServiceImpl(ClusterJobServiceImpl jobService) {
+	public AggregatorServiceImpl(InternalClusterJobService jobService) {
 		super();
 		this.jobService = jobService;
 	}

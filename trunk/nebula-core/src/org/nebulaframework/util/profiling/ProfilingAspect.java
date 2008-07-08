@@ -77,6 +77,6 @@ public class ProfilingAspect {
     /**
      * AspectJ Pointcut Definition for Profiling Aspect
      */
-    @Pointcut("@annotation(org.nebulaframework.util.profiling.annotations.ProfileExecution)")
+    @Pointcut("@annotation(org.nebulaframework.util.profiling.ProfileExecution)")
     public void profilingPointcut(){}
 }

@@ -1,7 +1,6 @@
 package org.nebulaframework.core.grid.cluster.node;
 
 import java.io.IOException;
-import java.util.Date;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -10,6 +9,7 @@ import org.nebulaframework.core.grid.cluster.registration.RegistrationException;
 import org.nebulaframework.core.job.future.GridJobFuture;
 import org.springframework.context.ApplicationContext;
 import org.springframework.remoting.RemoteInvocationFailureException;
+import org.springframework.util.StopWatch;
 
 import test.nebulaframework.simpleTest.TestJob;
 
@@ -24,28 +24,45 @@ public class TestNodeRunner {
 		
 		try {
 
+			log.info("GridNode Starting...");
+			StopWatch sw = new StopWatch();
+			sw.start();
+			
 			ApplicationContext ctx = new ClassPathXmlApplicationContext("org/nebulaframework/core/grid/cluster/node/grid-node.xml");
 			GridNode node = (GridNode) ctx.getBean("localNode");
-
-			log.debug("Registering Node");
-			node.getNodeRegistrationService().register();
 			
-			Date dStart = new Date();
+			log.info("GridNode ID : " + node.getId());
+			
+			node.getNodeRegistrationService().register();
+			log.info("Registered in Cluster : " + node.getNodeRegistrationService().getRegistration().getClusterId());
+			
+			sw.stop();
+
+			log.info("GridNode Started Up. [" + sw.getLastTaskTimeMillis() + " ms]");
+			
 			// Submit Job
 			log.debug("Submitting Job");
+			
+			sw.start();
+			
 			GridJobFuture future = node.getJobSubmissionService().submitJob(testJob);
 			try {
-				log.info("RESULT : " + future.getResult());
+				log.info("Job Result : " + future.getResult());
 			} catch (RemoteInvocationFailureException e) {
 				e.getCause().printStackTrace();
 			}
-			Date dEnd = new Date();
 			
-			log.debug("Job Duration : " + (dEnd.getTime() - dStart.getTime()) + " ms");
-			log.debug("Waiting...");
+			sw.stop();
+			log.info("GridJob Finished. Duration " + sw.getLastTaskTimeMillis() + " ms");
+			
+			log.debug("Press any key to unregister GridNode and terminate");
 			System.in.read();
-			log.debug("Unregistering Node");
 			node.getNodeRegistrationService().unregister();
+			
+			log.info("Unregistered, Terminating...");
+			System.exit(0);
+			
+		
 		} catch (RegistrationException e) {
 			e.printStackTrace();
 		} catch (IOException e) {

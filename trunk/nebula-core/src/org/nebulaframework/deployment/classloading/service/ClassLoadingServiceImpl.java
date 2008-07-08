@@ -72,12 +72,12 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 	/**
 	 * CacheGC Initial Delay of Garbage Collection (Seconds)
 	 */
-	private static final int CACHE_GC_INITIAL_DELAY_SECS = 2*60;
+	private static final int CACHE_GC_INITIAL_DELAY_SECS = 5*60;
 	
 	/**
 	 * CacheGC Sequential Delay of Garbage Collection (Seconds)
 	 */
-	private static final int CACHE_GC_SEQ_DELAY_SECS = 2*60;
+	private static final int CACHE_GC_SEQ_DELAY_SECS = 3*60;
 	
 	
 	private static Log log = LogFactory.getLog(ClassLoadingServiceImpl.class);

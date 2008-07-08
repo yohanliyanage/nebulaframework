@@ -18,8 +18,6 @@ import java.io.Externalizable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -91,7 +89,9 @@ import org.springframework.util.Assert;
  * @see GridJob
  * @see GridArchiveClassLoader
  */
-public class GridArchive implements Externalizable {
+public class GridArchive implements Serializable {
+
+	private static final long serialVersionUID = -5657326124238562531L;
 
 	private static Log log = LogFactory.getLog(GridArchive.class);
 
@@ -346,26 +346,27 @@ public class GridArchive implements Externalizable {
 		return fileName.endsWith(".class");
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	public void readExternal(ObjectInput in) throws IOException,
-			ClassNotFoundException {
-		int size = in.readInt();
-		this.bytes = new byte[size];
-		in.read(bytes,0, size);
-		this.hash = in.readUTF();
-		this.jobClassNames = (String[]) in.readObject();
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public void writeExternal(ObjectOutput out) throws IOException {
-		out.writeInt(bytes.length);
-		out.write(bytes);
-		out.writeUTF(hash);
-		out.writeObject(jobClassNames);
-	}
+	// TODO Externalizable ?
+//	/**
+//	 * {@inheritDoc}
+//	 */
+//	public void readExternal(ObjectInput in) throws IOException,
+//			ClassNotFoundException {
+//		int size = in.readInt();
+//		this.bytes = new byte[size];
+//		in.read(bytes,0, size);
+//		this.hash = in.readUTF();
+//		this.jobClassNames = (String[]) in.readObject();
+//	}
+//
+//	/**
+//	 * {@inheritDoc}
+//	 */
+//	public void writeExternal(ObjectOutput out) throws IOException {
+//		out.writeInt(bytes.length);
+//		out.write(bytes);
+//		out.writeUTF(hash);
+//		out.writeObject(jobClassNames);
+//	}
 
 }

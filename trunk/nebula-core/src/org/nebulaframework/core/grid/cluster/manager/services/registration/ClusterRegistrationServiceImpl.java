@@ -35,7 +35,7 @@ import org.springframework.beans.factory.annotation.Required;
  * @see GridNodeDelegate
  */
 public class ClusterRegistrationServiceImpl implements
-		ClusterRegistrationService {
+		ClusterRegistrationService, InternalClusterRegistrationService {
 
 	private static Log log = LogFactory
 			.getLog(ClusterRegistrationServiceImpl.class);

@@ -29,7 +29,9 @@ import org.nebulaframework.deployment.classloading.GridNodeClassLoader;
 import org.nebulaframework.deployment.classloading.node.exporter.GridNodeClassExporter;
 import org.nebulaframework.deployment.classloading.service.ClassLoadingService;
 import org.nebulaframework.deployment.classloading.service.ClassLoadingServiceSupport;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.util.Assert;
 
 /**
  * Implementation of {@link JobExecutionService}. This class is responsible of
@@ -65,7 +67,7 @@ import org.springframework.beans.factory.annotation.Required;
  * @see TaskExecutor
  * @see ClassLoadingService
  */
-public class JobExecutionServiceImpl implements JobExecutionService {
+public class JobExecutionServiceImpl implements JobExecutionService, InitializingBean {
 
 	private static Log log = LogFactory.getLog(JobExecutionServiceImpl.class);
 
@@ -140,7 +142,10 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 	protected synchronized void newJob(String jobId) {
 
 		// Initialize the ClassLoading Service
-		initalizeService();
+		if (!initalizeService()) {
+			log.debug("[JobExecution] Aborting Request as ClassLoadingService not initialized");
+			return;
+		}
 
 		if (idle) {
 			// Request for Job
@@ -164,6 +169,36 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 		}
 	}
 
+	protected synchronized void requestNextJob() {
+		
+		// Initialize the ClassLoading Service
+		if (!initalizeService()) {
+			log.debug("[JobExecution] Aborting Request as ClassLoadingService not initialized");
+			return;
+		}
+		
+		if (idle) {
+			// Request for Job
+			try {
+				GridJobInfo jobInfo = node.getServicesFacade().requestNextJob();
+
+				// If no job, do nothing
+				if (jobInfo == null) return;
+				
+				// Start it
+				if (jobInfo.isArchived()) {	// Archived Job
+					startNewArchivedJob(jobInfo.getJobId(), jobInfo.getArchive());
+				} else {					// Normal Job
+					startNewJob(jobInfo.getJobId());
+				}
+
+			} catch (GridJobPermissionDeniedException e) {
+				// Permission Denied
+				log.warn("[JobExecution] Permission Denied for Request Next Available Job");
+			}
+		} 
+	}
+	
 	/**
 	 * Starts {@code TaskExecutor} for the given <i>non-archived</i> Job.
 	 * This type of {@code GridJob}s rely on Node-based Class Loading,
@@ -226,10 +261,14 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 			this.currentJobId = null;
 			this.idle = true;
 			
+			requestNextJob();
+			
 		} else {	// Log & ignore
 			log.debug("[Job Execution] Ignored Job End | N/A {" + jobId + "}");
 		}
 	}
+
+
 
 	/**
 	 * Terminates task execution for a specified Job (if executed by this service), 
@@ -252,6 +291,9 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 			// Update state
 			this.currentJobId = null;
 			this.idle = true;
+			
+			requestNextJob();
+			
 		} else { // Log & ignore
 			log.debug("[Job Execution] Ignored Job Termination | N/A {" + jobId + "}");
 		}
@@ -273,7 +315,7 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 	 * 
 	 * @return {@code true} if not active, {@code false} otherwise.
 	 */
-	public boolean isIdle() {
+	public synchronized boolean isIdle() {
 		return idle;
 	}
 
@@ -289,15 +331,70 @@ public class JobExecutionServiceImpl implements JobExecutionService {
 	 * available after registration with a {@code ClusterManager}. However,
 	 * since {@code NodeRegistrationService} cannot be assigned this
 	 * responsibility, it was assigned to {@code JobExecutionService}.
+	 * 
+	 * @return if already started or started successfully, {@code true},
+	 * otherwise {@code false}.
 	 */
-	private void initalizeService() {
+	private boolean initalizeService() {
 		// If not initialized before
 		if (classLoadingService == null) {
 			// Create Service Proxy
-			classLoadingService = ClassLoadingServiceSupport.createProxy(node
-					.getNodeRegistrationService().getRegistration()
-					.getClusterId(), connectionFactory);
+			try {
+				classLoadingService = ClassLoadingServiceSupport.createProxy(node
+						.getNodeRegistrationService().getRegistration()
+						.getClusterId(), connectionFactory);
+				return true;
+			} catch (Exception e) {
+				log.info("[Job Execution] Unable to start ClassLoadingServiceProxy");
+				return false;
+			}
 		}
+		else {
+			return true;
+		}
+		
+	}
+
+	/**
+	 * This method ensures that all dependencies of the {@code JobExecutionServiceImpl} 
+	 * is set. Also, this method requests the next available Job from Cluster, enabling
+	 * the node to start processing once started up.
+	 * <p>
+	 * <b>Note : </b>In default implementation, this method will be invoked automatically by Spring Container.
+	 * If this class is used outside of Spring Container, this method should be invoked explicitly
+	 * to initialize the {@code GridNode} properly.
+	 * <p>
+	 * <i>Spring Invoked</i>
+	 * 
+	 * @throws Exception if dependencies are not set.
+	 */
+	public void afterPropertiesSet() throws Exception {
+		
+		// Check required dependencies
+		Assert.notNull(node);
+		Assert.notNull(connectionFactory);
+		
+		// Wait until initialized and request 
+		// for next available job
+		new Thread(new Runnable() {
+			public void run() {
+			
+				try {
+					
+					// Check until initialized
+					while(!initalizeService()) {
+						Thread.sleep(2000);
+					}
+					
+					// Initialized, request Job
+					requestNextJob();
+					
+				} catch (InterruptedException e) {
+					log.error(e);
+				}
+				
+			}
+		}).start();
 	}
 
 }

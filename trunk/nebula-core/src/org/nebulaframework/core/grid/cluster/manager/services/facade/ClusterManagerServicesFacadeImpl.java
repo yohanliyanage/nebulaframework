@@ -54,6 +54,8 @@ public class ClusterManagerServicesFacadeImpl implements ClusterManagerServicesF
 	}
 
 	/**
+	 * {@inheritDoc}
+	 * <p>
 	 * Delegates to {@code ClusterManager}'s {@code ClusterJobService} 
 	 * to submit a given {@code GridJob}.
 	 * 
@@ -64,6 +66,8 @@ public class ClusterManagerServicesFacadeImpl implements ClusterManagerServicesF
 	}
 
 	/**
+	 * {@inheritDoc}
+	 * <p>
 	 * Delegates to {@code ClusterManager}'s {@code ClusterJobService} 
 	 * to submit a given {@code GridJob}, which is included in the 
 	 * given {@code GridArchive}.
@@ -77,6 +81,8 @@ public class ClusterManagerServicesFacadeImpl implements ClusterManagerServicesF
 	}
 
 	/**
+	 * {@inheritDoc}
+	 * <p>
 	 * Delegates to {@code ClusterManager}'s {@code ClusterJobService} 
 	 * to request permission to participate for a specified {@code GridJob}.
 	 * 
@@ -84,6 +90,16 @@ public class ClusterManagerServicesFacadeImpl implements ClusterManagerServicesF
 	 */
 	public GridJobInfo requestJob(String jobId) throws GridJobPermissionDeniedException {
 		return this.cluster.getJobService().requestJob(jobId);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * Delegates to {@code ClusterManager}'s {@code ClusterJobService} 
+	 * to request permission to participate for next available {@code GridJob}.
+	 */
+	public GridJobInfo requestNextJob() throws GridJobPermissionDeniedException {
+		return this.cluster.getJobService().requestNextJob();
 	}
 
 }

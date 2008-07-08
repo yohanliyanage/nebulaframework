@@ -16,8 +16,8 @@ package org.nebulaframework.core.grid.cluster.manager.services.jobs.aggregator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nebulaframework.core.grid.cluster.manager.services.jobs.ClusterJobServiceImpl;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.GridJobProfile;
+import org.nebulaframework.core.grid.cluster.manager.services.jobs.InternalClusterJobService;
 import org.nebulaframework.core.task.GridTaskResult;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 
@@ -37,7 +37,7 @@ public class ResultCollector {
 	private static Log log = LogFactory.getLog(ResultCollector.class);
 
 	private GridJobProfile profile;
-	private ClusterJobServiceImpl jobService;
+	private InternalClusterJobService jobService;
 	private DefaultMessageListenerContainer container;
 
 	/**
@@ -48,7 +48,7 @@ public class ResultCollector {
 	 * @param container Spring {@code DefaultMessageListenerContainer} for {@code ResultsQueue}
 	 */
 	public ResultCollector(GridJobProfile profile,
-			ClusterJobServiceImpl jobService,
+			InternalClusterJobService jobService,
 			DefaultMessageListenerContainer container) {
 		super();
 		this.profile = profile;
@@ -66,6 +66,8 @@ public class ResultCollector {
 
 		if (result.isComplete()) { // Result is Valid / Complete
 			
+			log.debug("[ResultCollector] Received : " + result.getResult());
+			
 			// Put result to ResultMap, and remove Task from TaskMap
 			profile.getResultMap().put(result.getTaskId(), result);
 			profile.getTaskMap().remove(result.getTaskId());
@@ -80,7 +82,7 @@ public class ResultCollector {
 
 		} else { // Result Not Valid / Exception
 			
-			log.debug("Result Failed, ReEnqueueing - " + result.getException());
+			log.warn("[ResultCollector] Result Failed, ReEnqueueing - " + result.getException());
 			
 			//Request re-enqueue of Task
 			jobService.getSplitterService().reEnqueueTask(profile.getJobId(),

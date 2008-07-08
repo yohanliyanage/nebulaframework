@@ -20,8 +20,10 @@ import javax.jms.ConnectionFactory;
 import org.nebulaframework.core.ID;
 import org.nebulaframework.core.grid.cluster.manager.services.facade.ClusterManagerServicesFacade;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.ClusterJobService;
+import org.nebulaframework.core.grid.cluster.manager.services.jobs.InternalClusterJobService;
 import org.nebulaframework.core.grid.cluster.manager.services.messaging.ServiceMessageSender;
 import org.nebulaframework.core.grid.cluster.manager.services.registration.ClusterRegistrationService;
+import org.nebulaframework.core.grid.cluster.manager.services.registration.InternalClusterRegistrationService;
 import org.nebulaframework.core.grid.cluster.node.GridNode;
 import org.nebulaframework.deployment.classloading.service.ClassLoadingServiceSupport;
 import org.springframework.beans.factory.InitializingBean;
@@ -64,8 +66,8 @@ public class ClusterManager implements InitializingBean {
 	private String brokerUrl;
 	private ConnectionFactory connectionFactory;
 	private ServiceMessageSender serviceMessageSender;
-	private ClusterRegistrationService clusterRegistrationService;
-	private ClusterJobService jobService;
+	private InternalClusterRegistrationService clusterRegistrationService;
+	private InternalClusterJobService jobService;
 	
 	/**
 	 * Instantiates ClusterManager, and assigns it a unique identifier.
@@ -155,7 +157,7 @@ public class ClusterManager implements InitializingBean {
 	 * 
 	 * @return {@code ClusterRegistrationService} of this Cluster
 	 */
-	public ClusterRegistrationService getClusterRegistrationService() {
+	public InternalClusterRegistrationService getClusterRegistrationService() {
 		return clusterRegistrationService;
 	}
 
@@ -173,7 +175,7 @@ public class ClusterManager implements InitializingBean {
 	 */
 	@Required
 	public void setClusterRegistrationService(
-			ClusterRegistrationService clusterRegistrationService) {
+			InternalClusterRegistrationService clusterRegistrationService) {
 		this.clusterRegistrationService = clusterRegistrationService;
 	}
 
@@ -185,7 +187,7 @@ public class ClusterManager implements InitializingBean {
 	 * 
 	 * @return {@code ClusterJobService} of this Cluster
 	 */
-	public ClusterJobService getJobService() {
+	public InternalClusterJobService getJobService() {
 		return jobService;
 	}
 
@@ -202,7 +204,7 @@ public class ClusterManager implements InitializingBean {
 	 * @param jobService {@code ClusterJobService} for this Cluster
 	 */
 	@Required
-	public void setJobService(ClusterJobService jobService) {
+	public void setJobService(InternalClusterJobService jobService) {
 		this.jobService = jobService;
 	}
 

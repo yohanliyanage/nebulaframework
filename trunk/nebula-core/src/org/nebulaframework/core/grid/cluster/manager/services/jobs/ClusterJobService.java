@@ -81,4 +81,14 @@ public interface ClusterJobService {
 	// TODO Pass GridNode profile ?
 	public GridJobInfo requestJob(String jobId) throws GridJobPermissionDeniedException;
 	
+	/**
+	 * Requests next available {@code GridJob}. If no {@code GridJob} is available,
+	 * this method will return {@code null}.
+	 * 
+	 * @return If available, {@code GridJobInfo}, or {@code null} if no {@code GridJob}
+	 * is available.
+	 * 
+	 * @throws GridJobPermissionDeniedException if permission denied
+	 */
+	public GridJobInfo requestNextJob() throws GridJobPermissionDeniedException;
 }
