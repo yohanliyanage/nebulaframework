@@ -183,7 +183,10 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 				GridJobInfo jobInfo = node.getServicesFacade().requestNextJob();
 
 				// If no job, do nothing
-				if (jobInfo == null) return;
+				if (jobInfo == null) {
+					log.info("[JobExecution] Idle as no active GridJobs");
+					return;
+				}
 				
 				// Start it
 				if (jobInfo.isArchived()) {	// Archived Job
@@ -208,7 +211,7 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 	 */
 	protected synchronized void startNewJob(String jobId) {
 
-		log.info("[Job Execution] Starting Non-Archive Job {" + jobId + "}");
+		log.info("[JobExecution] Starting Non-Archive Job {" + jobId + "}");
 
 		// Update state
 		this.idle = false;
@@ -228,7 +231,7 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 	protected synchronized void startNewArchivedJob(String jobId,
 			GridArchive archive) {
 
-		log.info("[Job Execution] Starting Archived Job {" + jobId + "}");
+		log.info("[JobExecution] Starting Archived Job {" + jobId + "}");
 
 		// Update state
 		this.idle = false;
@@ -252,7 +255,7 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 		//If the notification is for current Job
 		if ((this.currentJobId != null) && (this.currentJobId.equals(jobId))) {
 			
-			log.info("[Job Execution] Stopping Job Execution {" + jobId + "}");
+			log.info("[JobExecution] Stopping Job Execution {" + jobId + "}");
 			
 			// Stop TaskExecutor
 			TaskExecutor.stopForJob(jobId);
@@ -264,7 +267,7 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 			requestNextJob();
 			
 		} else {	// Log & ignore
-			log.debug("[Job Execution] Ignored Job End | N/A {" + jobId + "}");
+			log.debug("[JobExecution] Ignored Job End | N/A {" + jobId + "}");
 		}
 	}
 
@@ -283,7 +286,7 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 		//If the notification is for current Job
 		if ((this.currentJobId != null) && (this.currentJobId.equals(jobId))) {
 			
-			log.info("[Job Execution] Terminating Job Execution {" + jobId + "}");
+			log.info("[JobExecution] Terminating Job Execution {" + jobId + "}");
 			
 			// Stop Task Executor
 			TaskExecutor.stopForJob(jobId);
@@ -295,7 +298,7 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 			requestNextJob();
 			
 		} else { // Log & ignore
-			log.debug("[Job Execution] Ignored Job Termination | N/A {" + jobId + "}");
+			log.debug("[JobExecution] Ignored Job Termination | N/A {" + jobId + "}");
 		}
 	}
 
@@ -325,17 +328,19 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 	 * {@code ClassLoadingService} of the {@code ClusterManager}, if it has not
 	 * been already created.
 	 * <p>
-	 * This method is invoked at New Job notifications. The reason for invoking
-	 * this at such a stage is due to the fact that it requires the Cluster ID
-	 * to determine the communication {@code Queue} name, which is only
-	 * available after registration with a {@code ClusterManager}. However,
-	 * since {@code NodeRegistrationService} cannot be assigned this
-	 * responsibility, it was assigned to {@code JobExecutionService}.
+	 * This method is invoked at initialization of JobExecutionService. However
+	 * it is possible that ClassLoadingService cannot be created at this point,
+	 * as  <b>it requires the node to be registered with a {@code ClusterManager}</b>. 
+	 * {@link #afterPropertiesSet()} method ensures that this gets initialized
+	 * properly by repeatedly invoking {@code initializeService()} until it returns
+	 * {@code true}, within 2 second intervals.
 	 * 
 	 * @return if already started or started successfully, {@code true},
 	 * otherwise {@code false}.
 	 */
 	private boolean initalizeService() {
+		
+		
 		// If not initialized before
 		if (classLoadingService == null) {
 			// Create Service Proxy
@@ -343,9 +348,10 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 				classLoadingService = ClassLoadingServiceSupport.createProxy(node
 						.getNodeRegistrationService().getRegistration()
 						.getClusterId(), connectionFactory);
+				log.info("[JobExecution] Started ClassLoadingServiceProxy");
 				return true;
 			} catch (Exception e) {
-				log.info("[Job Execution] Unable to start ClassLoadingServiceProxy");
+				log.debug("[JobExecution] Unable to start ClassLoadingServiceProxy");
 				return false;
 			}
 		}
@@ -359,6 +365,10 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 	 * This method ensures that all dependencies of the {@code JobExecutionServiceImpl} 
 	 * is set. Also, this method requests the next available Job from Cluster, enabling
 	 * the node to start processing once started up.
+	 * <p>
+	 * Not that this method ensures that the {@code ClassLoadingServiceProxy} gets initialized
+	 * properly by repeatedly invoking {@code initializeService()} until it returns
+	 * {@code true}, within 2 second intervals.
 	 * <p>
 	 * <b>Note : </b>In default implementation, this method will be invoked automatically by Spring Container.
 	 * If this class is used outside of Spring Container, this method should be invoked explicitly
@@ -380,9 +390,23 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 			public void run() {
 			
 				try {
+					// Keep track of attempts
+					int attempts = 0;
+					
+					// Initial Delay
+					Thread.sleep(2000);
 					
 					// Check until initialized
 					while(!initalizeService()) {
+						
+						attempts++; // Increment attempts
+						
+						if (attempts >= 3) {
+						// If more than 3 attempts, log Error message
+							log.error("[JobExecution] Unable to Start ClassLoadingServiceProxy, Re-trying in 2 seconds");
+						}
+						
+						// Wait and re-attempt
 						Thread.sleep(2000);
 					}
 					

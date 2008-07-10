@@ -29,24 +29,25 @@ public class TestJob implements GridJob<Integer, Integer>{
 
 	private static final long serialVersionUID = -4504183475114576465L;
 
+	
 	public List<? extends GridTask<Integer>> split() {
-		System.out.println("Splitting...");
+		//System.out.println("Splitting...");
 		List<TestTask> tasks = new ArrayList<TestTask>();
 		
 		for(int i=0; i < 50; i++) {
 			tasks.add(new TestTask());
 		}
-		System.out.println("Splitting...Done");
+		//System.out.println("Splitting...Done");
 		return tasks;
 	}
 
 	public Integer aggregate(List<? extends Serializable> results) {
-		System.out.println("Aggregating...");
+		//System.out.println("Aggregating...");
 		int sum = 0;
 		for (Serializable result : results) {
 			sum += ((Integer) result).intValue();
 		}
-		System.out.println("Aggregating...Done");
+		//System.out.println("Aggregating...Done");
 		return sum;
 	}
 

@@ -1,9 +1,26 @@
 package org.nebulaframework.core.grid.cluster.manager.services.jobs;
 
+import org.nebulaframework.core.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.aggregator.AggregatorService;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.splitter.SplitterService;
+import org.nebulaframework.core.job.GridJob;
 
-//TODO Fix Doc
+/**
+ * Internal interface definition for {@code ClusterJobService}, which
+ * is responsible for the {@code GridJob} submission and execution, with 
+ * in a {@code ClusterManager}. Internal interface extends the public interface,
+ * but allows to access members which are not exposed by the public API.
+ * <p>
+ * This is to be used by the internal system only, and is not a part of the
+ * public API.
+ * 
+ * @author Yohan Liyanage
+ * @version 1.0
+ * 
+ * @see ClusterManager
+ * @see GridJob
+ *
+ */
 public interface InternalClusterJobService extends ClusterJobService {
 
 	/**

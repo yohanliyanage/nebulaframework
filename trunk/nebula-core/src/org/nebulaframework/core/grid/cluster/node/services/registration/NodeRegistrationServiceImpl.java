@@ -92,7 +92,7 @@ public class NodeRegistrationServiceImpl implements NodeRegistrationService {
 		this.registration = clusterRegistrationService.registerNode(node.getId());
 
 		// Log
-		log.info("Node " + node.getId() + " registered in Cluster "
+		log.debug("Node " + node.getId() + " registered in Cluster "
 				+ registration.getClusterId());
 		log.debug("Broker URL : " + registration.getBrokerUrl());
 	}
