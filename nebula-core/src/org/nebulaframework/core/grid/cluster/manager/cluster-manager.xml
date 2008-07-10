@@ -25,7 +25,7 @@
 		http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core-5.1.0.xsd">
 
 	<!-- External Configuration File Location -->
-	<context:property-placeholder location="nebula-cluster.properties" />
+	<context:property-placeholder location="file:nebula-cluster.properties" />
 
 	<!-- Enable AspectJ Load Time Weaver -->
 	<context:load-time-weaver/>

@@ -66,7 +66,7 @@ public class ResultCollector {
 
 		if (result.isComplete()) { // Result is Valid / Complete
 			
-			log.debug("[ResultCollector] Received : " + result.getResult());
+			log.debug("[ResultCollector] Received : Task " + result.getTaskId());
 			
 			// Put result to ResultMap, and remove Task from TaskMap
 			profile.getResultMap().put(result.getTaskId(), result);
