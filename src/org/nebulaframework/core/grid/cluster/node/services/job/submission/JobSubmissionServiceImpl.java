@@ -25,7 +25,7 @@ import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.grid.cluster.manager.services.facade.ClusterManagerServicesFacade;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.JMSNamingSupport;
 import org.nebulaframework.core.grid.cluster.node.GridNode;
-import org.nebulaframework.core.job.GridJob;
+import org.nebulaframework.core.job.SplitAggregateGridJob;
 import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.core.job.exceptions.GridJobRejectionException;
 import org.nebulaframework.core.job.future.GridJobFuture;
@@ -47,7 +47,7 @@ import org.springframework.jms.remoting.JmsInvokerProxyFactoryBean;
  * 
  * @see JobSubmissionService
  * @see ClusterManagerServicesFacade
- * @see GridJob
+ * @see SplitAggregateGridJob
  * @see GridArchive
  * @see GridJobFuture
  */
@@ -87,9 +87,9 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
      * {@inheritDoc}
      * <p>
      * This method delegates to internal overloaded version of 
-     * method {@link #submitJob(GridJob, GridArchive)}
+     * method {@link #submitJob(SplitAggregateGridJob, GridArchive)}
      */
-    public GridJobFuture submitJob(GridJob<?,?> job) throws GridJobRejectionException {
+    public GridJobFuture submitJob(SplitAggregateGridJob<?,?> job) throws GridJobRejectionException {
         
     	// Delegate to overloaded version    
     	return submitJob(job, null);
@@ -100,7 +100,7 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
      * <p>
      * This method delegates to each {@GridJob} submission to 
      * internal overloaded version of method 
-     * {@link #submitJob(GridJob, GridArchive)}
+     * {@link #submitJob(SplitAggregateGridJob, GridArchive)}
      */
 	public Map<String, GridJobFuture> submitArchive(GridArchive archive) {
 		
@@ -116,7 +116,7 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
 				//Instantiate GridJob
 				Class<?> cls = Class.forName(className);
 				Constructor<?> constructor = cls.getConstructor();
-				GridJob<?,?> job = (GridJob<?,?>)constructor.newInstance();
+				SplitAggregateGridJob<?,?> job = (SplitAggregateGridJob<?,?>)constructor.newInstance();
 				
 				// Submit and get GridJobFuture
 				futureMap.put(className, submitJob(job, archive));
@@ -144,7 +144,7 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
 	 * @param archive Archive, if applicable. This may be <tt>null</tt>
 	 * @return GridJobFuture for the submitted job
 	 */
-	protected GridJobFuture submitJob(GridJob<?,?> job, GridArchive archive) throws GridJobRejectionException {
+	protected GridJobFuture submitJob(SplitAggregateGridJob<?,?> job, GridArchive archive) throws GridJobRejectionException {
 		
 		log.info("Submitting GridJob " + job.getClass().getName());
 		

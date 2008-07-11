@@ -18,7 +18,7 @@ import java.util.UUID;
 
 import org.nebulaframework.core.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.ClusterJobService;
-import org.nebulaframework.core.job.GridJob;
+import org.nebulaframework.core.job.SplitAggregateGridJob;
 import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.core.job.deploy.GridJobInfo;
 import org.nebulaframework.core.job.exceptions.GridJobPermissionDeniedException;
@@ -59,9 +59,9 @@ public class ClusterManagerServicesFacadeImpl implements ClusterManagerServicesF
 	 * Delegates to {@code ClusterManager}'s {@code ClusterJobService} 
 	 * to submit a given {@code GridJob}.
 	 * 
-	 * @see ClusterJobService#submitJob(UUID, GridJob)
+	 * @see ClusterJobService#submitJob(UUID, SplitAggregateGridJob)
 	 */
-	public String submitJob(UUID owner, GridJob<?,?> job) throws  GridJobRejectionException {
+	public String submitJob(UUID owner, SplitAggregateGridJob<?,?> job) throws  GridJobRejectionException {
 		return this.cluster.getJobService().submitJob(owner, job);
 	}
 
@@ -73,10 +73,11 @@ public class ClusterManagerServicesFacadeImpl implements ClusterManagerServicesF
 	 * given {@code GridArchive}.
 	 * 
 	 * @see GridArchive
-	 * @see ClusterJobService#submitJob(UUID, GridJob, GridArchive)
+	 * @see ClusterJobService#submitJob(UUID, SplitAggregateGridJob, GridArchive)
 	 */
 	public String submitJob(UUID owner, GridJob<?,?> job,
 			GridArchive archive) throws GridJobRejectionException {
+		// If SplitAggregate this, if not other
 		return this.cluster.getJobService().submitJob(owner, job, archive);
 	}
 

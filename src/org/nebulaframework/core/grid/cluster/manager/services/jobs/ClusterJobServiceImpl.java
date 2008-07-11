@@ -18,12 +18,17 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.Session;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.aggregator.AggregatorService;
+import org.nebulaframework.core.grid.cluster.manager.services.jobs.remote.RemoteClusterJobService;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.splitter.SplitterService;
-import org.nebulaframework.core.job.GridJob;
+import org.nebulaframework.core.job.SplitAggregateGridJob;
 import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.core.job.deploy.GridJobInfo;
 import org.nebulaframework.core.job.exceptions.GridJobPermissionDeniedException;
@@ -33,6 +38,10 @@ import org.nebulaframework.core.service.message.ServiceMessage;
 import org.nebulaframework.core.service.message.ServiceMessageType;
 import org.nebulaframework.util.hashing.SHA1Generator;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.jms.remoting.JmsInvokerProxyFactoryBean;
+import org.springframework.jms.support.converter.MessageConversionException;
+import org.springframework.jms.support.converter.SimpleMessageConverter;
+import org.springframework.remoting.support.RemoteInvocation;
 import org.springframework.util.Assert;
 
 /**
@@ -62,11 +71,11 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 
 	private SplitterService splitterService;
 	private AggregatorService aggregatorService;
-
+	private RemoteClusterJobService remoteJobServiceProxy;
+	
 	// Holds GridJobProfiles of all active GridJobs, against its JobId
 	// A LinkedHashMap is used to ensure insertion order iteration
 	private Map<String, GridJobProfile> jobs = new LinkedHashMap<String, GridJobProfile>();
-
 	/**
 	 * Instantiates a ClusterJobServiceImpl for the given {@code ClusterManager}
 	 * instance.
@@ -84,7 +93,7 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	 * <p>
 	 * {@inheritDoc}
 	 */
-	public String submitJob(UUID owner, GridJob<?, ?> job)
+	public String submitJob(UUID owner, SplitAggregateGridJob<?, ?> job)
 			throws GridJobRejectionException {
 		// Delegate to overloaded version
 		return submitJob(owner, job, null);
@@ -96,7 +105,7 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	 * <p>
 	 * {@inheritDoc}
 	 */
-	public String submitJob(UUID owner, GridJob<?, ?> job, GridArchive archive)
+	public String submitJob(UUID owner, SplitAggregateGridJob<?, ?> job, GridArchive archive)
 			throws GridJobRejectionException {
 
 		// Create JobId [ClusterID.OwnerID.RandomUUID]
@@ -168,10 +177,10 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 			throws GridJobPermissionDeniedException, IllegalArgumentException {
 
 		if (isRemoteClusterJob(jobId)) {
-			// TODO Process Remote Job Request
 			log.debug("[ClusterJobService] Remote Job Request {" + jobId + "}");
+			return remoteJobServiceProxy.remoteJobRequest(jobId);
 		}
-		
+
 		log.debug("[ClusterJobService] Local Job Request {" + jobId + "}");
 		
 		try {
@@ -179,7 +188,10 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 			GridJobProfile profile = jobs.get(jobId);
 			
 			// If no Job found
-			if (profile==null) throw new NullPointerException("Job Not Found");
+			if (profile==null) {
+				log.debug("[ClusterJobService] JobId " + jobId + " not in Jobs Collection of Cluster");
+				throw new NullPointerException("Job Not Found");
+			}
 			
 			// Return GridJobInfo for Profile
 			return createInfo(profile);
@@ -192,16 +204,20 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		}
 	}
 
-	private boolean isRemoteClusterJob(String jobId) {
+	/**
+	 * Returns {@code true} if the passed JobId indicates a remote {@code GridJob},
+	 * that is, a {@code GridJob} of another Cluster. This method parses the given
+	 * {@code JobId} to extract the ClusterID portion of it to identify the 
+	 * originating cluster.
+	 * 
+	 * @param jobId JobId to check
+	 * @return true if remote job, false otherwise
+	 * @throws IllegalArgumentException if {@code jobId} is not valid
+	 */
+	private boolean isRemoteClusterJob(String jobId) throws IllegalArgumentException {
 		
 		String jobClusterId = jobId.split("\\.")[0];
-		
-		try {
-			return this.cluster.getClusterId().equals(UUID.fromString(jobClusterId));
-		} catch (IllegalArgumentException e) {
-			// Bad JobId
-			return false;
-		}
+		return !(this.cluster.getClusterId().equals(UUID.fromString(jobClusterId)));
 	}
 
 	/**
@@ -370,6 +386,13 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	@Required
 	public void setJmsSupport(JobServiceJmsSupport jmsSupport) {
 		this.jmsSupport = jmsSupport;
+	}
+
+	// TODO FixDoc
+	@Required
+	public void setRemoteJobServiceProxy(
+			RemoteClusterJobService remoteJobServiceProxy) {
+		this.remoteJobServiceProxy = remoteJobServiceProxy;
 	}
 
 	/**

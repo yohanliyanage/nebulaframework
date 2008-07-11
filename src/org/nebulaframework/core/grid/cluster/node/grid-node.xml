@@ -31,12 +31,14 @@
 	<context:load-time-weaver/>
 	
 	<!-- Client Connection Factory -->
+	<!--  
 	<bean id="jmsConnectionFactory" class="org.springframework.jms.connection.SingleConnectionFactory">
 		<property name="targetConnectionFactory">
 			<amq:connectionFactory brokerURL="${cluster.url}" />
 		</property>
 	</bean>
-	
+	-->
+	<amq:connectionFactory id="jmsConnectionFactory" brokerURL="${cluster.url}" />
 
 	<!-- Local Node Instance -->
 	<bean id="localNode" class="org.nebulaframework.core.grid.cluster.node.GridNode">

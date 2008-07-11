@@ -52,4 +52,8 @@ public class JMSNamingSupport {
 	public static String getFutureQueueName(String jobId) {
 		return "nebula.jobs." + jobId + ".future.queue";
 	}
+
+	public static String getRemoteJobServiceQueueName() {
+		return "nebula.cluster.remote.jobservice.queue";
+	}
 }

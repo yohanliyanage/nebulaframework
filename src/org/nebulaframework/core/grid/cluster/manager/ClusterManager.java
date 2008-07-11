@@ -23,6 +23,8 @@ import org.nebulaframework.core.ID;
 import org.nebulaframework.core.grid.cluster.manager.services.facade.ClusterManagerServicesFacade;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.ClusterJobService;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.InternalClusterJobService;
+import org.nebulaframework.core.grid.cluster.manager.services.jobs.remote.InternalRemoteClusterJobService;
+import org.nebulaframework.core.grid.cluster.manager.services.jobs.remote.RemoteClusterJobServiceImpl;
 import org.nebulaframework.core.grid.cluster.manager.services.messaging.ServiceMessageSender;
 import org.nebulaframework.core.grid.cluster.manager.services.registration.ClusterRegistrationService;
 import org.nebulaframework.core.grid.cluster.manager.services.registration.InternalClusterRegistrationService;
@@ -74,6 +76,7 @@ public class ClusterManager implements InitializingBean {
 	private ServiceMessageSender serviceMessageSender;
 	private InternalClusterRegistrationService clusterRegistrationService;
 	private InternalClusterJobService jobService;
+	private InternalRemoteClusterJobService remoteJobService;
 	
 	/**
 	 * Instantiates ClusterManager, and assigns it a unique identifier.
@@ -198,6 +201,18 @@ public class ClusterManager implements InitializingBean {
 	}
 
 	/**
+	 * Returns the {@code RemoteClusterJobService} of this Cluster.
+	 * <p>
+	 * The {@code RemoteClusterJobService} is responsible for allowing {@code GridNode}s 
+	 * from remote {@code Cluster}s to participate in {@code GridJob}s of this {@code Cluster}.
+	 * 
+	 * @return {@code RemoteClusterJobService} of this Cluster
+	 */
+	public InternalRemoteClusterJobService getRemoteJobService() {
+		return remoteJobService;
+	}
+
+	/**
 	 * Sets the {@code ClusterJobService} for this Cluster.
 	 * <p>
 	 * The {@code ClusterJobService} is responsible for allowing {@code GridNode}s 
@@ -254,6 +269,9 @@ public class ClusterManager implements InitializingBean {
 		
 		// Start Remote Class Loading Service
 		ClassLoadingServiceSupport.startClassLoadingService(this, connectionFactory);
+		
+		// Start Remote Cluster Job Service
+		remoteJobService = new RemoteClusterJobServiceImpl(this,connectionFactory);
 	}
 	
 	// TODO Fix Doc

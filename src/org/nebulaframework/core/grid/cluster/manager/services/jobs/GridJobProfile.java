@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.nebulaframework.core.job.GridJob;
+import org.nebulaframework.core.job.SplitAggregateGridJob;
 import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.core.job.future.GridJobFutureImpl;
 import org.nebulaframework.core.task.GridTask;
@@ -41,7 +41,7 @@ public class GridJobProfile {
 
 	private String jobId; // JobId of GridJob
 	private UUID owner; // Owner Node Id (Submitter)
-	private GridJob<? extends Serializable, ? extends Serializable> job; // GridJob class Reference
+	private SplitAggregateGridJob<? extends Serializable, ? extends Serializable> job; // GridJob class Reference
 	private GridJobFutureImpl future; // GridJobFuture for the Job
 	private GridArchive archive; // If exists, the GridArchive of Job
 
@@ -93,7 +93,7 @@ public class GridJobProfile {
 	 * 
 	 * @return {@code GridJob} instance for the Job
 	 */
-	public GridJob<?,?> getJob() {
+	public SplitAggregateGridJob<?,?> getJob() {
 		return job;
 	}
 
@@ -103,7 +103,7 @@ public class GridJobProfile {
 	 * @param job
 	 *            {@code GridJob} instance
 	 */
-	public void setJob(GridJob<?,?> job) {
+	public void setJob(SplitAggregateGridJob<?,?> job) {
 		this.job = job;
 	}
 
@@ -175,4 +175,10 @@ public class GridJobProfile {
 		return this.archive != null;
 	}
 
+	@Override
+	public String toString() {
+		return this.jobId + (isArchived()?" [Archived]" : " [Non-Archive]");
+	}
+
+	
 }

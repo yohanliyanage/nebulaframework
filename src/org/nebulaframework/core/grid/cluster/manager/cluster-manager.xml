@@ -39,12 +39,14 @@
 	</amq:broker>
  	
 	<!-- JMS Connection Factory -->
+	<!-- 
 	<bean id="jmsConnectionFactory" class="org.springframework.jms.connection.SingleConnectionFactory">
 		<property name="targetConnectionFactory">
 			<amq:connectionFactory brokerURL="${cluster.serviceUrl}" />
 		</property>
 	</bean>
-	
+	 -->
+	<amq:connectionFactory id="jmsConnectionFactory" brokerURL="${cluster.serviceUrl}" />
 
 	<!-- ClusterManager -->
 	<bean id="clusterManager" class="org.nebulaframework.core.grid.cluster.manager.ClusterManager">
@@ -76,6 +78,18 @@
 			<bean class="org.nebulaframework.core.grid.cluster.manager.services.jobs.JobServiceJmsSupport">
 				<property name="connectionFactory"
 					ref="jmsConnectionFactory" />
+			</bean>
+		</property>
+		<property name="remoteJobServiceProxy">
+			<bean class="org.springframework.jms.remoting.JmsInvokerProxyFactoryBean">
+				<property name="connectionFactory" ref="jmsConnectionFactory" />
+				<property name="queue">
+					<amq:queue physicalName="nebula.cluster.remote.jobservice.queue" />
+				</property>
+				<property name="serviceInterface" value="org.nebulaframework.core.grid.cluster.manager.services.jobs.remote.RemoteClusterJobService" />
+				<property name="messageConverter">
+					<bean class="org.nebulaframework.core.grid.cluster.manager.services.jobs.remote.RemoteJobRequestMessageConverter" />
+				</property>
 			</bean>
 		</property>
 		<property name="splitterService">

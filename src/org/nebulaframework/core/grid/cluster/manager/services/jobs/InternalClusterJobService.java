@@ -3,7 +3,7 @@ package org.nebulaframework.core.grid.cluster.manager.services.jobs;
 import org.nebulaframework.core.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.aggregator.AggregatorService;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.splitter.SplitterService;
-import org.nebulaframework.core.job.GridJob;
+import org.nebulaframework.core.job.SplitAggregateGridJob;
 
 /**
  * Internal interface definition for {@code ClusterJobService}, which
@@ -18,7 +18,7 @@ import org.nebulaframework.core.job.GridJob;
  * @version 1.0
  * 
  * @see ClusterManager
- * @see GridJob
+ * @see SplitAggregateGridJob
  *
  */
 public interface InternalClusterJobService extends ClusterJobService {

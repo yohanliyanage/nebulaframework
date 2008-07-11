@@ -40,7 +40,7 @@ import org.nebulaframework.core.job.GridJobState;
  * @version 1.0
  * 
  * @see Future
- * @see GridJob
+ * @see SplitAggregateGridJob
  */
 public interface GridJobFuture {
 	

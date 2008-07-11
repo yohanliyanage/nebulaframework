@@ -25,7 +25,7 @@ import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.GridJobProfile;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.InternalClusterJobService;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.JMSNamingSupport;
-import org.nebulaframework.core.job.GridJob;
+import org.nebulaframework.core.job.SplitAggregateGridJob;
 import org.nebulaframework.core.job.GridJobState;
 import org.nebulaframework.core.job.exceptions.SplitException;
 import org.nebulaframework.core.task.GridTask;
@@ -108,7 +108,7 @@ public class SplitterServiceImpl implements SplitterService {
 		profile.getFuture().setState(GridJobState.INITIALIZING);
 
 		try {
-			GridJob<?,?> job = profile.getJob();
+			SplitAggregateGridJob<?,?> job = profile.getJob();
 
 			// Split to Tasks
 			log.debug("[Splitter] Splitting Tasks");
