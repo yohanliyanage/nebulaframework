@@ -18,7 +18,7 @@ import java.util.UUID;
 
 import org.nebulaframework.core.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.ClusterJobService;
-import org.nebulaframework.core.job.SplitAggregateGridJob;
+import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.core.job.deploy.GridJobInfo;
 import org.nebulaframework.core.job.exceptions.GridJobPermissionDeniedException;
@@ -26,27 +26,30 @@ import org.nebulaframework.core.job.exceptions.GridJobRejectionException;
 
 /**
  * Implementation of {@code ClusterManagerServicesFacade} interface. Allows
- * {@code GridNode}s of the cluster to access the services offered by 
- * {@code ClusterManager}. 
+ * {@code GridNode}s of the cluster to access the services offered by
+ * {@code ClusterManager}.
  * <p>
- * This class is exposed to the {@code GridNode}s as a JMS Remote Service, through 
- * Spring Framework's JMS Remoting support.
- * <p><i>Spring Managed</i>
+ * This class is exposed to the {@code GridNode}s as a JMS Remote Service,
+ * through Spring Framework's JMS Remoting support.
+ * <p>
+ * <i>Spring Managed</i>
  * 
  * @author Yohan Liyanage
  * @version 1.0
  * 
  * @see ClusterManagerServicesFacade
  */
-public class ClusterManagerServicesFacadeImpl implements ClusterManagerServicesFacade{
+public class ClusterManagerServicesFacadeImpl implements
+		ClusterManagerServicesFacade {
 
-	private ClusterManager cluster;	// Reference to ClusterManager instance
-	
+	private ClusterManager cluster; // Reference to ClusterManager instance
+
 	/**
-	 * Instantiates an instance of {@code ClusterManagerServicesFacadeImpl} for the 
-	 * given {@code ClusterManager}.
+	 * Instantiates an instance of {@code ClusterManagerServicesFacadeImpl} for
+	 * the given {@code ClusterManager}.
 	 * 
-	 * @param cluster {@code ClusterManager} of the Cluster.
+	 * @param cluster
+	 *            {@code ClusterManager} of the Cluster.
 	 */
 	public ClusterManagerServicesFacadeImpl(ClusterManager cluster) {
 		super();
@@ -56,27 +59,40 @@ public class ClusterManagerServicesFacadeImpl implements ClusterManagerServicesF
 	/**
 	 * {@inheritDoc}
 	 * <p>
-	 * Delegates to {@code ClusterManager}'s {@code ClusterJobService} 
-	 * to submit a given {@code GridJob}.
+	 * Delegates to {@code ClusterManager}'s {@code ClusterJobService} to
+	 * submit a given {@code GridJob}.
 	 * 
-	 * @see ClusterJobService#submitJob(UUID, SplitAggregateGridJob)
+	 * @see ClusterJobService#submitJob(UUID, GridJob, GridArchive)
 	 */
-	public String submitJob(UUID owner, SplitAggregateGridJob<?,?> job) throws  GridJobRejectionException {
+	public String submitJob(UUID owner, GridJob<?, ?> job)
+			throws GridJobRejectionException {
 		return this.cluster.getJobService().submitJob(owner, job);
 	}
 
+	// TODO Fix Doc
+	public String submitJob(UUID owner, GridJob<?, ?> job,
+			String resultCallbackQueue) throws GridJobRejectionException {
+		return this.cluster.getJobService().submitJob(owner, job, resultCallbackQueue);
+	}
+	
+	// TODO Fix Doc
+	public String submitJob(UUID owner, GridJob<?, ?> job, GridArchive archive,
+			String resultCallbackQueue) throws GridJobRejectionException {
+		return this.cluster.getJobService().submitJob(owner, job, archive, resultCallbackQueue);
+	}
+	
 	/**
 	 * {@inheritDoc}
 	 * <p>
-	 * Delegates to {@code ClusterManager}'s {@code ClusterJobService} 
-	 * to submit a given {@code GridJob}, which is included in the 
-	 * given {@code GridArchive}.
+	 * Delegates to {@code ClusterManager}'s {@code ClusterJobService} to
+	 * submit a given {@code GridJob}, which is included in the given
+	 * {@code GridArchive}.
 	 * 
 	 * @see GridArchive
-	 * @see ClusterJobService#submitJob(UUID, SplitAggregateGridJob, GridArchive)
+	 * @see ClusterJobService#submitJob(UUID, GridJob)
 	 */
-	public String submitJob(UUID owner, GridJob<?,?> job,
-			GridArchive archive) throws GridJobRejectionException {
+	public String submitJob(UUID owner, GridJob<?, ?> job, GridArchive archive)
+			throws GridJobRejectionException {
 		// If SplitAggregate this, if not other
 		return this.cluster.getJobService().submitJob(owner, job, archive);
 	}
@@ -84,23 +100,26 @@ public class ClusterManagerServicesFacadeImpl implements ClusterManagerServicesF
 	/**
 	 * {@inheritDoc}
 	 * <p>
-	 * Delegates to {@code ClusterManager}'s {@code ClusterJobService} 
-	 * to request permission to participate for a specified {@code GridJob}.
+	 * Delegates to {@code ClusterManager}'s {@code ClusterJobService} to
+	 * request permission to participate for a specified {@code GridJob}.
 	 * 
 	 * @see ClusterJobService#requestJob(String)
 	 */
-	public GridJobInfo requestJob(String jobId) throws GridJobPermissionDeniedException {
+	public GridJobInfo requestJob(String jobId)
+			throws GridJobPermissionDeniedException {
 		return this.cluster.getJobService().requestJob(jobId);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 * <p>
-	 * Delegates to {@code ClusterManager}'s {@code ClusterJobService} 
-	 * to request permission to participate for next available {@code GridJob}.
+	 * Delegates to {@code ClusterManager}'s {@code ClusterJobService} to
+	 * request permission to participate for next available {@code GridJob}.
 	 */
 	public GridJobInfo requestNextJob() throws GridJobPermissionDeniedException {
 		return this.cluster.getJobService().requestNextJob();
 	}
+
+
 
 }

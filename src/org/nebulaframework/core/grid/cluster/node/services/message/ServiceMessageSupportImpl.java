@@ -14,6 +14,8 @@
 
 package org.nebulaframework.core.grid.cluster.node.services.message;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import org.apache.commons.logging.Log;
@@ -23,11 +25,12 @@ import org.nebulaframework.core.service.message.ServiceMessage;
 import org.nebulaframework.core.service.message.ServiceMessageType;
 
 /**
- * Implementation of {@code ServiceMessagesSupport}. Handles {@code ServiceMessage}s 
- * sent by the {@code ClusterManager}. The responsibility of this service is to 
- * notify relevant services regarding incoming service messages.
+ * Implementation of {@code ServiceMessagesSupport}. Handles
+ * {@code ServiceMessage}s sent by the {@code ClusterManager}. The
+ * responsibility of this service is to notify relevant services regarding
+ * incoming service messages.
  * <p>
- * {@code ServiceMessage}s are communicated through a special JMS {@code Topic}, 
+ * {@code ServiceMessage}s are communicated through a special JMS {@code Topic},
  * referred to as {@code ServiceTopic}.
  * <p>
  * <i>Spring Managed</i>
@@ -41,15 +44,18 @@ import org.nebulaframework.core.service.message.ServiceMessageType;
 public class ServiceMessageSupportImpl implements ServiceMessagesSupport {
 
 	private static Log log = LogFactory.getLog(ServiceMessageSupportImpl.class);
-	
-	private GridNode node;				// Owner Node
-	private ServiceMessage message;		// Last Message
+
+	private GridNode node; // Owner Node
+	private ServiceMessage message; // Last Message
+
+	private List<ServiceHookElement> hooks = new ArrayList<ServiceHookElement>();
 
 	/**
-	 * Constructs a {@code ServiceMessageSupportImpl} instance for
-	 * given {@code GridNode}.
-	 *  
-	 * @param node Owner {@code GridNode}
+	 * Constructs a {@code ServiceMessageSupportImpl} instance for given
+	 * {@code GridNode}.
+	 * 
+	 * @param node
+	 *            Owner {@code GridNode}
 	 */
 	public ServiceMessageSupportImpl(GridNode node) {
 		super();
@@ -66,19 +72,19 @@ public class ServiceMessageSupportImpl implements ServiceMessagesSupport {
 	/**
 	 * {@inheritDoc}
 	 * <p>
-	 * This method is invoked by Spring's {@code MessageListenerContainer}, 
-	 * through {@code MessageListenerAdapter}, when a {@code ServiceMessage} 
+	 * This method is invoked by Spring's {@code MessageListenerContainer},
+	 * through {@code MessageListenerAdapter}, when a {@code ServiceMessage}
 	 * arrives in the {@code ServiceTopic}.
 	 * <p>
 	 * <i>Spring Invoked</i>
 	 */
 	public void onServiceMessage(ServiceMessage message) {
-		
+
 		log.debug("[Service] " + message);
-		
+
 		this.message = message;
-		
-		//If Job Message
+
+		// If Job Message
 		if (message.isJobMessage()) {
 			// Notify Job Service
 			node.getJobExecutionService().onServiceMessage(message);
@@ -86,23 +92,75 @@ public class ServiceMessageSupportImpl implements ServiceMessagesSupport {
 		if (message.isClusterMessage()) {
 			processClusterMessage(message);
 		}
-		// TODO Write the rest of code to manage message and notify relevant parties
+
+		// TODO Write the rest of code to manage message and notify relevant
+		// parties
+
+		notifyHooks(message);
+
+	}
+
+	// TODO FixDoc
+	private void notifyHooks(final ServiceMessage message) {
+		new Thread(new Runnable() {
+			public void run() {
+				for (ServiceHookElement hook : hooks) {
+					if (hook.getEvent().getType()== message.getType()) {
+						if (hook.getEvent().getMessage()!=null) {
+							if (hook.getEvent().getMessage().equals(message.getMessage())) {
+								hook.getCallback().onServiceEvent();
+							}
+						}
+						else {
+							hook.getCallback().onServiceEvent();
+						}
+					}
+				}
+			}
+		}).start();
 	}
 
 	// TODO Fix Doc
 	protected void processClusterMessage(ServiceMessage message) {
 		String clusterId = message.getMessage();
-		
+
 		// Process only messages from own Cluster
-		if (! node.getClusterId().equals(UUID.fromString(clusterId))) {
+		if (!node.getClusterId().equals(UUID.fromString(clusterId))) {
 			return;
 		}
-		
+
 		// Cluster Shutdown, Shutdown Node
 		if (message.getType() == ServiceMessageType.CLUSTER_SHUTDOWN) {
 			// TODO Fail Over ?
 			node.shutdown(true, true);
 		}
+	}
+
+	// TODO FixDoc
+	public void addServiceHook(ServiceEvent event, HookCallback callback) {
+		// TODO Auto-generated method stub
+
+	}
+
+	// TODO FixDoc
+	private class ServiceHookElement {
+		private ServiceEvent event;
+		private HookCallback callback;
+
+		public ServiceHookElement(ServiceEvent event, HookCallback callback) {
+			super();
+			this.event = event;
+			this.callback = callback;
+		}
+
+		public ServiceEvent getEvent() {
+			return event;
+		}
+
+		public HookCallback getCallback() {
+			return callback;
+		}
+
 	}
 
 }

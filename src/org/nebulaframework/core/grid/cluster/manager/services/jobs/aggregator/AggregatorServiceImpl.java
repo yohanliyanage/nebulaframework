@@ -28,6 +28,7 @@ import org.nebulaframework.core.grid.cluster.manager.services.jobs.GridJobProfil
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.InternalClusterJobService;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.JMSNamingSupport;
 import org.nebulaframework.core.job.GridJobState;
+import org.nebulaframework.core.job.SplitAggregateGridJob;
 import org.nebulaframework.core.job.exceptions.AggregateException;
 import org.nebulaframework.core.task.GridTaskResult;
 import org.springframework.beans.factory.annotation.Required;
@@ -163,7 +164,7 @@ public class AggregatorServiceImpl implements AggregatorService {
 		Serializable jobResult = null;
 		
 		// Get GridTaskResults
-		Collection<GridTaskResult> taskResults = profile.getResultMap().values();
+		Collection<GridTaskResult> taskResults = profile.getResults();
 		List<Serializable> results = new ArrayList<Serializable>();
 		
 		try {
@@ -174,7 +175,7 @@ public class AggregatorServiceImpl implements AggregatorService {
 			
 			log.info("[Aggregator] Aggregating Results for Job : {" + profile.getJobId() + "}");
 			// Do Aggregation
-			jobResult = profile.getJob().aggregate(results);
+			jobResult = ((SplitAggregateGridJob<?, ?>)profile.getJob()).aggregate(results);
 			
 		} catch (Exception e) {
 			

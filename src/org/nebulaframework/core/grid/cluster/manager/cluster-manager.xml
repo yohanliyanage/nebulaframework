@@ -80,6 +80,7 @@
 					ref="jmsConnectionFactory" />
 			</bean>
 		</property>
+		<property name="connnectionFactory" ref="jmsConnectionFactory" />
 		<property name="remoteJobServiceProxy">
 			<bean class="org.springframework.jms.remoting.JmsInvokerProxyFactoryBean">
 				<property name="connectionFactory" ref="jmsConnectionFactory" />
@@ -105,7 +106,14 @@
 				<constructor-arg ref="clusterJobService" />
 				<property name="connectionFactory" ref="jmsConnectionFactory" />
 			</bean>
-		</property>				
+		</property>		
+		<property name="unboundedService">
+			<!--  Unbounded Job Service -->
+			<bean class="org.nebulaframework.core.grid.cluster.manager.services.jobs.unbounded.UnboundedJobServiceImpl">
+				<property name="connectionFactory" ref="jmsConnectionFactory" />
+				<property name="jobService" ref="clusterJobService" />
+			</bean>
+		</property>		
 	</bean>
 	
 	<!-- Cluster Registration Service -->

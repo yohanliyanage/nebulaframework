@@ -17,7 +17,8 @@ package org.nebulaframework.core.grid.cluster.node.services.job.submission;
 import java.util.Map;
 
 import org.nebulaframework.core.grid.cluster.manager.services.facade.ClusterManagerServicesFacade;
-import org.nebulaframework.core.job.SplitAggregateGridJob;
+import org.nebulaframework.core.job.GridJob;
+import org.nebulaframework.core.job.ResultCallback;
 import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.core.job.exceptions.GridJobRejectionException;
 import org.nebulaframework.core.job.future.GridJobFuture;
@@ -31,7 +32,7 @@ import org.nebulaframework.core.job.future.GridJobFuture;
  * 
  * @author Yohan Liyanage
  * @version 1.0
- * @see SplitAggregateGridJob
+ * @see GridJob
  * @see GridArchive
  * @see GridJobFuture
  * @see ClusterManagerServicesFacade
@@ -47,7 +48,10 @@ public interface JobSubmissionService {
 	 * @return {@code GridJobFuture} proxy
 	 * @throws GridJobRejectionException if submission failed
 	 */
-	public GridJobFuture submitJob(SplitAggregateGridJob<?,?> job) throws GridJobRejectionException;
+	public GridJobFuture submitJob(GridJob<?,?> job) throws GridJobRejectionException;
+	
+	// TODO FixDoc
+	public GridJobFuture submitJob(GridJob<?,?> job, ResultCallback callback) throws GridJobRejectionException;
 	
 	/**
 	 * Submits the given {@code GridArchive} to the Grid through {@code ClusterManager}.
@@ -67,4 +71,7 @@ public interface JobSubmissionService {
 	 * qualified class name of the {@code GridJob} class
 	 */
 	public Map<String, GridJobFuture> submitArchive(GridArchive archive);
+	
+	// TODO FixDoc 
+	public Map<String, GridJobFuture> submitArchive(GridArchive archive, Map<String, ResultCallback> callbacks);
 }

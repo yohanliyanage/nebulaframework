@@ -46,4 +46,6 @@ public interface ServiceMessagesSupport {
 	 * @return Last {@code ServiceMessage} or {@code null}
 	 */
 	public ServiceMessage getLastMessage();
+	
+	public void addServiceHook(ServiceEvent event, HookCallback callback);
 }

@@ -23,6 +23,7 @@ public class RemoteClusterJobServiceImpl implements InternalRemoteClusterJobServ
 	public RemoteClusterJobServiceImpl(ClusterManager cluster, ConnectionFactory connectionFactory) {
 		super();
 		this.cluster = cluster;
+		this.connectionFactory = connectionFactory;
 		initialize();
 	}		
 
@@ -31,7 +32,7 @@ public class RemoteClusterJobServiceImpl implements InternalRemoteClusterJobServ
 		
 		JmsInvokerServiceExporter exporter = new JmsInvokerServiceExporter();
 		exporter.setService(this);
-		exporter.setServiceInterface(null);
+		exporter.setServiceInterface(RemoteClusterJobService.class);
 		exporter.afterPropertiesSet();
 		
 		container = new DefaultMessageListenerContainer();

@@ -69,11 +69,11 @@ public class ResultCollector {
 			log.debug("[ResultCollector] Received : Task " + result.getTaskId());
 			
 			// Put result to ResultMap, and remove Task from TaskMap
-			profile.getResultMap().put(result.getTaskId(), result);
-			profile.getTaskMap().remove(result.getTaskId());
+			profile.addResult(result.getTaskId(), result);
+			profile.removeTask(result.getTaskId());
 			
-			log.debug("[ResultCollector] Remaining Tasks  (" + profile.getTaskMap().size() + ")");
-			if (profile.getTaskMap().size() == 0) { // If all results collected
+			log.debug("[ResultCollector] Remaining Tasks  (" + profile.getTaskCount() + ")"); // TODO Remove
+			if (profile.getTaskCount() == 0) { // If all results collected
 				
 				// Aggregate result
 				jobService.getAggregatorService().aggregateResults(profile);
@@ -88,7 +88,7 @@ public class ResultCollector {
 			//Request re-enqueue of Task
 			jobService.getSplitterService().reEnqueueTask(profile.getJobId(),
 					result.getTaskId(),
-					profile.getTaskMap().get(result.getTaskId()));
+					profile.getTask(result.getTaskId()));
 		}
 	}
 
