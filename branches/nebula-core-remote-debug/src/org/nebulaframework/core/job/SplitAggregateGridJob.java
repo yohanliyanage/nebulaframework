@@ -19,7 +19,8 @@ import java.util.List;
 import org.nebulaframework.core.task.GridTask;
 
 /**
- * Represents a Job which is to be executed on Grid. 
+ * Represents a Split-Aggregate model Job which is to be 
+ * executed on Grid. 
  * <p>
  * A Job will be split into multiple {@link GridTask}s and 
  * executed on remote nodes, using the {@link #split()} method.
@@ -37,7 +38,7 @@ import org.nebulaframework.core.task.GridTask;
  * 
  * @see GridTask
  */
-public interface SplitAggregateGridJob<T extends Serializable, R extends Serializable> extends Serializable{
+public interface SplitAggregateGridJob<T extends Serializable, R extends Serializable> extends GridJob<T, R>{
 	
 	/**
 	 * Logic to split this {@code GridJob} into multiple 

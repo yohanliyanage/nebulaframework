@@ -21,7 +21,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.GridExecutionException;
 import org.nebulaframework.core.GridTimeoutException;
-import org.nebulaframework.core.job.SplitAggregateGridJob;
+import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.GridJobState;
 import org.nebulaframework.core.job.GridJobStateListener;
 
@@ -42,7 +42,7 @@ import org.nebulaframework.core.job.GridJobStateListener;
  * @version 1.0
  * 
  * @see GridJobFuture
- * @see SplitAggregateGridJob
+ * @see GridJob
  * @see GridJobState
  */
 public class GridJobFutureImpl implements GridJobFuture {
@@ -82,7 +82,7 @@ public class GridJobFutureImpl implements GridJobFuture {
 	}
 
 	/**
-	 * Sets the result after the {@link SplitAggregateGridJob} execution.
+	 * Sets the result after the {@link GridJob} execution.
 	 * 
 	 * @param result Result
 	 */

@@ -28,7 +28,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.JMSNamingSupport;
 import org.nebulaframework.core.grid.cluster.node.GridNode;
-import org.nebulaframework.core.job.SplitAggregateGridJob;
+import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.core.task.GridTask;
 import org.nebulaframework.core.task.GridTaskResultImpl;
@@ -76,7 +76,7 @@ import org.springframework.jms.listener.DefaultMessageListenerContainer;
  * @version 1.0
  * 
  * @see GridTask
- * @see SplitAggregateGridJob
+ * @see GridJob
  * @see GridArchive
  * @see GridNodeClassLoader
  * @see GridArchiveClassLoader

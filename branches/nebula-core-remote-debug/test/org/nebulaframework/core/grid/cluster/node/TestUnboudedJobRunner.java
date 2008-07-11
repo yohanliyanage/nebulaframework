@@ -13,16 +13,15 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.remoting.RemoteInvocationFailureException;
 import org.springframework.util.StopWatch;
 
-import test.nebulaframework.simpleTest.TestJob;
+import test.nebulaframework.simpleTest.TestUnboundedJob;
 
-public class TestNodeRunner {
+public class TestUnboudedJobRunner {
 	
-	private static Log log = LogFactory.getLog(TestNodeRunner.class);
+	private static Log log = LogFactory.getLog(TestUnboudedJobRunner.class);
 	
 	public static void main(String[] args) {
-
 		// Test Job
-		TestJob testJob = new TestJob();
+		TestUnboundedJob testJob = new TestUnboundedJob();
 		
 		try {
 
@@ -78,7 +77,5 @@ public class TestNodeRunner {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
 	}
-	
 }

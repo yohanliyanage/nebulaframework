@@ -17,7 +17,7 @@ package org.nebulaframework.core.grid.cluster.manager.services.jobs;
 import java.util.UUID;
 
 import org.nebulaframework.core.grid.cluster.manager.ClusterManager;
-import org.nebulaframework.core.job.SplitAggregateGridJob;
+import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.core.job.deploy.GridJobInfo;
 import org.nebulaframework.core.job.exceptions.GridJobPermissionDeniedException;
@@ -32,7 +32,7 @@ import org.nebulaframework.core.job.exceptions.GridJobRejectionException;
  * @version 1.0
  * 
  * @see ClusterManager
- * @see SplitAggregateGridJob
+ * @see GridJob
  *
  */
 public interface ClusterJobService {
@@ -49,7 +49,10 @@ public interface ClusterJobService {
 	 * @throws GridJobRejectionException if job is rejected
 	 */
 	public String submitJob(UUID owner,
-			SplitAggregateGridJob<?,?> job) throws GridJobRejectionException;
+			GridJob<?,?> job) throws GridJobRejectionException;
+	
+	// TODO FixDoc
+	public String submitJob(UUID owner, GridJob<?,?> job,  String resultCallbackQueue) throws GridJobRejectionException;
 	
 	/**
 	 * Submits an <i>archived</i> {@code GridJob} to the {@code ClusterManager}, 
@@ -66,7 +69,11 @@ public interface ClusterJobService {
 	 * @throws GridJobRejectionException if job is rejected
 	 */	
 	public String submitJob(UUID owner,
-			SplitAggregateGridJob<?,?> job, GridArchive archive) throws GridJobRejectionException;
+			GridJob<?,?> job, GridArchive archive) throws GridJobRejectionException;
+	
+	// TODO FixDoc
+	public String submitJob(UUID owner,
+			GridJob<?,?> job, GridArchive archive, String resultCallbackQueue) throws GridJobRejectionException;
 	
 	/**
 	 * Requests permission for the invoking {@code GridNode} 

@@ -15,11 +15,13 @@
 package org.nebulaframework.core.grid.cluster.manager.services.jobs;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.nebulaframework.core.job.SplitAggregateGridJob;
+import org.nebulaframework.core.job.GridJob;
+import org.nebulaframework.core.job.ResultCallback;
 import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.core.job.future.GridJobFutureImpl;
 import org.nebulaframework.core.task.GridTask;
@@ -41,10 +43,12 @@ public class GridJobProfile {
 
 	private String jobId; // JobId of GridJob
 	private UUID owner; // Owner Node Id (Submitter)
-	private SplitAggregateGridJob<? extends Serializable, ? extends Serializable> job; // GridJob class Reference
+	private GridJob<? extends Serializable, ? extends Serializable> job; // GridJob class Reference
 	private GridJobFutureImpl future; // GridJobFuture for the Job
 	private GridArchive archive; // If exists, the GridArchive of Job
 
+	private ResultCallback callbackProxy;
+	
 	// Tasks of GridJob, against TaskId (Sequence Number)
 	private Map<Integer, GridTask<?>> taskMap = new HashMap<Integer, GridTask<?>>();
 
@@ -93,7 +97,7 @@ public class GridJobProfile {
 	 * 
 	 * @return {@code GridJob} instance for the Job
 	 */
-	public SplitAggregateGridJob<?,?> getJob() {
+	public GridJob<?,?> getJob() {
 		return job;
 	}
 
@@ -103,7 +107,7 @@ public class GridJobProfile {
 	 * @param job
 	 *            {@code GridJob} instance
 	 */
-	public void setJob(SplitAggregateGridJob<?,?> job) {
+	public void setJob(GridJob<?,?> job) {
 		this.job = job;
 	}
 
@@ -126,23 +130,72 @@ public class GridJobProfile {
 		this.future = future;
 	}
 
-	/**
-	 * Returns the Map of GridTasks for the Job.
-	 * 
-	 * @return GridTasks Map
-	 */
-	public Map<Integer, GridTask<?>> getTaskMap() {
-		return taskMap;
+	// TODO FixDoc
+	public void addResult(int taskId, GridTaskResult result) {
+		this.resultMap.put(taskId, result);
+		fireCallback(result.getResult());
+	}
+	
+	// TODO FixDoc
+	public void fireCallback(final Serializable result) {
+		
+		if (callbackProxy == null) return;
+		
+		new Thread(new Runnable() {
+			public void run() {
+				callbackProxy.onResult(result);
+			}
+		}).start();
 	}
 
-	/**
-	 * Returns the Map of GridTaskResults for the Job.
-	 * 
-	 * @return GridTaskResults Map
-	 */
-	public Map<Integer, GridTaskResult> getResultMap() {
-		return resultMap;
+	// TODO FixDoc
+	public void addTask(int taskId, GridTask<?> task) {
+		this.taskMap.put(taskId, task);
 	}
+	
+	// TODO FixDoc
+	public GridTask<?> removeTask(int taskId) {
+		return this.taskMap.remove(taskId);
+	}
+	
+	// TODO FixDoc
+	public GridTask<?> getTask(int taskId) {
+		return this.taskMap.get(taskId);
+	}
+	
+	// TODO FixDoc
+	public int getTaskCount() {
+		return this.taskMap.size();
+	}
+	
+	// TODO FixDoc
+	public int getResultCount() {
+		return this.resultMap.size();
+	}
+	
+	// TODO FixDoc
+	public Collection<GridTaskResult> getResults() {
+		return this.resultMap.values();
+	}
+	
+//	
+//	/**
+//	 * Returns the Map of GridTasks for the Job.
+//	 * 
+//	 * @return GridTasks Map
+//	 */
+//	public Map<Integer, GridTask<?>> getTaskMap() {
+//		return taskMap;
+//	}
+//
+//	/**
+//	 * Returns the Map of GridTaskResults for the Job.
+//	 * 
+//	 * @return GridTaskResults Map
+//	 */
+//	public Map<Integer, GridTaskResult> getResultMap() {
+//		return resultMap;
+//	}
 
 	/**
 	 * Returns the {@code GridArchive} of the Job, or {@code null} if not
@@ -175,9 +228,15 @@ public class GridJobProfile {
 		return this.archive != null;
 	}
 
+	// TODO FixDoc
 	@Override
 	public String toString() {
 		return this.jobId + (isArchived()?" [Archived]" : " [Non-Archive]");
+	}
+
+	// TODO FixDoc
+	public void setResultCallback(ResultCallback proxy) {
+		this.callbackProxy = proxy;
 	}
 
 	

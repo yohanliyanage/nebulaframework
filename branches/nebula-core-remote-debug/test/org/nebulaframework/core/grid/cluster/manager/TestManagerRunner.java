@@ -19,8 +19,8 @@ public class TestManagerRunner {
 	
 	public static void main(String[] args) throws Exception {
 		
-		ClusterManager mgr = startContainer();
-		
+		//ClusterManager mgr = startContainer();
+		startContainer();
 		BrokerService broker = (BrokerService) ctx.getBean("broker");
 		
 		System.out.println("Press any key to Add new Network Broker");

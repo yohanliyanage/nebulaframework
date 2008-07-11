@@ -27,7 +27,7 @@ import java.util.zip.ZipFile;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nebulaframework.core.job.SplitAggregateGridJob;
+import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.deployment.classloading.GridArchiveClassLoader;
 import org.nebulaframework.util.hashing.SHA1Generator;
 import org.nebulaframework.util.io.IOSupport;
@@ -86,7 +86,7 @@ import org.springframework.util.Assert;
  * @author Yohan Liyanage
  * @version 1.0
  * 
- * @see SplitAggregateGridJob
+ * @see GridJob
  * @see GridArchiveClassLoader
  */
 public class GridArchive implements Serializable {
@@ -312,14 +312,24 @@ public class GridArchive implements Serializable {
 		
 		// Get all interfaces, and process each
 		for(Class<?> iface : cls.getInterfaces()) {
-			// If class implements GridJob interface
-			if (iface.getName().equals(SplitAggregateGridJob.class.getName())) {
+			// If class implements GridJob interfaces
+			if (isGridJobInterface(iface)) {
 				log.debug("[GridArchive] Found GridJob Class " + cls.getName());
 				return true;
 			}
 		}
 		return false;
 	}	
+	
+	// TODO FixDoc
+	private static boolean isGridJobInterface(Class<?> intrface) {
+		for(Class<?> iface : intrface.getInterfaces()) {
+			if (iface.getName().equals(GridJob.class.getName())) {
+				return true;
+			}
+		}
+		return false;
+	}
 	
 	/**
 	 * Converts the given file name to fully qualified class name.

@@ -108,7 +108,7 @@ public class SplitterServiceImpl implements SplitterService {
 		profile.getFuture().setState(GridJobState.INITIALIZING);
 
 		try {
-			SplitAggregateGridJob<?,?> job = profile.getJob();
+			SplitAggregateGridJob<?,?> job = (SplitAggregateGridJob<?, ?>) profile.getJob();
 
 			// Split to Tasks
 			log.debug("[Splitter] Splitting Tasks");
@@ -121,7 +121,7 @@ public class SplitterServiceImpl implements SplitterService {
 			for (int i = 0; i < taskList.size(); i++) {
 				GridTask<?> task = (GridTask<?>) taskList.get(i);
 				enqueueTask(profile.getJobId(), i, task); 	// Put to Task Queue
-				profile.getTaskMap().put(i, task); 			// Put copy to TaskMap in Profile
+				profile.addTask(i, task);					// Put copy to TaskMap in Profile
 			}
 			
 		} catch (Exception e) {
