@@ -1,14 +1,12 @@
-package org.nebulaframework.core.job;
+package org.nebulaframework.core.job.unbounded;
 
 import java.io.Serializable;
 
 import org.nebulaframework.core.task.GridTask;
 
-// TODO Fix Doc, Extend Common GridJob interface
+// TODO Fix Doc, Extend Common GridJob interface | ServerSide stuff here
 public interface UnboundedGridJob<T extends GridTask<R>, R extends Serializable> extends Serializable{
 	
-	// Invoked repetitively for each task, don't use instance/class variables
-	// to keep state
 	// TODO FixDoc
 	public T task();
 	

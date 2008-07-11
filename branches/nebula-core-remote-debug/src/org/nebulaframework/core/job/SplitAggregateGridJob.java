@@ -37,7 +37,7 @@ import org.nebulaframework.core.task.GridTask;
  * 
  * @see GridTask
  */
-public interface GridJob<T extends Serializable, R extends Serializable> extends Serializable{
+public interface SplitAggregateGridJob<T extends Serializable, R extends Serializable> extends Serializable{
 	
 	/**
 	 * Logic to split this {@code GridJob} into multiple 

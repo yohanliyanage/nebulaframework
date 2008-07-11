@@ -26,7 +26,7 @@ public class TestManagerRunner {
 		System.out.println("Press any key to Add new Network Broker");
 		System.in.read();
 		
-		NetworkConnector con = broker.addNetworkConnector("static://(tcp://localhost:61617)");
+		NetworkConnector con = broker.addNetworkConnector("static://(tcp://excalibur:61616)");
 		
 		if (con!=null) {
 			// con.addExcludedDestination(new ActiveMQQueue(">"));
@@ -34,6 +34,7 @@ public class TestManagerRunner {
 			con.setConduitSubscriptions(false);
 			con.setDynamicOnly(true);
 			con.addExcludedDestination(new ActiveMQQueue("nebula.cluster.registration.queue"));
+			con.addExcludedDestination(new ActiveMQQueue("nebula.cluster.services.facade.queue"));
 			con.setNetworkTTL(128);
 			con.start();
 		}
