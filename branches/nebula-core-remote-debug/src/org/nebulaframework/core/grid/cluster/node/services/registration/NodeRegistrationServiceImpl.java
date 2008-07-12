@@ -111,5 +111,12 @@ public class NodeRegistrationServiceImpl implements NodeRegistrationService {
 		this.clusterRegistrationService.unregisterNode(node.getId());
 		
 		log.info("Node " + node.getId() + " unregistered from Cluster");
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public boolean isRegistered() {
+		return this.registration!=null;
 	}	
 }

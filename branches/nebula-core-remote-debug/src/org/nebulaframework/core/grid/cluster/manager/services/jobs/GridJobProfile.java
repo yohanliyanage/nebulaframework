@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.ResultCallback;
 import org.nebulaframework.core.job.archive.GridArchive;
@@ -41,6 +43,8 @@ import org.nebulaframework.core.task.GridTaskResult;
  */
 public class GridJobProfile {
 
+	private static Log log = LogFactory.getLog(GridJobProfile.class);
+	
 	private String jobId; // JobId of GridJob
 	private UUID owner; // Owner Node Id (Submitter)
 	private GridJob<? extends Serializable, ? extends Serializable> job; // GridJob class Reference
@@ -55,6 +59,7 @@ public class GridJobProfile {
 	// Results for GridTasks, against TaskId (Sequence Number)
 	private Map<Integer, GridTaskResult> resultMap = new HashMap<Integer, GridTaskResult>();
 
+	
 	/**
 	 * Returns JobId of the Job
 	 * 
@@ -111,6 +116,7 @@ public class GridJobProfile {
 		this.job = job;
 	}
 
+
 	/**
 	 * Returns the {@code GridJobFutureImpl} for the Job.
 	 * 
@@ -131,7 +137,7 @@ public class GridJobProfile {
 	}
 
 	// TODO FixDoc
-	public void addResult(int taskId, GridTaskResult result) {
+	public synchronized void addResult(int taskId, GridTaskResult result) {
 		this.resultMap.put(taskId, result);
 		fireCallback(result.getResult());
 	}
@@ -143,18 +149,22 @@ public class GridJobProfile {
 		
 		new Thread(new Runnable() {
 			public void run() {
-				callbackProxy.onResult(result);
+				try {
+					callbackProxy.onResult(result);
+				} catch (Exception e) {
+					log.warn("[ResultCallback] Exception on Client Side", e);
+				}
 			}
 		}).start();
 	}
 
 	// TODO FixDoc
-	public void addTask(int taskId, GridTask<?> task) {
+	public synchronized void addTask(int taskId, GridTask<?> task) {
 		this.taskMap.put(taskId, task);
 	}
 	
 	// TODO FixDoc
-	public GridTask<?> removeTask(int taskId) {
+	public synchronized GridTask<?> removeTask(int taskId) {
 		return this.taskMap.remove(taskId);
 	}
 	
@@ -164,17 +174,17 @@ public class GridJobProfile {
 	}
 	
 	// TODO FixDoc
-	public int getTaskCount() {
+	public synchronized int getTaskCount() {
 		return this.taskMap.size();
 	}
 	
 	// TODO FixDoc
-	public int getResultCount() {
+	public synchronized int getResultCount() {
 		return this.resultMap.size();
 	}
 	
 	// TODO FixDoc
-	public Collection<GridTaskResult> getResults() {
+	public synchronized Collection<GridTaskResult> getResults() {
 		return this.resultMap.values();
 	}
 	

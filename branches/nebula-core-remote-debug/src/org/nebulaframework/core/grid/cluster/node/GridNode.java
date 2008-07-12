@@ -307,6 +307,11 @@ public class GridNode implements InitializingBean{
 			log.error("[GridNode] Shutting Down GridNode as ClusterManager has Shutdown");
 			System.exit(0);
 		}
+		else {
+			if (nodeRegistrationService.isRegistered()) {
+				nodeRegistrationService.unregister();
+			}
+		}
 		
 	}
 	
