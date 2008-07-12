@@ -14,7 +14,7 @@ public class MandelbrotJob implements SplitAggregateGridJob<MandelbrotResult, Se
     private int ysize;       
     private int ymid;
     public static final int MAX_LINES = 10;  // # of scan lines per task ( must be > MIN_LINES)
-    public static final int MIN_LINES = 2;  // # of scan lines per task ( must be > 1)
+    public static final int MIN_LINES = 1;  // # of scan lines per task ( must be > 1)
     
     // initial region for which Mandelbrot is being computed
     private double x1 = -2.25;
