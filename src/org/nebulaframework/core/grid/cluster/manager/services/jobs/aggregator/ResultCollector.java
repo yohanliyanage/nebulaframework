@@ -18,6 +18,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.GridJobProfile;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.InternalClusterJobService;
+import org.nebulaframework.core.job.GridJobState;
 import org.nebulaframework.core.task.GridTaskResult;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 
@@ -68,17 +69,27 @@ public class ResultCollector {
 			
 			log.debug("[ResultCollector] Received : Task " + result.getTaskId());
 			
-			// Put result to ResultMap, and remove Task from TaskMap
-			profile.addResult(result.getTaskId(), result);
-			profile.removeTask(result.getTaskId());
+			boolean finished = false;
 			
-			log.debug("[ResultCollector] Remaining Tasks  (" + profile.getTaskCount() + ")"); // TODO Remove
-			if (profile.getTaskCount() == 0) { // If all results collected
+			
+			synchronized (profile) {
 				
+				// Put result to ResultMap, and remove Task from TaskMap
+				profile.addResult(result.getTaskId(), result);
+				profile.removeTask(result.getTaskId());
+				
+				log.debug("[ResultCollector] Remaining Tasks  (" + profile.getTaskCount() + ")"); // TODO Remove
+				
+				// Check if Job has finished
+				finished = (profile.getTaskCount() == 0)&&(profile.getFuture().getState()== GridJobState.EXECUTING);
+			}
+
+			// If Job Finished
+			if (finished) { 
+
 				// Aggregate result
 				jobService.getAggregatorService().aggregateResults(profile);
-				
-				this.destroy(); // Destroy the Result Collector
+				this.destroy(); // Destroy the Result Collector	
 			}
 
 		} else { // Result Not Valid / Exception

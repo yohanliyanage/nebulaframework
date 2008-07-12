@@ -42,6 +42,14 @@ public interface NodeRegistrationService {
 	public Registration getRegistration();
 
 	/**
+	 * Returns {@code true} if this node is registered in a 
+	 * cluster.
+	 * 
+	 * @return if registered, {@code true}, otherwise {@code false}.
+	 */
+	public boolean isRegistered();
+	
+	/**
 	 * Registers this {@code GridNode} in the current cluster,
 	 * as specified in the {@code Broker URL}.
 	 * <p>
