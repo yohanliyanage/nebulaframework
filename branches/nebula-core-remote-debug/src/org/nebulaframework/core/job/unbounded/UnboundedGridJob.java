@@ -17,6 +17,6 @@ public interface UnboundedGridJob<T extends Serializable, R extends Serializable
 	// Invoked on each Result, may b used to update state to generate
 	// future tasks using these results
 	// TODO FixDoc
-	public void processResult(Serializable result);
+	public Serializable processResult(Serializable result);
 	
 }

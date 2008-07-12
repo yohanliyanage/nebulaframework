@@ -12,8 +12,9 @@ public class TestUnboundedJob implements UnboundedGridJob<Integer, Serializable>
 	private static final long serialVersionUID = 7973628989182769533L;
 	private static Log log = LogFactory.getLog(TestUnboundedJob.class);
 	
-	public void processResult(Serializable result) {
+	public Serializable processResult(Serializable result) {
 		log.info("FROM PROCESS RESULT : " + result);
+		return result;
 	}
 
 	public GridTask<Integer> task() {

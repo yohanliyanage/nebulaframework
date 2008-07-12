@@ -1,5 +1,7 @@
 package org.nebulaframework.core.grid.cluster.manager.services.jobs.unbounded;
 
+import java.io.Serializable;
+
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -62,20 +64,21 @@ public class UnboundedJobProcessor {
 				while (true) {
 
 					GridTask<?> task = job.task();
-					
+
 					if (task == null) {
-						log.info("[UnboundedJobProcessor] Task was Null. Stopping");
+						log
+								.info("[UnboundedJobProcessor] Task was Null. Stopping");
 						break;
 					}
 
 					enqueueTask(profile.getJobId(), ++taskId, task);
 					profile.addTask(taskId, task);
-					
+
 					// Pause for some duration if more than 100 tasks are there
 					// to ensure TaskQueue won't overload
 					try {
-						if (profile.getTaskCount()>100) {
-								Thread.sleep(profile.getTaskCount() * 50);
+						if (profile.getTaskCount() > 100) {
+							Thread.sleep(profile.getTaskCount() * 50);
 						}
 					} catch (InterruptedException e) {
 						log.error(e);
@@ -104,18 +107,29 @@ public class UnboundedJobProcessor {
 
 		// Send GridTask as a JMS Object Message to TaskQueue
 		jmsTemplate.convertAndSend(JMSNamingSupport.getTaskQueueName(jobId),
-				task, new MessagePostProcessor() {
-			
-					public Message postProcessMessage(Message message)
-							throws JMSException {
-						
-						// Post Process to include Meta Data
-						message.setJMSCorrelationID(jobId); 		// Set Correlation ID to Job Id
-						message.setIntProperty("taskId", taskId); 	// Put taskId as a property
-						log.debug("Enqueued Task : " + taskId);
-						return message;
-					}
-				});
+									task, new MessagePostProcessor() {
+
+										public Message postProcessMessage(
+												Message message)
+												throws JMSException {
+
+											// Post Process to include Meta Data
+											message.setJMSCorrelationID(jobId); // Set
+																				// Correlation
+																				// ID
+																				// to
+																				// Job
+																				// Id
+											message.setIntProperty("taskId",
+																	taskId); // Put
+																				// taskId
+																				// as a
+																				// property
+											log.debug("Enqueued Task : "
+													+ taskId);
+											return message;
+										}
+									});
 	}
 
 	public void reEnqueueTask(final String jobId, final int taskId,
@@ -127,13 +141,12 @@ public class UnboundedJobProcessor {
 		log.info("[UnboundedJobProcessor] Stopping Job Execution");
 		// Notify Workers
 		jobService.notifyJobEnd(profile.getJobId());
-		
+
 		// Update Future and return Result
 		profile.getFuture().setResult(null);
 		profile.getFuture().setState(GridJobState.COMPLETE);
-		
+
 		destroy();
-		
 
 	}
 
@@ -163,18 +176,24 @@ public class UnboundedJobProcessor {
 	public void onResult(final GridTaskResult taskResult) {
 		if (taskResult.isComplete()) { // Result is Valid / Complete
 
-			log.debug("[UnboundedJobProcessor] Received : Task " + taskResult.getTaskId());
-			
+			log.debug("[UnboundedJobProcessor] Received : Task "
+					+ taskResult.getTaskId());
+
 			// Post Process Result
-			doPostProcessResult(taskResult);
-			
-			// Put result to ResultMap, and remove Task from TaskMap
-			profile.fireCallback(taskResult.getResult());
+			Serializable result = doPostProcessResult(taskResult.getResult());
+
+
+			if (result != null) {
+				// Fire callback if its not null
+				profile.fireCallback(result);
+			}
+
+			// Task completed, remove it from TaskMap
 			profile.removeTask(taskResult.getTaskId());
 
 		} else { // Result Not Valid / Exception
 
-			log.warn("[UnboundedJobProcessor] Result Failed, ReEnqueueing - "
+			log.warn("[UnboundedJobProcessor] Result Failed [" + taskResult.getTaskId() +"], ReEnqueueing - "
 					+ taskResult.getException());
 
 			// Request re-enqueue of Task
@@ -183,13 +202,9 @@ public class UnboundedJobProcessor {
 									profile.getTask(taskResult.getTaskId()));
 		}
 	}
-	
-	protected void doPostProcessResult(final GridTaskResult taskResult) {
-		new Thread(new Runnable() {
-			public void run() {
-				job.processResult(taskResult.getResult());
-			}
-		}).start();
+
+	protected Serializable doPostProcessResult(final Serializable result) {
+		return job.processResult(result);
 	}
 
 	protected void destroy() {
