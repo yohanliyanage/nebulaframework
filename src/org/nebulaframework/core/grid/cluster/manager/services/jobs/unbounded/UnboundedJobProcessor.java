@@ -12,6 +12,7 @@ import org.nebulaframework.core.grid.cluster.manager.services.jobs.GridJobProfil
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.InternalClusterJobService;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.JMSNamingSupport;
 import org.nebulaframework.core.job.GridJobState;
+import org.nebulaframework.core.job.annotations.ProcessingSettings;
 import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
 import org.nebulaframework.core.task.GridTask;
 import org.nebulaframework.core.task.GridTaskResult;
@@ -25,6 +26,9 @@ import org.springframework.util.Assert;
 public class UnboundedJobProcessor {
 
 	private static Log log = LogFactory.getLog(UnboundedJobProcessor.class);
+
+	private int maxTaskConstant = 100;
+	private int reductionFactorConstant = 50;
 
 	private GridJobProfile profile;
 	private UnboundedGridJob<?, ?> job;
@@ -45,8 +49,28 @@ public class UnboundedJobProcessor {
 
 		this.profile = profile;
 		this.job = (UnboundedGridJob<?, ?>) profile.getJob();
+		
+		// Use Reflection to extract any processing instructions
+		extractProcessingInsructions(job);
+		
 		this.connectionFactory = connectionFactory;
 		this.jobService = jobService;
+	}
+
+	private void extractProcessingInsructions(UnboundedGridJob<?, ?> job) {
+		
+		Class<?> clazz = job.getClass();
+		ProcessingSettings settings = clazz.getAnnotation(ProcessingSettings.class);
+		
+		if (settings==null) return;
+		
+		this.maxTaskConstant = settings.maxTasksInQueue();
+		this.reductionFactorConstant = settings.reductionFactor();
+		
+		log.debug("Custom Processing Instructions Found - maxTasks : " + 
+		          maxTaskConstant + " | reduction factor : " + 
+		          reductionFactorConstant);
+		
 	}
 
 	public void start() {
@@ -77,8 +101,8 @@ public class UnboundedJobProcessor {
 					// Pause for some duration if more than 100 tasks are there
 					// to ensure TaskQueue won't overload
 					try {
-						if (profile.getTaskCount() > 100) {
-							Thread.sleep(profile.getTaskCount() * 50);
+						if (profile.getTaskCount() > maxTaskConstant) {
+							Thread.sleep(profile.getTaskCount() * reductionFactorConstant);
 						}
 					} catch (InterruptedException e) {
 						log.error(e);
@@ -105,31 +129,30 @@ public class UnboundedJobProcessor {
 	private void enqueueTask(final String jobId, final int taskId,
 			GridTask<?> task) {
 
+		String queueName = JMSNamingSupport.getTaskQueueName(jobId);
+		MessagePostProcessor postProcessor = new MessagePostProcessor() {
+
+			public Message postProcessMessage(
+					Message message)
+					throws JMSException {
+
+				/*-- Post Process to include Meta Data --*/
+				
+				// Set Correlation ID to Job Id
+				message.setJMSCorrelationID(jobId);
+				
+				// Put taskId as a property
+				message.setIntProperty("taskId",taskId); 
+				
+				log.debug("Enqueued Task : "+taskId);
+				
+				return message;
+			}
+		};
+		
 		// Send GridTask as a JMS Object Message to TaskQueue
-		jmsTemplate.convertAndSend(JMSNamingSupport.getTaskQueueName(jobId),
-									task, new MessagePostProcessor() {
-
-										public Message postProcessMessage(
-												Message message)
-												throws JMSException {
-
-											// Post Process to include Meta Data
-											message.setJMSCorrelationID(jobId); // Set
-																				// Correlation
-																				// ID
-																				// to
-																				// Job
-																				// Id
-											message.setIntProperty("taskId",
-																	taskId); // Put
-																				// taskId
-																				// as a
-																				// property
-											log.debug("Enqueued Task : "
-													+ taskId);
-											return message;
-										}
-									});
+		jmsTemplate.convertAndSend(queueName, task, postProcessor);
+									
 	}
 
 	public void reEnqueueTask(final String jobId, final int taskId,
@@ -157,22 +180,16 @@ public class UnboundedJobProcessor {
 
 	private void initializeResultListener() {
 
-		new Thread(new Runnable(){
+		MessageListenerAdapter adapter = new MessageListenerAdapter(
+				UnboundedJobProcessor.this);
+		adapter.setDefaultListenerMethod("onResult");
 
-			public void run() {
-				MessageListenerAdapter adapter = new MessageListenerAdapter(UnboundedJobProcessor.this);
-				adapter.setDefaultListenerMethod("onResult");
-
-				container = new DefaultMessageListenerContainer();
-				container.setConnectionFactory(connectionFactory);
-				container.setDestinationName(JMSNamingSupport
-						.getResultQueueName(profile.getJobId()));
-				container.setMessageListener(adapter);
-				container.afterPropertiesSet();				
-			}
-			
-		}).start();
-
+		container = new DefaultMessageListenerContainer();
+		container.setConnectionFactory(connectionFactory);
+		container.setDestinationName(JMSNamingSupport
+				.getResultQueueName(profile.getJobId()));
+		container.setMessageListener(adapter);
+		container.afterPropertiesSet();
 
 	}
 
@@ -189,7 +206,6 @@ public class UnboundedJobProcessor {
 			// Post Process Result
 			Serializable result = doPostProcessResult(taskResult.getResult());
 
-
 			if (result != null) {
 				// Fire callback if its not null
 				profile.fireCallback(result);
@@ -200,7 +216,8 @@ public class UnboundedJobProcessor {
 
 		} else { // Result Not Valid / Exception
 
-			log.warn("[UnboundedJobProcessor] Result Failed [" + taskResult.getTaskId() +"], ReEnqueueing - "
+			log.warn("[UnboundedJobProcessor] Result Failed ["
+					+ taskResult.getTaskId() + "], ReEnqueueing - "
 					+ taskResult.getException());
 
 			// Request re-enqueue of Task

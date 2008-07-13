@@ -8,6 +8,7 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Date;
 
 import javax.swing.JFrame;
 
@@ -113,6 +114,8 @@ public class BuddhabrotApp extends JFrame {
 			
 			// Start Job Submission
 			sw.start();
+			
+			System.err.println(new Date());
 			
 			GridJobFuture future = node.getJobSubmissionService()
 					.submitJob(buddhabrotJob, new ResultCallback() {
