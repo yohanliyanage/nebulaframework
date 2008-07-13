@@ -87,7 +87,12 @@ public class ServiceMessageSupportImpl implements ServiceMessagesSupport {
 		// If Job Message
 		if (message.isJobMessage()) {
 			// Notify Job Service
-			node.getJobExecutionService().onServiceMessage(message);
+			if (node.getJobExecutionService()!=null) {
+				node.getJobExecutionService().onServiceMessage(message);
+			}
+			else {
+				log.debug("[ServiceMessage]Job Message ignored as no JobExecutionService is registered");
+			}
 		}
 		if (message.isClusterMessage()) {
 			processClusterMessage(message);

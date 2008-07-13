@@ -191,13 +191,11 @@ public class GridNode implements InitializingBean{
 	 * The {@code JobExecutionService} is responsible for registration with 
 	 * new jobs and execution of tasks assigned.
 	 * <p>
-	 * <b>Note : </b>This is a <b>required</b> dependency.
-	 * <p>
+	 * This may be {@code null} for non-worker GridNodes (job submission only)
 	 * <i>Spring Injected</i>
 	 * 
 	 * @param jobExecutionService {@code JobExecutionService} implementation
 	 */
-	@Required
 	public void setJobExecutionService(JobExecutionService jobExecutionService) {
 		this.jobExecutionService = jobExecutionService;
 	}
