@@ -5,9 +5,11 @@ import java.io.Serializable;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nebulaframework.core.job.annotations.ProcessingSettings;
 import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
 import org.nebulaframework.core.task.GridTask;
 
+@ProcessingSettings(maxTasksInQueue=5,reductionFactor=1000)
 public class BuddhabrotJob implements UnboundedGridJob<BuddhabrotResult,Serializable> {
 
 	private static final long serialVersionUID = 8997815059325788647L;
@@ -25,11 +27,6 @@ public class BuddhabrotJob implements UnboundedGridJob<BuddhabrotResult,Serializ
 	private int maxexposureRed; 
 	private int maxexposureGreen; 
 	
-	
-	private int rawJobs = 0;
-	private int resultJobs = 0;
-	
-	
 	public BuddhabrotJob(int width, int height) {
 		
 		super();
@@ -43,21 +40,6 @@ public class BuddhabrotJob implements UnboundedGridJob<BuddhabrotResult,Serializ
 	}
 
 	public GridTask<BuddhabrotResult> task() {
-		
-		// TODO A way to read the # of current workers for job?
-		
-		if (rawJobs - resultJobs > 10) {
-			try {
-				//Thread.sleep((rawJobs - resultJobs) * 200);
-				synchronized (log) {
-					// Wait till a  result comes
-					log.wait();
-				}
-			} catch (InterruptedException e) {
-				log.error(e);
-			}
-		}
-		rawJobs++;
 		
 		log.debug("Returning Raw Job");
 		
@@ -78,19 +60,13 @@ public class BuddhabrotJob implements UnboundedGridJob<BuddhabrotResult,Serializ
 
 		
 		// Update Exposures
-		
 		updateExposures(exposureRed, result.getExposureRed());
 		updateExposures(exposureGreen, result.getExposureGreen());
 		updateExposures(exposureBlue, result.getExposureBlue());
 		
 		findMaxExposure();
-		resultJobs++;
 		
 		log.debug("Result Received : Finalized");
-		
-		synchronized (log) {
-			log.notifyAll();
-		}
 		
 		return calculateRGB();
 		
