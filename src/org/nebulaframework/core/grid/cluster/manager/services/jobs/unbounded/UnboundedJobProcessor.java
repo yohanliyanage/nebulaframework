@@ -157,15 +157,22 @@ public class UnboundedJobProcessor {
 
 	private void initializeResultListener() {
 
-		MessageListenerAdapter adapter = new MessageListenerAdapter(this);
-		adapter.setDefaultListenerMethod("onResult");
+		new Thread(new Runnable(){
 
-		container = new DefaultMessageListenerContainer();
-		container.setConnectionFactory(connectionFactory);
-		container.setDestinationName(JMSNamingSupport
-				.getResultQueueName(profile.getJobId()));
-		container.setMessageListener(adapter);
-		container.afterPropertiesSet();
+			public void run() {
+				MessageListenerAdapter adapter = new MessageListenerAdapter(UnboundedJobProcessor.this);
+				adapter.setDefaultListenerMethod("onResult");
+
+				container = new DefaultMessageListenerContainer();
+				container.setConnectionFactory(connectionFactory);
+				container.setDestinationName(JMSNamingSupport
+						.getResultQueueName(profile.getJobId()));
+				container.setMessageListener(adapter);
+				container.afterPropertiesSet();				
+			}
+			
+		}).start();
+
 
 	}
 
@@ -176,7 +183,7 @@ public class UnboundedJobProcessor {
 	public void onResult(final GridTaskResult taskResult) {
 		if (taskResult.isComplete()) { // Result is Valid / Complete
 
-			log.debug("[UnboundedJobProcessor] Received : Task "
+			log.debug("[UnboundedJobProcessor] Received Result : Task "
 					+ taskResult.getTaskId());
 
 			// Post Process Result
