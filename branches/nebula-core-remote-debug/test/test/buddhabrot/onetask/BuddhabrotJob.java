@@ -45,10 +45,11 @@ public class BuddhabrotJob implements UnboundedGridJob<BuddhabrotResult,Serializ
 
 	public GridTask<BuddhabrotResult> task() {
 		
+		// TODO A way to read the # of current workers for job?
 		
-		if (rawJobs - resultJobs > 2) {
+		if (rawJobs - resultJobs > 10) {
 			try {
-				Thread.sleep((rawJobs - resultJobs) * 1000);
+				Thread.sleep((rawJobs - resultJobs) * 200);
 			} catch (InterruptedException e) {
 				log.error(e);
 			}

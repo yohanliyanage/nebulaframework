@@ -8,9 +8,9 @@ public class BuddhabrotTask implements GridTask<BuddhabrotResult> {
 	private static final long serialVersionUID = -3525088131053205418L;
 
 	private static final long PLOT_SIZE = 100000L;
-	private static final int RED_DWELL = 1000;
-	private static final int GREEN_DWELL = 3000;
-	private static final int BLUE_DWELL = 9000;
+	private static final int RED_DWELL = 10000;
+	private static final int GREEN_DWELL = 6000;
+	private static final int BLUE_DWELL = 20000;
 
 	// exposure counters for each pixel & color
 	private int[][] exposureBlue; // ?

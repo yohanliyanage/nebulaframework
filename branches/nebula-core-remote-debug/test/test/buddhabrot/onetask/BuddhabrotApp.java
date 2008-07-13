@@ -29,6 +29,8 @@ public class BuddhabrotApp extends JFrame {
 	private static final long serialVersionUID = -3962671014114993755L;
 	private static Log log = LogFactory.getLog(BuddhabrotApp.class);
 	
+	private int plots = 0;
+	
 	// Image Buffer
 	BufferedImage image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
 	
@@ -73,6 +75,7 @@ public class BuddhabrotApp extends JFrame {
 				image.setRGB(x, y, rgb[x][y]);
 			}
 		}
+		setTitle("Rendering + " + (++plots) + " Plots");
 		repaint();
 	}
 	
@@ -85,7 +88,7 @@ public class BuddhabrotApp extends JFrame {
 			sw.start();
 
 			ApplicationContext ctx = new ClassPathXmlApplicationContext(
-					"org/nebulaframework/core/grid/cluster/node/grid-node.xml");
+					"org/nebulaframework/core/grid/cluster/node/grid-nonworker-node.xml");
 			GridNode node = (GridNode) ctx.getBean("localNode");
 
 			log.info("GridNode ID : " + node.getId());
