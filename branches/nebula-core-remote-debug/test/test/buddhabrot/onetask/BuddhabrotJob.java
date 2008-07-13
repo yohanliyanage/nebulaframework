@@ -13,7 +13,6 @@ public class BuddhabrotJob implements UnboundedGridJob<BuddhabrotResult,Serializ
 	private static final long serialVersionUID = 8997815059325788647L;
 	private static Log log = LogFactory.getLog(BuddhabrotJob.class);
 	
-	
 	private int width;
 	private int height;
 	
@@ -49,7 +48,11 @@ public class BuddhabrotJob implements UnboundedGridJob<BuddhabrotResult,Serializ
 		
 		if (rawJobs - resultJobs > 10) {
 			try {
-				Thread.sleep((rawJobs - resultJobs) * 200);
+				//Thread.sleep((rawJobs - resultJobs) * 200);
+				synchronized (log) {
+					// Wait till a  result comes
+					log.wait();
+				}
 			} catch (InterruptedException e) {
 				log.error(e);
 			}
@@ -64,6 +67,7 @@ public class BuddhabrotJob implements UnboundedGridJob<BuddhabrotResult,Serializ
 	
 	public Serializable processResult(Serializable r) {
 		
+		log.debug("Result Received : Finalizing");
 		BuddhabrotResult result = (BuddhabrotResult) r;
 
 		if (result.getType()==BuddhabrotResult.NORMALIZED_RESULT) {
@@ -81,6 +85,13 @@ public class BuddhabrotJob implements UnboundedGridJob<BuddhabrotResult,Serializ
 		
 		findMaxExposure();
 		resultJobs++;
+		
+		log.debug("Result Received : Finalized");
+		
+		synchronized (log) {
+			log.notifyAll();
+		}
+		
 		return calculateRGB();
 		
 	}

@@ -712,7 +712,7 @@ public class TaskExecutor {
      */
     protected void onTask(int taskId, GridTask<? extends Serializable> task) {
             
-            log.debug("[TaskExecutor] Runing Task " + taskId);
+            log.debug("[TaskExecutor] Start Runing Task " + taskId);
             
             // Update Stats
             taskCount++;    
@@ -737,6 +737,7 @@ public class TaskExecutor {
                     
             } finally {
                     
+            		log.debug("[TaskExecutor] Sending Result for Task " + taskId);
                     // Send the result to ResultQueue
                     sendResult(taskResult);
             }
