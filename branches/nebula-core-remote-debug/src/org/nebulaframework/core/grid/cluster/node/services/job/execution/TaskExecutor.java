@@ -24,6 +24,8 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.ObjectMessage;
 
+import org.apache.activemq.ActiveMQConnectionFactory;
+import org.apache.activemq.ActiveMQPrefetchPolicy;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.grid.cluster.manager.services.jobs.JMSNamingSupport;
@@ -671,6 +673,12 @@ public class TaskExecutor {
             if (this.jmsTemplate==null) {
                     throw new IllegalStateException("ResultQueueWriter not Initialized");
             }
+            
+            ActiveMQConnectionFactory cf = (ActiveMQConnectionFactory) connectionFactory;
+            
+            ActiveMQPrefetchPolicy policy = new ActiveMQPrefetchPolicy();
+            policy.setQueuePrefetch(1);
+            cf.setPrefetchPolicy(policy);
             
             // Create Listener and Container
             container = new DefaultMessageListenerContainer();
