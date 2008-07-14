@@ -19,8 +19,6 @@ import javax.jms.ConnectionFactory;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nebulaframework.core.service.message.ServiceMessage;
-import org.nebulaframework.core.service.message.ServiceMessageType;
 import org.nebulaframework.deployment.classloading.service.ClassLoadingServiceSupport;
 import org.nebulaframework.grid.ID;
 import org.nebulaframework.grid.cluster.manager.services.facade.ClusterManagerServicesFacade;
@@ -32,6 +30,8 @@ import org.nebulaframework.grid.cluster.manager.services.messaging.ServiceMessag
 import org.nebulaframework.grid.cluster.manager.services.registration.ClusterRegistrationService;
 import org.nebulaframework.grid.cluster.manager.services.registration.InternalClusterRegistrationService;
 import org.nebulaframework.grid.cluster.node.GridNode;
+import org.nebulaframework.grid.service.message.ServiceMessage;
+import org.nebulaframework.grid.service.message.ServiceMessageType;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.util.Assert;

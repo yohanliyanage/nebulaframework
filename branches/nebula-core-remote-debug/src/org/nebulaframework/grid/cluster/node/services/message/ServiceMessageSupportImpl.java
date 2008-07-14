@@ -20,9 +20,11 @@ import java.util.UUID;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nebulaframework.core.service.message.ServiceMessage;
-import org.nebulaframework.core.service.message.ServiceMessageType;
 import org.nebulaframework.grid.cluster.node.GridNode;
+import org.nebulaframework.grid.service.event.ServiceEvent;
+import org.nebulaframework.grid.service.event.ServiceHookCallback;
+import org.nebulaframework.grid.service.message.ServiceMessage;
+import org.nebulaframework.grid.service.message.ServiceMessageType;
 
 /**
  * Implementation of {@code ServiceMessagesSupport}. Handles

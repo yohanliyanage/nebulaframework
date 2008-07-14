@@ -1,4 +1,4 @@
-package org.nebulaframework.grid.cluster.node.services.message;
+package org.nebulaframework.grid.service.event;
 
 // TODO Fix Doc
 public interface ServiceHookCallback {

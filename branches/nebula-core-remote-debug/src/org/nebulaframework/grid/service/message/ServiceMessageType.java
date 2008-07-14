@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package org.nebulaframework.core.service.message;
+package org.nebulaframework.grid.service.message;
 
 /**
  * Enumeration which represents possible types of
