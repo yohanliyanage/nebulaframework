@@ -1,7 +1,7 @@
-package org.nebulaframework.grid.cluster.node.services.message;
+package org.nebulaframework.grid.service.event;
 
-import org.nebulaframework.core.service.message.ServiceMessage;
-import org.nebulaframework.core.service.message.ServiceMessageType;
+import org.nebulaframework.grid.service.message.ServiceMessage;
+import org.nebulaframework.grid.service.message.ServiceMessageType;
 
 public class ServiceEvent {
 

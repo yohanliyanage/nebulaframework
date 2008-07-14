@@ -16,7 +16,7 @@ package org.nebulaframework.grid.cluster.manager.services.messaging;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nebulaframework.core.service.message.ServiceMessage;
+import org.nebulaframework.grid.service.message.ServiceMessage;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jms.core.JmsTemplate;
 

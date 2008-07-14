@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package org.nebulaframework.core.service.message;
+package org.nebulaframework.grid.service.message;
 
 import java.io.Externalizable;
 import java.io.Serializable;

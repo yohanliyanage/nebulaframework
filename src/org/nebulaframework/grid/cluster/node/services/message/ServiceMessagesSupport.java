@@ -14,7 +14,9 @@
 
 package org.nebulaframework.grid.cluster.node.services.message;
 
-import org.nebulaframework.core.service.message.ServiceMessage;
+import org.nebulaframework.grid.service.event.ServiceEvent;
+import org.nebulaframework.grid.service.event.ServiceHookCallback;
+import org.nebulaframework.grid.service.message.ServiceMessage;
 
 /**
  * Service to handle {@code ServiceMessage}s sent by the {@code ClusterManager}.
