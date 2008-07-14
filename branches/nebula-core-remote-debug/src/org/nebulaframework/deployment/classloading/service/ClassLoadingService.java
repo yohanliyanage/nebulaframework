@@ -14,9 +14,9 @@
 
 package org.nebulaframework.deployment.classloading.service;
 
-import org.nebulaframework.core.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.deployment.classloading.GridNodeClassLoader;
 import org.nebulaframework.deployment.classloading.node.exporter.GridNodeClassExporter;
+import org.nebulaframework.grid.cluster.manager.ClusterManager;
 
 
 

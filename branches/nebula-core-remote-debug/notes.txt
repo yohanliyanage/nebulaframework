@@ -6,3 +6,5 @@ There will be only one CM running per host, for a given broker URL.
 
 
 -- REMOVE ProfileExecution annotations before releasing
+
+Currently ServiceMessages are duplicated, but this is not a issue as duplicates are safely ignored

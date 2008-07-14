@@ -19,8 +19,8 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nebulaframework.core.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.deployment.classloading.service.ClassLoadingService;
+import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.springframework.util.Assert;
 
 /**

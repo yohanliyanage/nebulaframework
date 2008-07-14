@@ -11,4 +11,6 @@ import java.lang.annotation.Target;
 public @interface ProcessingSettings {
 	int maxTasksInQueue() default 100;
 	int reductionFactor() default 50;
+	boolean stopOnNullTask() default true;
+	boolean mutuallyExclusiveTasks() default false;
 }

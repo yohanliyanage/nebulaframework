@@ -7,6 +7,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.xbean.spring.context.ClassPathXmlApplicationContext;
 import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.core.job.future.GridJobFuture;
+import org.nebulaframework.grid.cluster.node.GridNode;
 import org.springframework.context.ApplicationContext;
 import org.springframework.remoting.RemoteInvocationFailureException;
 import org.springframework.util.StopWatch;

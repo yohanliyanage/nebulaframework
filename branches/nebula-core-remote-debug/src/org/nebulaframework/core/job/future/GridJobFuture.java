@@ -16,9 +16,12 @@ package org.nebulaframework.core.job.future;
 import java.io.Serializable;
 import java.util.concurrent.Future;
 
-import org.nebulaframework.core.GridExecutionException;
-import org.nebulaframework.core.GridTimeoutException;
+import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.GridJobState;
+import org.nebulaframework.core.job.ResultCallback;
+import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
+import org.nebulaframework.grid.GridExecutionException;
+import org.nebulaframework.grid.GridTimeoutException;
 
 /**
  * Defines the interface of {@ code GridJobFuture} implementations, which represents the 
@@ -51,23 +54,49 @@ public interface GridJobFuture {
 	public GridJobState getState();
 	
 	/**
-	 * Returns the result of Job. This method blocks until the job execution is complete.
+	 * Returns the result of Job. This method blocks until the job execution 
+	 * is complete.
+	 * <p>
+	 * Note that after calling {@code getResult}, it is not possible to cancel
+	 * using {@link #cancel()}, as the cancel request will not be 
+	 * honored due to the blocking state of {@code GridJobFuture}.
+	 * <p>
+	 * Some types of {@code GridJob}s, namely {@link UnboundedGridJob}, does not
+	 * support final results, and invoking this method on such a {@code GridJob}s 
+	 * future will result in {@code IllegalStateException}. For such type of
+	 * {@code GridJob}s, consider using {@link ResultCallback}s.
+	 * 
 	 * @return Result of the job
+	 * 
 	 * @throws GridExecutionException if execution fails
+	 * @throws IllegalStateException if the job does not support final result
 	 */
-	public Serializable getResult() throws GridExecutionException;
+	public Serializable getResult() throws GridExecutionException, IllegalStateException;
 	
 	/**
 	 * Returns the result of Job with in a given time. 
 	 * This method blocks until the job execution is complete or 
 	 * the timeout exceeds (which ever occurs first).
+	 * <p>
+	 * Note that after calling {@code getResult}, it is not possible to cancel
+	 * using {@link #cancel()}, as the cancel request will not be 
+	 * honored due to the blocking state of {@code GridJobFuture}.
+	 * <p>
+	 * Some types of {@code GridJob}s, namely {@link UnboundedGridJob}, does not
+	 * support final results, and invoking this method on such a {@code GridJob}s 
+	 * future will result in {@code IllegalStateException}. For such type of
+	 * {@code GridJob}s, consider using {@link ResultCallback}s.
 	 * 
 	 * @param timeout Timeout in milliseconds
+	 * 
 	 * @return Result of the job
+	 * 
 	 * @throws GridExecutionException if execution fails
 	 * @throws GridTimeoutException if timeout occurs
+	 *  @throws IllegalStateException if the job does not support final result
 	 */
-	public Serializable getResult(long timeout) throws GridExecutionException, GridTimeoutException;
+	public Serializable getResult(long timeout) 
+			throws GridExecutionException, GridTimeoutException, IllegalStateException;
 
 	/**
 	 * Returns the exception attached to the execution of this {@code GridJob},
@@ -79,10 +108,18 @@ public interface GridJobFuture {
 	
 	/**
 	 * Attempts to cancel execution of this job. Note that the cancellation 
-	 * of the job is <b>not a guaranteed behavior</b>.
+	 * of the job is <b>not a guaranteed behavior</b>. 
+	 * <p>
+	 * Furthermore, if the future is in a blocked state (i.e. after calling 
+	 * {@code getResult}), this request will be not be honored until 
+	 * {@code getResult} returns. In case of a {@code #getResult()} call (without
+	 * timeout), or a successful {@link #getResult(long)}, this will result in 
+	 * {@code IllegalStateException} to be thrown, as the job is finished.
 	 * 
 	 * @return if cancellation succeeded , {@code true}.
+	 * 
+	 * @throws IllegalStateException if {@code GridJob} is not in a cancelable state
 	 */
-	public boolean cancel();
+	public boolean cancel() throws IllegalStateException;
 	
 }
