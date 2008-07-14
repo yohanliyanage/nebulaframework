@@ -17,6 +17,7 @@ import java.util.UUID;
 
 import javax.jms.ConnectionFactory;
 
+import org.apache.activemq.broker.BrokerService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.deployment.classloading.service.ClassLoadingServiceSupport;
@@ -59,6 +60,7 @@ import org.springframework.util.Assert;
  * automatically invoked by Spring itself.
  * <p>
  * <i>Spring Managed</i>
+ * <i>Singleton</i>
  * 
  * @author Yohan Liyanage
  * @version 1.0
@@ -69,25 +71,43 @@ import org.springframework.util.Assert;
 public class ClusterManager implements InitializingBean {
 
 	private static Log log = LogFactory.getLog(ClusterManager.class);
+	private static ClusterManager instance = new ClusterManager();
 	
 	private UUID clusterId;
 	private String brokerUrl;
+	
 	private ConnectionFactory connectionFactory;
+	private BrokerService brokerService;
+	
 	private ServiceMessageSender serviceMessageSender;
 	private InternalClusterRegistrationService clusterRegistrationService;
 	private InternalClusterJobService jobService;
 	private InternalRemoteClusterJobService remoteJobService;
 	
 	/**
-	 * Instantiates ClusterManager, and assigns it a unique identifier.
+	 * <b>Private Constructor</b> which instantiates ClusterManager, 
+	 * and assigns it a unique identifier. This constructor is private
+	 * to ensure that the <b>Singleton</b> state is managed.
+	 * <p>
 	 * The identifier is obtained using {@code ID} class. For details 
 	 * about algorithm for generating, please refer to {@link ID#getId()} 
 	 * method.
 	 */
-	public ClusterManager() {
+	private ClusterManager() {
 		super();
 		this.clusterId = ID.getId();
 	}
+
+	
+	/**
+	 * Returns the singleton instance of {@code ClusterManager}.
+	 * 
+	 * @return Singleton instance of {@code ClusterManager}.
+	 */
+	public static ClusterManager getInstance() {
+		return instance;
+	}
+
 
 	/**
 	 * Returns the ID for the cluster managed by this ClusterManager instance.
@@ -239,12 +259,48 @@ public class ClusterManager implements InitializingBean {
 	 * <p>
 	 * <i>Spring Injected</i>
 	 * 
-	 * @param connectionFactory JMS ConnectionFactory for <tt>ClusterManager}
+	 * @param connectionFactory JMS ConnectionFactory for {@code ClusterManager}
 	 */
 	@Required
 	public void setConnectionFactory(ConnectionFactory connectionFactory) {
 		this.connectionFactory = connectionFactory;
 	}
+
+	/**
+	 * Returns the JMS {@code ConnectionFactory} used by the {@code ClusterManager} to 
+	 * communicate with the JMS Broker of the cluster.
+	 * 
+	 * @return JMS ConnectionFactory for {@code ClusterManager}
+	 */
+	public ConnectionFactory getConnectionFactory() {
+		return connectionFactory;
+	}
+
+
+	/**
+	 * Sets the JMS {@code BrokerService} used by the {@code ClusterManager}.
+	 * <p>
+	 * In default implementation, this {@code BrokerService} is managed by Spring Container.
+	 * This may be {@code null} if the broker service is a remote broker, but this is
+	 * not recommended as it may negatively affect with resource clean up procedures, for
+	 * long running (for days or weeks, with many jobs) {@code BrokerService}s.
+	 * <p>
+	 * <i>Spring Injected</i>
+	 * 
+	 * @param brokerService JMS BrokerService of {@code ClusterManager}
+	 */
+	public void setBrokerService(BrokerService brokerService) {
+		this.brokerService = brokerService;
+	}
+	
+	/**
+	 * Returns the JMS {@code BrokerService} used by the {@code ClusterManager}.
+	 * @return JMS {@code BrokerService}
+	 */
+	public BrokerService getBrokerService() {
+		return brokerService;
+	}
+
 
 	/**
 	 * This method ensures that all dependencies of the {@code ClusterManager} is set. 
@@ -268,7 +324,7 @@ public class ClusterManager implements InitializingBean {
 		Assert.notNull(clusterRegistrationService);
 		
 		// Start Remote Class Loading Service
-		ClassLoadingServiceSupport.startClassLoadingService(this, connectionFactory);
+		ClassLoadingServiceSupport.startClassLoadingService();
 		
 		// Start Remote Cluster Job Service
 		remoteJobService = new RemoteClusterJobServiceImpl(this,connectionFactory);
@@ -304,12 +360,12 @@ public class ClusterManager implements InitializingBean {
 
 			public void run() {
 				try {
-					// Wait 2 secs for messages to go ? // TODO Revise
-					Thread.sleep(2000);
-					System.exit(0);
+					// Wait 1 second for messages to go // TODO Revise
+					Thread.sleep(1000);
 				} catch(InterruptedException ex) {
 					log.error(ex);
 				}
+				System.exit(0);
 			}
 			
 		}).start();

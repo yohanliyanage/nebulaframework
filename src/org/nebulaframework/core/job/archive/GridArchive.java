@@ -356,27 +356,4 @@ public class GridArchive implements Serializable {
 		return fileName.endsWith(".class");
 	}
 
-	// TODO Externalizable ?
-//	/**
-//	 * {@inheritDoc}
-//	 */
-//	public void readExternal(ObjectInput in) throws IOException,
-//			ClassNotFoundException {
-//		int size = in.readInt();
-//		this.bytes = new byte[size];
-//		in.read(bytes,0, size);
-//		this.hash = in.readUTF();
-//		this.jobClassNames = (String[]) in.readObject();
-//	}
-//
-//	/**
-//	 * {@inheritDoc}
-//	 */
-//	public void writeExternal(ObjectOutput out) throws IOException {
-//		out.writeInt(bytes.length);
-//		out.write(bytes);
-//		out.writeUTF(hash);
-//		out.writeObject(jobClassNames);
-//	}
-
 }

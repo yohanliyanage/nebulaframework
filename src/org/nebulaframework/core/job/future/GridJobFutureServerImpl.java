@@ -15,19 +15,24 @@ package org.nebulaframework.core.job.future;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
+
+import javax.jms.ConnectionFactory;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.GridJobState;
 import org.nebulaframework.core.job.GridJobStateListener;
+import org.nebulaframework.core.job.ResultCallback;
 import org.nebulaframework.core.job.SplitAggregateGridJob;
 import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
 import org.nebulaframework.grid.GridExecutionException;
 import org.nebulaframework.grid.GridTimeoutException;
+import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.manager.services.jobs.InternalClusterJobService;
+import org.nebulaframework.grid.cluster.manager.support.CleanUpSupport;
+import org.nebulaframework.util.jms.JMSRemotingSupport;
 
 /**
  * Implementation of {@link GridJobFuture} interface, which represents the
@@ -50,9 +55,9 @@ import org.nebulaframework.grid.cluster.manager.services.jobs.InternalClusterJob
  * @see GridJob
  * @see GridJobState
  */
-public class GridJobFutureImpl implements GridJobFuture {
+public class GridJobFutureServerImpl implements InternalGridJobFuture, GridJobFuture {
 
-	private static Log log = LogFactory.getLog(GridJobFutureImpl.class);
+	private static Log log = LogFactory.getLog(GridJobFutureServerImpl.class);
 
 	private String jobId; // GridJob Id
 	private Serializable result; // Final Result of GridJob
@@ -61,9 +66,8 @@ public class GridJobFutureImpl implements GridJobFuture {
 	private boolean finalResultSupported = false; // Final result allowed
 	
 	private InternalClusterJobService jobService;	// Job Service of CM
-	
+
 	// Server-side Listeners (in ClusterManager's VM)
-	// For client side, see GridJobFutureClientProxy
 	private List<GridJobStateListener> serverListeners = new ArrayList<GridJobStateListener>();
 	
 
@@ -76,7 +80,7 @@ public class GridJobFutureImpl implements GridJobFuture {
 	 * @param jobId
 	 *            JobId of {@code GridJob}
 	 */
-	public GridJobFutureImpl(String jobId, InternalClusterJobService jobService) {
+	public GridJobFutureServerImpl(String jobId, InternalClusterJobService jobService) {
 		super();
 
 		// Set initial state
@@ -89,8 +93,7 @@ public class GridJobFutureImpl implements GridJobFuture {
 	 * {@inheritDoc}
 	 */
 	public boolean cancel() {
-		log.debug("Cancel Request"); // TODO Remove
-		return this.jobService.cancelJob(this.jobId);
+		return jobService.cancelJob(jobId);
 	}
 
 	/**
@@ -103,79 +106,7 @@ public class GridJobFutureImpl implements GridJobFuture {
 		this.result = result;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	public Serializable getResult() throws GridExecutionException, IllegalStateException {
-		try {
-			return getResult(0);
-		} catch (GridTimeoutException e) {
-			throw new AssertionError("Unexpected GridTimeoutException");
-		}
-	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	public Serializable getResult(long timeout) throws GridExecutionException,
-			GridTimeoutException, IllegalStateException {
-		
-		// If final result is not supported, exception (i.e. Unbounded Jobs)
-		if (!isFinalResultSupported()) {
-			throw new IllegalStateException("GridJob does not support final results");
-		}
-		
-		// This sync block waits until result is available.
-		
-		// Note that in case of timeouts, our own time tracking is needed
-		// as a waking up due to unknown reasons may reset the timeouts
-		synchronized (mutex) {
-			try {
-				// If job is not finished, wait till it finishes
-				while (!isJobFinished()) {
-					
-					// Mark start time
-					long tStart = new Date().getTime();
-					
-					// Wait for result
-					mutex.wait(timeout);
-					
-					// Mark current time
-					long tNow = new Date().getTime();
-					
-					// Check for timeout
-					if (timeout > 0 && !isJobFinished()) {
-						
-						
-						if ((tNow - tStart) > timeout ) {
-							// timeout has occurred
-							throw new GridTimeoutException("Timeout, Result Not Available");
-						}
-						else {
-							// notified before timeout, update timeout
-							timeout -= (tNow - tStart);
-						}
-					}
-				}
-			} catch (InterruptedException e) {
-				log.error(e);
-				throw new RuntimeException(
-						"Interrupted while waiting for Result");
-			}
-		}
-
-		if (this.getState().equals(GridJobState.COMPLETE)) {
-			log.debug("Returning Result");
-			return this.result;
-		} else {
-			if (this.exception != null) {
-				throw new GridExecutionException("Execution Failed", exception);
-			} else {
-				throw new GridExecutionException(
-						"Execution Failed (Job State : " + this.getState() + ")");
-			}
-		}
-	}
 
 	/**
 	 * Returns {@code true} if this {@code GridJob} supports
@@ -185,7 +116,7 @@ public class GridJobFutureImpl implements GridJobFuture {
 	 * 
 	 * @return value @code true} final result supported
 	 */
-	private boolean isFinalResultSupported() {
+	public boolean isFinalResultSupported() {
 		return finalResultSupported;
 	}
 
@@ -206,23 +137,19 @@ public class GridJobFutureImpl implements GridJobFuture {
 		synchronized (mutex) {
 			this.state = state;
 			if (isJobFinished()) {
-
 				// Notify waiting threads (getResult)
 				mutex.notifyAll();
-
-				// Notify Listeners
-				notifyListeners(state);
 			}
 		}
+		
+		// Notify Listeners
+		notifyListeners(state);
 	}
 
 	/**
-	 * Checks if the Job has finished execution, by
-	 * completing or failing or canceling.
-	 * 
-	 * @return if finished, {@code true}, else {@code false}
+	 * {@inheritDoc}
 	 */
-	private boolean isJobFinished() {
+	public boolean isJobFinished() {
 		return (state == GridJobState.COMPLETE || 
 				state == GridJobState.FAILED || 
 				state == GridJobState.CANCELED);
@@ -250,6 +177,7 @@ public class GridJobFutureImpl implements GridJobFuture {
 	 * {@inheritDoc}
 	 */
 	public Exception getException() {
+		if (!isJobFinished()) throw new IllegalStateException("Job still executing");
 		return exception;
 	}
 
@@ -298,6 +226,103 @@ public class GridJobFutureImpl implements GridJobFuture {
 	public void setFinalResultSupported(boolean finalResultSupported) {
 		this.finalResultSupported = finalResultSupported;
 	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <b>Not Supported, invoking this method causes {@code UnsupportedOperationException}.</b>
+	 * This is only supported in the ClientSideProxy of GridJobFuture.
+	 * 
+	 */
+	public void addFinalResultCallback(ResultCallback callback) {
+		throw new UnsupportedOperationException("Only supported by Client Side Proxy");
+	}
 	
+	// TODO FixDOc
+	public void addFinalResultCallback(String queueName) throws IllegalStateException {
+		
+		
+		// If final result is not supported, exception (i.e. Unbounded Jobs)
+		if (!isFinalResultSupported()) {
+			 throw new IllegalStateException("GridJob does not support final results");
+		}
+		
+		// Create Proxy for callback
+		ConnectionFactory cf = ClusterManager.getInstance().getConnectionFactory();
+		final ResultCallback callback = JMSRemotingSupport.createProxy (cf, queueName, ResultCallback.class);
+		
+		// Clean Up Hook
+		CleanUpSupport.removeQueueWhenFinished(jobId, queueName);
+		
+		Thread t = new Thread(new Runnable(){
+
+			public void run() {
+				
+				// This sync block waits until result is available.
+				synchronized (mutex) {
+					try {
+						// If job is not finished, wait till it finishes
+						while (!isJobFinished()) {
+							// Wait for result
+							mutex.wait();
+						}
+						
+						// Job Finished
+						if (state==GridJobState.COMPLETE) {
+							callback.onResult(result);
+						}
+						else {
+							Exception e = null;
+							
+							// If we got an exception while execution
+							if (exception!=null) {
+								e = new GridExecutionException("Execution Failed", exception);
+							}
+							else { // If failed for other reason
+								e = new GridExecutionException("Execution Failed (Job State : " + getState() + ")");
+								
+							}
+							// Send Exception 
+							callback.onResult(e);
+						}
+					} catch (InterruptedException e) {
+						log.error(e);
+						throw new RuntimeException("Interrupted while waiting for Result");
+					}
+				}				
+			}
+			
+		});
+		
+		// Make the thread to be daemon, because if this thread never gets notified,
+		// we don't want the cluster manager to wait for this thread to finish.
+		t.setDaemon(true);
+		t.start();
+		
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <b>Not Supported, invoking this method causes {@code UnsupportedOperationException}.</b>
+	 * This is only supported in the ClientSideProxy of GridJobFuture.
+	 * 
+	 */
+	public Serializable getResult() throws GridExecutionException,
+			IllegalStateException {
+		throw new UnsupportedOperationException("Only supported by Client Side Proxy");
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * <b>Not Supported, invoking this method causes {@code UnsupportedOperationException}.</b>
+	 * This is only supported in the ClientSideProxy of GridJobFuture.
+	 * 
+	 */
+	public Serializable getResult(long timeout) throws GridExecutionException,
+			GridTimeoutException, IllegalStateException {
+		throw new UnsupportedOperationException("Only supported by Client Side Proxy");
+	}
 	
 }

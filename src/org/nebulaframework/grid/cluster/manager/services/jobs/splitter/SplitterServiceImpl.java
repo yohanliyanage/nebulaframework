@@ -118,15 +118,13 @@ public class SplitterServiceImpl implements SplitterService {
 			//Enqueue Tasks in TaskQueue
 			log.debug("[Splitter] Enqueueing Tasks");
 			
-			synchronized (profile) {
-				for (int i = 0; i < taskList.size(); i++) {
-					if (profile.isStopped()) return;
-					GridTask<?> task = (GridTask<?>) taskList.get(i);
-					enqueueTask(profile.getJobId(), i, task); 	// Put to Task Queue
-					profile.addTask(i, task);					// Put copy to TaskMap in Profile
-				}	
-			}
 			
+			for (int i = 0; i < taskList.size(); i++) {
+				if (profile.isStopped()) return;
+				GridTask<?> task = (GridTask<?>) taskList.get(i);
+				profile.addTask(i, task);					// Put copy to TaskMap in Profile
+				enqueueTask(profile.getJobId(), i, task); 	// Put to Task Queue
+			}	
 			
 		} catch (Exception e) {
 			// Exception during Split

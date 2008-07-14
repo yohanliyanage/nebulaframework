@@ -18,14 +18,15 @@ import javax.jms.ConnectionFactory;
 
 import org.apache.activemq.command.ActiveMQQueue;
 import org.nebulaframework.core.job.GridJobState;
-import org.nebulaframework.core.job.future.GridJobFuture;
-import org.nebulaframework.core.job.future.GridJobFutureImpl;
+import org.nebulaframework.core.job.ResultCallback;
+import org.nebulaframework.core.job.future.GridJobFutureServerImpl;
+import org.nebulaframework.core.job.future.InternalGridJobFuture;
+import org.nebulaframework.grid.cluster.manager.support.CleanUpSupport;
+import org.nebulaframework.util.jms.JMSRemotingSupport;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.jms.listener.DefaultMessageListenerContainer;
-import org.springframework.jms.remoting.JmsInvokerServiceExporter;
 
 /**
- * Provides support methods which assists {@code ClusterJobServiceImpl} in 
+ * Provides support methods which assists {@code ClusterJobServiceImpl} in
  * creating JMS Resources attached with {@code GridJob}s.
  * <p>
  * <i>Spring Managed</i>
@@ -40,14 +41,15 @@ public class JobServiceJmsSupport {
 	private ConnectionFactory connectionFactory;
 
 	/**
-	 * Sets the JMS {@code ConnectionFactory} used by this class to 
-	 * communicate with Cluster Broker.
+	 * Sets the JMS {@code ConnectionFactory} used by this class to communicate
+	 * with Cluster Broker.
 	 * <p>
 	 * <b>Note : </b>This is a <b>required</b> dependency.
 	 * <p>
 	 * <i>Spring Injected</i>
 	 * 
-	 * @param connectionFactory {@code ConnectionFactory}
+	 * @param connectionFactory
+	 *            {@code ConnectionFactory}
 	 */
 	@Required
 	public void setConnectionFactory(ConnectionFactory connectionFactory) {
@@ -57,59 +59,88 @@ public class JobServiceJmsSupport {
 	/**
 	 * Creates an returns the TaskQueue for given Job.
 	 * 
-	 * @param jobId JobId
+	 * @param jobId
+	 *            JobId
 	 * @return {@code ActiveMQQueue} TaskQueue
 	 */
-	public ActiveMQQueue createTaskQueue(String jobId) {
-		return new ActiveMQQueue(JMSNamingSupport.getTaskQueueName(jobId));
+	public String createTaskQueue(String jobId) {
+		String queueName = JMSNamingSupport.getTaskQueueName(jobId);
+		new ActiveMQQueue(queueName);
+		
+		// Clean Up Hook
+		CleanUpSupport.removeQueueWhenFinished(jobId, queueName);
+		
+		return queueName;
 	}
 
 	/**
 	 * Creates an returns the ResultQueue for given Job.
 	 * 
-	 * @param jobId JobId
+	 * @param jobId
+	 *            JobId
 	 * @return {@code ActiveMQQueue} ResultQueue
 	 */
-	public ActiveMQQueue createResultQueue(String jobId) {
-		return new ActiveMQQueue(JMSNamingSupport.getResultQueueName(jobId));
+	public String createResultQueue(String jobId) {
+		String queueName = JMSNamingSupport.getResultQueueName(jobId);
+		new ActiveMQQueue(queueName);
+		
+		// Clean Up Hook
+		CleanUpSupport.removeQueueWhenFinished(jobId, queueName, null);
+		
+		return queueName;
 	}
 
 	/**
-	 * Creates an returns the Queue to be used for GridJobFuture 
-	 * communication of given Job.
+	 * Creates an returns the Queue to be used for GridJobFuture communication
+	 * of given Job.
 	 * 
-	 * @param jobId JobId
+	 * @param jobId
+	 *            JobId
 	 * @return {@code ActiveMQQueue} FutureQueue
 	 */
-	public ActiveMQQueue createFutureQueue(String jobId) {
-		return new ActiveMQQueue(JMSNamingSupport.getFutureQueueName(jobId));
+	public String createFutureQueue(String jobId) {
+		String queueName = JMSNamingSupport.getFutureQueueName(jobId);
+		new ActiveMQQueue(queueName);
+		return queueName;
 	}
-	
+
 	/**
 	 * Returns {@code GridJobFutureImpl} for given Job, and also remote-enables
 	 * the GridJobFuture using Spring's JMS Remoting facilities.
 	 * 
-	 * @param jobId JobId
+	 * @param jobId
+	 *            JobId
 	 * @return {@code GridJobFutureImpl} Future
 	 */
-	public GridJobFutureImpl createFuture(String jobId, InternalClusterJobService jobService) {
-		
-		GridJobFutureImpl future = new GridJobFutureImpl(jobId, jobService);
+	public GridJobFutureServerImpl createFuture(String jobId,
+			InternalClusterJobService jobService) {
+
+		GridJobFutureServerImpl future = new GridJobFutureServerImpl(jobId,
+				jobService);
 		future.setState(GridJobState.WAITING);
-		
+
 		// Export the Future to client side through Spring JMS Remoting
-		JmsInvokerServiceExporter exporter = new JmsInvokerServiceExporter();
-		exporter.setServiceInterface(GridJobFuture.class);
-		exporter.setService(future);
-		exporter.afterPropertiesSet();
-		
-		// Create Message Listener Container
-		DefaultMessageListenerContainer container = new DefaultMessageListenerContainer();
-		container.setConnectionFactory(connectionFactory);
-		container.setDestination(createFutureQueue(jobId));
-		container.setMessageListener(exporter);
-		container.afterPropertiesSet();
-		
+		String queueName = createFutureQueue(jobId);
+
+		// Clean Up Hook
+		CleanUpSupport
+				.removeQueueWhenFinished(jobId, queueName, JMSRemotingSupport
+						.createService(connectionFactory, queueName, future,
+										InternalGridJobFuture.class));
+
 		return future;
 	}
+	
+	
+
+	// TODO FixDoc
+	public  ResultCallback createResultCallbackProxy(String jobId, String resultCallbackQueue) {
+		
+		// Clean Up Hook
+		CleanUpSupport.removeQueueWhenFinished(jobId, resultCallbackQueue);
+		
+		return JMSRemotingSupport.createProxy(connectionFactory, resultCallbackQueue, ResultCallback.class);
+	}
+	
+	
 }

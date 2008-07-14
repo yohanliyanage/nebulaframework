@@ -41,6 +41,11 @@ public enum ServiceMessageType {
 	JOB_CANCEL,
 	
 	/**
+	 * A GridNode has left the Grid.
+	 */
+	NODE_UNREGISTERED,
+	
+	/**
 	 * {@code ClusterManager} is shutting down.
 	 */
 	CLUSTER_SHUTDOWN

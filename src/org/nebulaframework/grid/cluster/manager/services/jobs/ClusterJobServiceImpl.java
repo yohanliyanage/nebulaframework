@@ -18,8 +18,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.jms.ConnectionFactory;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJob;
@@ -29,7 +27,7 @@ import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.core.job.deploy.GridJobInfo;
 import org.nebulaframework.core.job.exceptions.GridJobPermissionDeniedException;
 import org.nebulaframework.core.job.exceptions.GridJobRejectionException;
-import org.nebulaframework.core.job.future.GridJobFutureImpl;
+import org.nebulaframework.core.job.future.GridJobFutureServerImpl;
 import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.manager.services.jobs.aggregator.AggregatorService;
@@ -40,7 +38,6 @@ import org.nebulaframework.grid.service.message.ServiceMessage;
 import org.nebulaframework.grid.service.message.ServiceMessageType;
 import org.nebulaframework.util.hashing.SHA1Generator;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.jms.remoting.JmsInvokerProxyFactoryBean;
 import org.springframework.util.Assert;
 
 /**
@@ -75,7 +72,6 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	
 	private RemoteClusterJobService remoteJobServiceProxy;
 
-	private ConnectionFactory connnectionFactory;
 	
 	// Holds GridJobProfiles of all active GridJobs, against its JobId
 	// A LinkedHashMap is used to ensure insertion order iteration
@@ -136,7 +132,7 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 
 		// Create GridJobFuture, which will be used remotely by
 		// owner node to monitor / obtain results
-		GridJobFutureImpl future = jmsSupport.createFuture(jobId, this);
+		GridJobFutureServerImpl future = jmsSupport.createFuture(jobId, this);
 
 		// Create GridJobProfile for GridJob
 		GridJobProfile profile = new GridJobProfile();
@@ -146,7 +142,7 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		profile.setFuture(future);
 
 		if (resultCallbackQueue != null) {
-			ResultCallback proxy = createResultCallbackProxy(resultCallbackQueue);
+			ResultCallback proxy = jmsSupport.createResultCallbackProxy(jobId, resultCallbackQueue);
 			profile.setResultCallback(proxy);
 		}
 		
@@ -191,19 +187,10 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		// Notify Job Start to Workers
 		notifyJobStart(jobId);
 
+		
 		return jobId;
 	}
 
-	// TODO FixDoc
-	private ResultCallback createResultCallbackProxy(String resultCallbackQueue) {
-		JmsInvokerProxyFactoryBean proxyFactory = new JmsInvokerProxyFactoryBean();
-		proxyFactory.setConnectionFactory(connnectionFactory);
-		proxyFactory.setQueueName(resultCallbackQueue);
-		proxyFactory.setServiceInterface(ResultCallback.class);
-		proxyFactory.afterPropertiesSet();
-		
-		return (ResultCallback) proxyFactory.getObject();
-	}
 
 	// TODO FixDoc
 	private void startSplitAggregateJob(GridJobProfile profile) {
@@ -570,20 +557,6 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	@Required
 	public void setUnboundedService(UnboundedJobService unboundedService) {
 		this.unboundedService = unboundedService;
-	}
-
-	/**
-	 * Sets the JMS {@code ConnectionFactory} which is used by the
-	 * {@code JobServiceImpl}.
-	 * <p>
-	 * <b>Note : </b>This is a <b>required</b> dependency.
-	 * <p>
-	 * <i>Spring Injected</i>
-	 * @param connnectionFactory JMS Connection Factory
-	 */
-	@Required
-	public void setConnnectionFactory(ConnectionFactory connnectionFactory) {
-		this.connnectionFactory = connnectionFactory;
 	}
 
 	

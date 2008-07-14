@@ -17,6 +17,7 @@ import org.nebulaframework.grid.cluster.manager.services.jobs.GridJobProfile;
 import org.nebulaframework.grid.cluster.manager.services.jobs.InternalClusterJobService;
 import org.nebulaframework.grid.cluster.manager.services.jobs.JMSNamingSupport;
 import org.nebulaframework.grid.cluster.manager.services.jobs.JobExecutionManager;
+import org.nebulaframework.grid.cluster.manager.support.CleanUpSupport;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.core.MessagePostProcessor;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
@@ -211,6 +212,9 @@ public class UnboundedJobProcessor implements JobExecutionManager {
 				.getResultQueueName(profile.getJobId()));
 		container.setMessageListener(adapter);
 		container.afterPropertiesSet();
+		
+		// Clean Up Hook
+		CleanUpSupport.shutdownContainerWhenFinished(profile.getJobId(), container);
 
 	}
 

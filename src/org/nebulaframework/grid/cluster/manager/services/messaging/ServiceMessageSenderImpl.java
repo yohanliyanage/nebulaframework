@@ -16,6 +16,7 @@ package org.nebulaframework.grid.cluster.manager.services.messaging;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nebulaframework.grid.service.event.ServiceEventsSupport;
 import org.nebulaframework.grid.service.message.ServiceMessage;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jms.core.JmsTemplate;
@@ -59,6 +60,9 @@ public class ServiceMessageSenderImpl implements ServiceMessageSender {
 	public void sendServiceMessage(final ServiceMessage message) {
 		log.debug("Sending Service Message : " + message);
 		jmsTemplate.convertAndSend(message);
+		
+		// Notify Service Event
+		ServiceEventsSupport.getInstance().onServiceMessage(message);
 	}
 
 }

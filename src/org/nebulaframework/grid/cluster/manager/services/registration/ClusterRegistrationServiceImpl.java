@@ -13,6 +13,8 @@ import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.node.delegate.GridNodeDelegate;
 import org.nebulaframework.grid.cluster.registration.Registration;
 import org.nebulaframework.grid.cluster.registration.RegistrationImpl;
+import org.nebulaframework.grid.service.message.ServiceMessage;
+import org.nebulaframework.grid.service.message.ServiceMessageType;
 import org.springframework.beans.factory.annotation.Required;
 
 /**
@@ -99,6 +101,8 @@ public class ClusterRegistrationServiceImpl implements
 		synchronized (this) {
 			this.clusterNodes.remove(id);
 		}
+		ServiceMessage message = new ServiceMessage(id.toString(), ServiceMessageType.NODE_UNREGISTERED);
+		cluster.getServiceMessageSender().sendServiceMessage(message);
 		log.info("Node unregistered [ID:" + id + "]");
 	}
 

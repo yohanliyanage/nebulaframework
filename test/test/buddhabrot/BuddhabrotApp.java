@@ -23,8 +23,8 @@ import org.springframework.util.StopWatch;
 
 public class BuddhabrotApp extends JFrame {
 
-	private final int WIDTH = 600;
-	private final int HEIGHT = 600;
+	private static final int WIDTH = 600;
+	private static final int HEIGHT = 600;
 	
 	private static final long serialVersionUID = -3962671014114993755L;
 	private static Log log = LogFactory.getLog(BuddhabrotApp.class);
@@ -81,6 +81,7 @@ public class BuddhabrotApp extends JFrame {
 	}
 	
 	public synchronized void onResult(int[][] rgb) {
+		System.err.println(rgb.length + ","+ rgb[0].length);
 		for (int x = 0; x < WIDTH; x++) {
 			for (int y = 0; y < HEIGHT; y++) {
 				image.setRGB(x, y, rgb[x][y]);
@@ -102,7 +103,7 @@ public class BuddhabrotApp extends JFrame {
 			sw.start();
 
 			ApplicationContext ctx = new ClassPathXmlApplicationContext(
-					"org/nebulaframework/core/grid/cluster/node/grid-nonworker-node.xml");
+					"org/nebulaframework/grid/cluster/node/grid-nonworker-node.xml");
 			GridNode node = (GridNode) ctx.getBean("localNode");
 
 			log.info("GridNode ID : " + node.getId());
@@ -130,7 +131,7 @@ public class BuddhabrotApp extends JFrame {
 			app.requestFocus();
 			
 			// Create Buddhabrot Job
-			BuddhabrotJob buddhabrotJob = new BuddhabrotJob(app.getWidth(), app.getHeight());
+			BuddhabrotJob buddhabrotJob = new BuddhabrotJob(WIDTH, HEIGHT);
 			
 			// Start Job Submission
 			sw.start();
