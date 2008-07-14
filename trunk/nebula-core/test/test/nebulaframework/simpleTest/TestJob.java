@@ -17,7 +17,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.nebulaframework.core.job.GridJob;
+import org.nebulaframework.core.job.SplitAggregateGridJob;
 import org.nebulaframework.core.task.GridTask;
 
 /**
@@ -25,7 +25,7 @@ import org.nebulaframework.core.task.GridTask;
  * @author Yohan Liyanage
  *
  */
-public class TestJob implements GridJob<Integer, Integer>{
+public class TestJob implements SplitAggregateGridJob<Integer, Integer>{
 
 	private static final long serialVersionUID = -4504183475114576465L;
 

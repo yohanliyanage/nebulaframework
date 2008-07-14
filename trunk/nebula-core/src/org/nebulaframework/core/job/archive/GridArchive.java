@@ -312,14 +312,24 @@ public class GridArchive implements Serializable {
 		
 		// Get all interfaces, and process each
 		for(Class<?> iface : cls.getInterfaces()) {
-			// If class implements GridJob interface
-			if (iface.getName().equals(GridJob.class.getName())) {
+			// If class implements GridJob interfaces
+			if (isGridJobInterface(iface)) {
 				log.debug("[GridArchive] Found GridJob Class " + cls.getName());
 				return true;
 			}
 		}
 		return false;
 	}	
+	
+	// TODO FixDoc
+	private static boolean isGridJobInterface(Class<?> intrface) {
+		for(Class<?> iface : intrface.getInterfaces()) {
+			if (iface.getName().equals(GridJob.class.getName())) {
+				return true;
+			}
+		}
+		return false;
+	}
 	
 	/**
 	 * Converts the given file name to fully qualified class name.
@@ -345,28 +355,5 @@ public class GridArchive implements Serializable {
 	protected static boolean isClass(String fileName) {
 		return fileName.endsWith(".class");
 	}
-
-	// TODO Externalizable ?
-//	/**
-//	 * {@inheritDoc}
-//	 */
-//	public void readExternal(ObjectInput in) throws IOException,
-//			ClassNotFoundException {
-//		int size = in.readInt();
-//		this.bytes = new byte[size];
-//		in.read(bytes,0, size);
-//		this.hash = in.readUTF();
-//		this.jobClassNames = (String[]) in.readObject();
-//	}
-//
-//	/**
-//	 * {@inheritDoc}
-//	 */
-//	public void writeExternal(ObjectOutput out) throws IOException {
-//		out.writeInt(bytes.length);
-//		out.write(bytes);
-//		out.writeUTF(hash);
-//		out.writeObject(jobClassNames);
-//	}
 
 }

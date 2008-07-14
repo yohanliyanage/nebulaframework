@@ -5,7 +5,8 @@ import java.io.IOException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.xbean.spring.context.ClassPathXmlApplicationContext;
-import org.nebulaframework.core.grid.cluster.registration.RegistrationException;
+import org.nebulaframework.grid.cluster.node.GridNode;
+import org.nebulaframework.grid.cluster.registration.RegistrationException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.util.StopWatch;
 
@@ -21,7 +22,7 @@ public class TestNodeWorker {
 			StopWatch sw = new StopWatch();
 			sw.start();
 			
-			ApplicationContext ctx = new ClassPathXmlApplicationContext("org/nebulaframework/core/grid/cluster/node/grid-node.xml");
+			ApplicationContext ctx = new ClassPathXmlApplicationContext("org/nebulaframework/grid/cluster/node/grid-node.xml");
 			GridNode node = (GridNode) ctx.getBean("localNode");
 			
 			sw.stop();

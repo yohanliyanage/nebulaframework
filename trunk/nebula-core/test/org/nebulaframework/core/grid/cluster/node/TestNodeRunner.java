@@ -2,13 +2,14 @@ package org.nebulaframework.core.grid.cluster.node;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.xbean.spring.context.ClassPathXmlApplicationContext;
-import org.nebulaframework.core.grid.cluster.registration.RegistrationException;
+import org.nebulaframework.core.job.ResultCallback;
 import org.nebulaframework.core.job.future.GridJobFuture;
+import org.nebulaframework.grid.cluster.node.GridNode;
+import org.nebulaframework.grid.cluster.registration.RegistrationException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.remoting.RemoteInvocationFailureException;
 import org.springframework.util.StopWatch;
@@ -30,7 +31,7 @@ public class TestNodeRunner {
 			StopWatch sw = new StopWatch();
 			sw.start();
 			
-			ApplicationContext ctx = new ClassPathXmlApplicationContext("org/nebulaframework/core/grid/cluster/node/grid-node.xml");
+			ApplicationContext ctx = new ClassPathXmlApplicationContext("org/nebulaframework/grid/cluster/node/grid-node.xml");
 			GridNode node = (GridNode) ctx.getBean("localNode");
 			
 			log.info("GridNode ID : " + node.getId());
@@ -47,7 +48,13 @@ public class TestNodeRunner {
 			
 			sw.start();
 			
-			GridJobFuture future = node.getJobSubmissionService().submitJob(testJob);
+			GridJobFuture future = node.getJobSubmissionService().submitJob(testJob,new ResultCallback() {
+
+				public void onResult(Serializable result) {
+					System.err.println(result);
+				}
+				
+			});
 			try {
 				log.info("Job Result : " + future.getResult());
 			} catch (RemoteInvocationFailureException e) {
@@ -75,7 +82,4 @@ public class TestNodeRunner {
 		
 	}
 	
-	public static List<Serializable> getStuff() {
-		return null;
-	}
 }

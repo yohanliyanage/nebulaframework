@@ -18,16 +18,12 @@ import java.util.UUID;
 
 import javax.jms.ConnectionFactory;
 
-import org.apache.activemq.command.ActiveMQQueue;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nebulaframework.core.grid.cluster.manager.ClusterManager;
-import org.nebulaframework.core.grid.cluster.manager.services.jobs.ClusterJobServiceImpl;
-import org.nebulaframework.core.grid.cluster.manager.services.registration.ClusterRegistrationServiceImpl;
-import org.springframework.jms.listener.DefaultMessageListenerContainer;
-import org.springframework.jms.remoting.JmsInvokerProxyFactoryBean;
-import org.springframework.jms.remoting.JmsInvokerServiceExporter;
-import org.springframework.util.Assert;
+import org.nebulaframework.grid.cluster.manager.ClusterManager;
+import org.nebulaframework.grid.cluster.manager.services.jobs.InternalClusterJobService;
+import org.nebulaframework.grid.cluster.manager.services.registration.InternalClusterRegistrationService;
+import org.nebulaframework.util.jms.JMSRemotingSupport;
 
 /**
  * Provide support functionality for {@code ClassLoadingService},
@@ -53,36 +49,20 @@ public class ClassLoadingServiceSupport {
 	 * 
 	 * @throws IllegalArgumentException if any argument is null
 	 */
-	public static void startClassLoadingService(ClusterManager manager,
-			ConnectionFactory connectionFactory) throws IllegalArgumentException {
+	public static void startClassLoadingService() throws IllegalArgumentException {
 
-		// Check for null values
-		Assert.notNull(manager);
-		Assert.notNull(connectionFactory);
+		ClusterManager manager = ClusterManager.getInstance();
 		
-		// FIXME This type casting may cause troubles in future versions, if
-		// real implementation differs
 		// Create Service Implementation Instance
 		ClassLoadingServiceImpl service = new ClassLoadingServiceImpl(
-				(ClusterJobServiceImpl) manager.getJobService(),
-				(ClusterRegistrationServiceImpl) manager.getClusterRegistrationService());
-
-		// Spring JMS Remoting Service Exporter
-		JmsInvokerServiceExporter exporter = new JmsInvokerServiceExporter();
-		exporter.setService(service);
-		exporter.setServiceInterface(ClassLoadingService.class);
-		exporter.afterPropertiesSet();
+				(InternalClusterJobService) manager.getJobService(),
+				(InternalClusterRegistrationService) manager.getClusterRegistrationService());
 
 		// ActiveMQ Queue used for communication
-		ActiveMQQueue queue = new ActiveMQQueue(getQueueName(manager
-				.getClusterId()));
-
-		// Spring JMS MessageListenerContainer to receive messages
-		DefaultMessageListenerContainer container = new DefaultMessageListenerContainer();
-		container.setDestination(queue);
-		container.setMessageListener(exporter);
-		container.setConnectionFactory(connectionFactory);
-		container.afterPropertiesSet();
+		String queueName = getQueueName(manager.getClusterId());
+		
+		ConnectionFactory cf = manager.getConnectionFactory();
+		JMSRemotingSupport.createService(cf, queueName, service, ClassLoadingService.class);
 		
 		log.debug("[ClassLoadingService] Started");
 	}
@@ -110,18 +90,9 @@ public class ClassLoadingServiceSupport {
 	 * 
 	 * @throws IllegalArgumentException if any argument is null
 	 */
-	public static ClassLoadingService createProxy(UUID clusterId,
-			ConnectionFactory connectionFactory) throws IllegalArgumentException {
+	public static ClassLoadingService createProxy(UUID clusterId, ConnectionFactory cf) throws IllegalArgumentException {
 		
-		// Check for null values
-		Assert.notNull(clusterId);
-		Assert.notNull(connectionFactory);
-		
-		JmsInvokerProxyFactoryBean proxyFactory = new JmsInvokerProxyFactoryBean();
-		proxyFactory.setConnectionFactory(connectionFactory);
-		proxyFactory.setServiceInterface(ClassLoadingService.class);
-		proxyFactory.setQueueName(getQueueName(clusterId));
-		proxyFactory.afterPropertiesSet();
-		return (ClassLoadingService) proxyFactory.getObject();
+		String queueName = getQueueName(clusterId);
+		return JMSRemotingSupport.createProxy(cf, queueName, ClassLoadingService.class);
 	}
 }
