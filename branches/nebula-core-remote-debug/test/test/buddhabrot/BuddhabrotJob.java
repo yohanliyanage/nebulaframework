@@ -9,7 +9,7 @@ import org.nebulaframework.core.job.annotations.ProcessingSettings;
 import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
 import org.nebulaframework.core.task.GridTask;
 
-@ProcessingSettings(maxTasksInQueue=5,reductionFactor=1000, stopOnNullTask=false, mutuallyExclusiveTasks=true)
+@ProcessingSettings(maxTasksInQueue=10,reductionFactor=500, stopOnNullTask=false, mutuallyExclusiveTasks=true)
 public class BuddhabrotJob implements UnboundedGridJob<BuddhabrotResult,Serializable> {
 
 	private static final long serialVersionUID = 8997815059325788647L;
@@ -33,6 +33,8 @@ public class BuddhabrotJob implements UnboundedGridJob<BuddhabrotResult,Serializ
 		
 		this.width = width;
 		this.height = height;
+		
+		System.err.println("Job " + width + "," + height);
 		
 		exposureRed = new int[width][height];
 		exposureGreen = new int[width][height];
@@ -99,6 +101,8 @@ public class BuddhabrotJob implements UnboundedGridJob<BuddhabrotResult,Serializ
 
 		int[][] rgb = new int[width][height];
 
+		System.err.println("Cal RGB " + rgb.length + " , " + rgb[0].length);
+		
 		for (int x = 0; x < width; x++) {
 			for (int y = 0; y < height; y++) {
 				double blue = exposureBlue[x][y] / (maxexposureBlue / 2.5);

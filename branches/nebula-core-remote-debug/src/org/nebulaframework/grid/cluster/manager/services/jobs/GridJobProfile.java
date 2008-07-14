@@ -16,6 +16,7 @@ package org.nebulaframework.grid.cluster.manager.services.jobs;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -25,7 +26,7 @@ import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.ResultCallback;
 import org.nebulaframework.core.job.archive.GridArchive;
-import org.nebulaframework.core.job.future.GridJobFutureImpl;
+import org.nebulaframework.core.job.future.GridJobFutureServerImpl;
 import org.nebulaframework.core.task.GridTask;
 import org.nebulaframework.core.task.GridTaskResult;
 
@@ -48,7 +49,7 @@ public class GridJobProfile {
 	private String jobId; // JobId of GridJob
 	private UUID owner; // Owner Node Id (Submitter)
 	private GridJob<? extends Serializable, ? extends Serializable> job; // GridJob class Reference
-	private GridJobFutureImpl future; // GridJobFuture for the Job
+	private GridJobFutureServerImpl future; // GridJobFuture for the Job
 	private GridArchive archive; // If exists, the GridArchive of Job
 
 	private JobExecutionManager executionManager;
@@ -57,10 +58,10 @@ public class GridJobProfile {
 	private ResultCallback callbackProxy;
 	
 	// Tasks of GridJob, against TaskId (Sequence Number)
-	private Map<Integer, GridTask<?>> taskMap = new HashMap<Integer, GridTask<?>>();
+	private Map<Integer, GridTask<?>> taskMap = Collections.synchronizedMap(new HashMap<Integer, GridTask<?>>());
 
 	// Results for GridTasks, against TaskId (Sequence Number)
-	private Map<Integer, GridTaskResult> resultMap = new HashMap<Integer, GridTaskResult>();
+	private Map<Integer, GridTaskResult> resultMap = Collections.synchronizedMap(new HashMap<Integer, GridTaskResult>());
 
 	
 	/**
@@ -125,7 +126,7 @@ public class GridJobProfile {
 	 * 
 	 * @return GridJobFuture Implementation
 	 */
-	public GridJobFutureImpl getFuture() {
+	public GridJobFutureServerImpl getFuture() {
 		return future;
 	}
 
@@ -135,14 +136,26 @@ public class GridJobProfile {
 	 * @param future
 	 *            GridJobFuture Implementation
 	 */
-	public void setFuture(GridJobFutureImpl future) {
+	public void setFuture(GridJobFutureServerImpl future) {
 		this.future = future;
 	}
 
 	// TODO FixDoc
-	public synchronized void addResult(int taskId, GridTaskResult result) {
+//	public synchronized void addResult(int taskId, GridTaskResult result) {
+//		this.resultMap.put(taskId, result);
+//		fireCallback(result.getResult());
+//	}
+	
+	public synchronized int addResultAndRemoveTask(int taskId, GridTaskResult result) {
+		
+		if (!this.taskMap.containsKey(taskId)) {
+			throw new IllegalArgumentException("No such Task in TaskQueue for Task Id :" + taskId);
+		}
+		this.taskMap.remove(taskId);
 		this.resultMap.put(taskId, result);
+		
 		fireCallback(result.getResult());
+		return taskMap.size();
 	}
 	
 	// TODO FixDoc

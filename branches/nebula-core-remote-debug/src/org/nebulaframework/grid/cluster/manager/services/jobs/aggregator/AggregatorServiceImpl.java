@@ -169,12 +169,13 @@ public class AggregatorServiceImpl implements AggregatorService {
 		List<Serializable> results = new ArrayList<Serializable>();
 		
 		try {
+			log.info("[Aggregator] Aggregating Results for Job : {" + profile.getJobId() + "}");
+			
 			// Fetch the result from GridTaskResults
 			for (GridTaskResult result : taskResults) {
 				results.add(result.getResult());
 			}
 			
-			log.info("[Aggregator] Aggregating Results for Job : {" + profile.getJobId() + "}");
 			// Do Aggregation
 			jobResult = ((SplitAggregateGridJob<?, ?>)profile.getJob()).aggregate(results);
 			

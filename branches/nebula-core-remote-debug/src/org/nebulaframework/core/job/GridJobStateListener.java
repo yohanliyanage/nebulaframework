@@ -28,7 +28,6 @@ import org.nebulaframework.core.job.future.GridJobFuture;
  * @see GridJobFuture#addGridJobStateListener(GridJobStateListener)
  * @see GridJobFuture#removeGridJobStateListener(GridJobStateListener)
  */
-// TODO Remove if not needed
 public interface GridJobStateListener {
 	
 	/**

@@ -49,7 +49,7 @@
 	<amq:connectionFactory id="jmsConnectionFactory" brokerURL="${cluster.serviceUrl}" />
 
 	<!-- ClusterManager -->
-	<bean id="clusterManager" class="org.nebulaframework.grid.cluster.manager.ClusterManager">
+	<bean id="clusterManager" class="org.nebulaframework.grid.cluster.manager.ClusterManager" factory-method="getInstance">
 		<property name="clusterRegistrationService" ref="clusterRegistrationService" />
 		<property name="serviceMessageSender">
 			<!-- ServiceMessageSender Service -->
@@ -68,6 +68,7 @@
 		<property name="jobService" ref="clusterJobService" />
 		<property name="brokerUrl" value="${cluster.serviceUrl}" />
 		<property name="connectionFactory" ref="jmsConnectionFactory" />
+		<property name="brokerService" ref="broker" />
 	</bean>
 
 	<!-- Cluster Job Service -->
@@ -80,7 +81,6 @@
 					ref="jmsConnectionFactory" />
 			</bean>
 		</property>
-		<property name="connnectionFactory" ref="jmsConnectionFactory" />
 		<property name="remoteJobServiceProxy">
 			<bean class="org.springframework.jms.remoting.JmsInvokerProxyFactoryBean">
 				<property name="connectionFactory" ref="jmsConnectionFactory" />

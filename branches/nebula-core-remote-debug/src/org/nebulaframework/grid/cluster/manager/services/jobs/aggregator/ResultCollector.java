@@ -17,10 +17,13 @@ package org.nebulaframework.grid.cluster.manager.services.jobs.aggregator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJobState;
+import org.nebulaframework.core.job.GridJobStateListener;
 import org.nebulaframework.core.task.GridTaskResult;
 import org.nebulaframework.grid.cluster.manager.services.jobs.GridJobProfile;
 import org.nebulaframework.grid.cluster.manager.services.jobs.InternalClusterJobService;
 import org.nebulaframework.grid.cluster.manager.services.jobs.JobExecutionManager;
+import org.nebulaframework.grid.cluster.manager.services.jobs.splitter.SplitterService;
+import org.nebulaframework.grid.cluster.manager.support.CleanUpSupport;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 
 /**
@@ -34,10 +37,12 @@ import org.springframework.jms.listener.DefaultMessageListenerContainer;
  * @author Yohan Liyanage
  * @version 1.0
  */
-public class ResultCollector implements JobExecutionManager {
+public class ResultCollector implements JobExecutionManager, GridJobStateListener {
 
 	private static Log log = LogFactory.getLog(ResultCollector.class);
 
+	private boolean aggregated = false;
+	
 	private GridJobProfile profile;
 	private InternalClusterJobService jobService;
 	private DefaultMessageListenerContainer container;
@@ -56,6 +61,12 @@ public class ResultCollector implements JobExecutionManager {
 		this.profile = profile;
 		this.jobService = jobService;
 		this.container = container;
+		
+		// Register as a GridJobState Listener
+		profile.getFuture().addGridJobStateListener(this);
+		
+		// Create Job End Service Hook for Clean Up
+		CleanUpSupport.shutdownContainerWhenFinished(profile.getJobId(), container);
 	}
 
 	/**
@@ -71,26 +82,22 @@ public class ResultCollector implements JobExecutionManager {
 			log.debug("[ResultCollector] Received : Task " + result.getTaskId());
 			
 			boolean finished = false;
+			int taskCount = -1;
+				
+			// Put result to ResultMap, and remove Task from TaskMap
+			taskCount = profile.addResultAndRemoveTask(result.getTaskId(), result);
 			
 			
-			synchronized (profile) {
-				
-				// Put result to ResultMap, and remove Task from TaskMap
-				profile.addResult(result.getTaskId(), result);
-				profile.removeTask(result.getTaskId());
-				
-				log.debug("[ResultCollector] Remaining Tasks  (" + profile.getTaskCount() + ")"); // TODO Remove
-				
-				// Check if Job has finished
-				finished = (profile.getTaskCount() == 0)&&(profile.getFuture().getState()== GridJobState.EXECUTING);
-			}
+			// Check if Job has finished
+			finished = (taskCount == 0)&&(profile.getFuture().getState()== GridJobState.EXECUTING);
 
+			// TODO Remove
+			//log.debug("Task Count : " + taskCount + " | State : " + profile.getFuture().getState());
+			
 			// If Job Finished
 			if (finished) { 
-
 				// Aggregate result
-				jobService.getAggregatorService().aggregateResults(profile);
-				this.destroy(); // Destroy the Result Collector	
+				doAggregate();
 			}
 
 		} else { // Result Not Valid / Exception
@@ -104,6 +111,13 @@ public class ResultCollector implements JobExecutionManager {
 		}
 	}
 
+	private synchronized void doAggregate() {
+		if (!aggregated) {
+			aggregated = true;
+			jobService.getAggregatorService().aggregateResults(profile);
+			this.destroy(); // Destroy the Result Collector
+		}
+	}
 	/**
 	 * Called once all results are collected for the Job, to destroy the
 	 * ResultCollector. This method shutdowns the MessageListnerContainer for
@@ -136,6 +150,30 @@ public class ResultCollector implements JobExecutionManager {
 		catch (Exception e) {
 			log.error("Exception while cancelling job",e);
 			return false;
+		}
+	}
+
+	/**
+	 * Invoked when {@code GridJob}'s state has changed.
+	 * <p>
+	 * If the new state is executing and remaining task count 
+	 * is zero, this will invoke {@link #doAggregate()}.
+	 * <p>
+	 * The reason for this is to guard against situations where the
+	 * result collection completes before the {@link SplitterService}
+	 * updates the {@code GridJob}'s state to {@link GridJobState#EXECUTING}.
+	 * In such situations, {@link #doAggregate()} will not be invoked
+	 * by the {@link #onResult(GridTaskResult)} method, as no new result
+	 * will arrive.
+	 * <p>
+	 * In such situations, this method will be invoked and it will in turn
+	 * invoke the {@link #doAggregate()} method.
+	 * 
+	 * @param newState New State of the {@code GridJob}
+	 */
+	public synchronized void stateChanged(GridJobState newState) {
+		if ((newState==GridJobState.EXECUTING) && (profile.getTaskCount()==0)) {
+			doAggregate();
 		}
 	}
 

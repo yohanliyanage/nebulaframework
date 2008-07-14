@@ -52,8 +52,9 @@ import org.springframework.beans.factory.annotation.Required;
  * dependencies of the class. If deployed with in Spring Container, this will be 
  * automatically invoked by Spring itself.</p>
  * <p>
- * <i>Spring Managed</i> 
-
+ * <i>Spring Managed</i>
+ * <i>Singleton</i>  
+ * 
  * @author Yohan Liyanage
  * @version 1.0
  * 
@@ -61,8 +62,11 @@ import org.springframework.beans.factory.annotation.Required;
  */
 public class GridNode implements InitializingBean{
 
+	
 	private static Log log = LogFactory.getLog(GridNode.class);
 
+	private static GridNode instance = null;
+	
 	private UUID id;					// Node Id
 	private GridNodeProfile profile;	// Holds meta-data about node
 
@@ -74,15 +78,68 @@ public class GridNode implements InitializingBean{
 	private JobSubmissionService jobSubmissionService;
 	
 	/**
-	 * Constructs a {@code GridNode} with given {@link GridNodeProfile}.
+	 * <b>Private Constructor</b> constructs a {@code GridNode} 
+	 * with given {@link GridNodeProfile}.This constructor is private
+	 * to ensure that the <b>Singleton</b> state is managed.
+	 * 
+	 * @param profile {@link GridNodeProfile} for this Node
 	 */
-	public GridNode(GridNodeProfile profile) {
+	private GridNode(GridNodeProfile profile) {
 		super();
 		this.id = ID.getId();
 		this.profile = profile;
 		log.debug("Node " + id + " created");
 	}
 
+	/**
+	 * Creates a {@code GridNode} instance for the given 
+	 * {@code GridNodeProfile}. Note that this method is <b>not supposed
+	 * to be used</b> by users. Instead, it is to be invoked by the
+	 * Spring container during initialization of a node. Once initialized,
+	 * any further calls to this method will result in {@code IllegalStateException}.
+	 * <p>
+	 * <b>Note : </b>To obtain a reference to the current {@code GridNode}, 
+	 * use the {@link #getInstance()} method. This method is to be
+	 * invoked by Spring container.
+	 * <p>
+	 * <i>Spring Invoked</i>
+	 * 
+	 * @param profile  {@link GridNodeProfile} for this Node
+	 * 
+	 * @return The created {@code GridNode} instance
+	 * 
+	 * @throws IllegalStateException if this method is invoked after initialization
+	 */
+	public static GridNode createNode(GridNodeProfile profile) throws IllegalStateException {
+		
+		// If previous instance found, throw exception
+		if (instance!=null) throw new IllegalStateException("GridNode already created");
+		
+		return instance = new GridNode(profile);
+	}
+	
+	/**
+	 * Returns the instance of {@code GridNode}.
+	 * <p>
+	 * Prior to invoking this method, the {@code GridNode} must be 
+	 * initialized. This is done by {@link #createNode(GridNodeProfile)},
+	 * which is <i>invoked automatically</i> by the Spring Framework.
+	 * <p>
+	 * Invoking this method on an uninitialized {@code GridNode}
+	 * will result in {@code IllegalStateException}.
+	 *  
+	 * @return Instance of {@code GridNode}
+	 * 
+	 * @throws IllegalStateException if {@code GridNode} is uninitialized
+	 */
+	public static GridNode getInstance() throws IllegalStateException {
+		
+		// If instance is not created, throw exception
+		if (instance==null) throw new IllegalStateException("GridNode not initialized (created)");
+		
+		return instance;
+	}
+	
 	/**
 	 * Returns the NodeId for this {@code GridNode}.
 	 * @return {@code UUID} Node Id
@@ -242,6 +299,17 @@ public class GridNode implements InitializingBean{
 		this.connectionFactory = connectionFactory;
 	}
 
+	
+	/**
+	 * Returns the JMS {@code ConnectionFactory} which is utilized by this node to
+	 * communicate with the cluster's JMS {@code Broker}.
+	 * 
+	 * @return JMS {@code ConnectionFactory}
+	 */
+	public ConnectionFactory getConnectionFactory() {
+		return connectionFactory;
+	}
+
 	/**
 	 * This method ensures that all dependencies of the {@code GridNode} is set. 
 	 * Also, this method starts {@code GridNodeClassExporter} for the Cluster.
@@ -255,7 +323,7 @@ public class GridNode implements InitializingBean{
 	 * @throws Exception if dependencies are not set or GridNodeClassExporter fails with Exceptions.
 	 */
 	public void afterPropertiesSet() throws Exception {
-		GridNodeClassExporterSupport.startService(this.id, this.connectionFactory);
+		GridNodeClassExporterSupport.startService();
 	}
 	
 	public UUID getClusterId() {

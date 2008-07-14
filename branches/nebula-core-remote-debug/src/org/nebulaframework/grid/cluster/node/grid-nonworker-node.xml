@@ -41,7 +41,7 @@
 	<amq:connectionFactory id="jmsConnectionFactory" brokerURL="${cluster.url}" />
 
 	<!-- Local Node Instance -->
-	<bean id="localNode" class="org.nebulaframework.grid.cluster.node.GridNode">
+	<bean id="localNode" class="org.nebulaframework.grid.cluster.node.GridNode" factory-method="createNode">
 		<constructor-arg>
 			<!-- Create Grid Node Profile -->
 			<bean class="org.nebulaframework.grid.cluster.node.GridNodeProfileImpl">

@@ -18,13 +18,12 @@ import java.util.UUID;
 
 import javax.jms.ConnectionFactory;
 
-import org.apache.activemq.command.ActiveMQQueue;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nebulaframework.grid.cluster.manager.support.CleanUpSupport;
+import org.nebulaframework.grid.cluster.node.GridNode;
+import org.nebulaframework.util.jms.JMSRemotingSupport;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
-import org.springframework.jms.remoting.JmsInvokerProxyFactoryBean;
-import org.springframework.jms.remoting.JmsInvokerServiceExporter;
-import org.springframework.util.Assert;
 
 /**
  * Provides support methods which assists the {@code GridNode} to create and
@@ -49,41 +48,22 @@ public class GridNodeClassExporterSupport {
 	 * necessary JMS resources, along with Spring JMS Remoting services, and
 	 * starts the remote service.
 	 * 
-	 * @param nodeId
-	 *            Node Id of local {@code GridNode}
-	 * @param connectionFactory
-	 *            JMS {@code ConnectionFactory}
-	 * 
 	 * @throws IllegalArgumentException
 	 *             if any argument is {@code null}
 	 */
-	public static void startService(UUID nodeId,
-			ConnectionFactory connectionFactory)
-			throws IllegalArgumentException {
+	public static void startService()throws IllegalArgumentException {
 
-		// Check for nulls
-		Assert.notNull(nodeId);
-		Assert.notNull(connectionFactory);
-
+		UUID nodeId = GridNode.getInstance().getId();
+		ConnectionFactory cf =  GridNode.getInstance().getConnectionFactory();
+		String queueName = getExporterQueueName(nodeId);
+		
 		// Create Service
 		GridNodeClassExporterImpl service = new GridNodeClassExporterImpl();
-
-		// Create Spring JMS Service Exporter
-		JmsInvokerServiceExporter exporter = new JmsInvokerServiceExporter();
-		exporter.setService(service);
-		exporter.setServiceInterface(GridNodeClassExporter.class);
-		exporter.afterPropertiesSet();
-
-		// Create JMS Queue for Communication
-		ActiveMQQueue queue = new ActiveMQQueue(getExporterQueueName(nodeId));
-
-		// Create Spring JMS MessageListenerContainer to receive messages
-		DefaultMessageListenerContainer container = new DefaultMessageListenerContainer();
-		container.setConnectionFactory(connectionFactory);
-		container.setDestination(queue);
-		container.setMessageListener(exporter);
-		container.afterPropertiesSet();
-
+		DefaultMessageListenerContainer container = JMSRemotingSupport.createService(cf, queueName, service, GridNodeClassExporter.class);
+		
+		// CleanUpHook
+		CleanUpSupport.shutdownContainerWhenNodeLeft(nodeId.toString(), container);
+		
 		log.debug("[GridNodeClassExporter] Service Started");
 	}
 
@@ -114,22 +94,19 @@ public class GridNodeClassExporterSupport {
 	 * 
 	 * @return The {@code GridNodeClassExporter} Service Proxy
 	 */
-	public static GridNodeClassExporter createServiceProxy(UUID nodeId,
-			ConnectionFactory connectionFactory)
+	public static GridNodeClassExporter createServiceProxy(UUID nodeId, ConnectionFactory cf)
 			throws IllegalArgumentException {
 		
 		// Check for nulls
-		Assert.notNull(nodeId);
-		Assert.notNull(connectionFactory);
+		String queueName = getExporterQueueName(nodeId);
 		
-		// Create Spring JMS Proxy Factory
-		JmsInvokerProxyFactoryBean proxyFactory = new JmsInvokerProxyFactoryBean();
-		proxyFactory.setConnectionFactory(connectionFactory);
-		proxyFactory.setQueueName(getExporterQueueName(nodeId));
-		proxyFactory.setServiceInterface(GridNodeClassExporter.class);
-		proxyFactory.afterPropertiesSet();
-
+		
 		// Return Proxy Object
-		return (GridNodeClassExporter) proxyFactory.getObject();
+		GridNodeClassExporter proxy = JMSRemotingSupport.createProxy(cf, queueName, GridNodeClassExporter.class);
+		
+		// CleanUp Hook
+		CleanUpSupport.removeQueueWhenNodeLeft(nodeId.toString(), queueName);
+		
+		return proxy;
 	}
 }

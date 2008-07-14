@@ -66,4 +66,24 @@ public interface InternalClusterJobService extends ClusterJobService {
 	 */
 	public AggregatorService getAggregatorService();
 
+	/**
+	 * Returns the {@code GridJobProfile} for a given {@code GridJob}.
+	 * 
+	 * @param jobId
+	 *            JobId of the {@code GridJob}
+	 * @return {@code GridJobProfile} for the specified {@code GridJob}.
+	 */
+	public GridJobProfile getProfile(String jobId);
+	
+	/**
+	 * Returns a {@code boolean} value indicating whether a given JobId refers
+	 * to an active {@code GridJob} of this service instance.
+	 * 
+	 * @param jobId
+	 *            JobId of the {@code GridJob}
+	 * 
+	 * @return {@code true} if the {@code GridJob} is active, {@code false}
+	 *         otherwise.
+	 */
+	public boolean isActiveJob(String jobId);
 }

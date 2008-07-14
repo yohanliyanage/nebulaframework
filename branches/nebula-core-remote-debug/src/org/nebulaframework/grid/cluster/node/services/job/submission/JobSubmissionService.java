@@ -50,7 +50,8 @@ public interface JobSubmissionService {
 	 */
 	public GridJobFuture submitJob(GridJob<?,?> job) throws GridJobRejectionException;
 	
-	// TODO FixDoc
+	
+	// TODO FixDoc callback : Intermediate result callback
 	public GridJobFuture submitJob(GridJob<?,?> job, ResultCallback callback) throws GridJobRejectionException;
 	
 	/**
@@ -72,6 +73,6 @@ public interface JobSubmissionService {
 	 */
 	public Map<String, GridJobFuture> submitArchive(GridArchive archive);
 	
-	// TODO FixDoc 
+	// TODO FixDoc : callbacks : Intermediate result callback
 	public Map<String, GridJobFuture> submitArchive(GridArchive archive, Map<String, ResultCallback> callbacks);
 }

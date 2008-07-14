@@ -6,7 +6,6 @@ import java.awt.HeadlessException;
 import java.awt.Image;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.IOException;
 import java.io.Serializable;
 
 import javax.swing.JFrame;
@@ -17,14 +16,13 @@ import org.apache.xbean.spring.context.ClassPathXmlApplicationContext;
 import org.nebulaframework.core.job.ResultCallback;
 import org.nebulaframework.core.job.future.GridJobFuture;
 import org.nebulaframework.grid.cluster.node.GridNode;
-import org.nebulaframework.grid.cluster.registration.RegistrationException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.util.StopWatch;
 
 public class MandelbrotApp extends JFrame {
 
-	private static final int WIDTH = 600;
-	private static final int HEIGHT = 600;
+	private static final int WIDTH = 300;
+	private static final int HEIGHT = 300;
 
 	private static final long serialVersionUID = -2070429091106618345L;
 	private static Log log = LogFactory.getLog(MandelbrotApp.class);
@@ -35,8 +33,12 @@ public class MandelbrotApp extends JFrame {
 	private Graphics offg;
 
 	private boolean done = false;
+	private boolean shutdown = false;
+	
 	private int progress;
 
+	private GridJobFuture future;
+	
 	public MandelbrotApp(final GridNode nodeRef) throws HeadlessException {
 		super();
 		this.setSize(WIDTH, HEIGHT);
@@ -46,17 +48,25 @@ public class MandelbrotApp extends JFrame {
 			@Override
 			public void windowClosing(WindowEvent e) {
 				
+				
+				shutdown = true;
+				
 				setTitle("Shutting Down Node... Wait");
 				System.out.println("Shutting Down Node... Wait");
 				
-				nodeRef.shutdown(true, false);
-
-				// Give time to send termination message
 				try {
-					Thread.sleep(2000);
-				} catch (InterruptedException e1) {
+					
+					if (future!=null) {
+						if (!future.isJobFinished()) {
+							future.cancel();
+						}
+					}
+					nodeRef.shutdown(true, false);
+					
+				} catch (Exception e1) {
 					e1.printStackTrace();
 				}
+				
 				
 				System.exit(0);
 				
@@ -83,7 +93,7 @@ public class MandelbrotApp extends JFrame {
 			sw.start();
 
 			ApplicationContext ctx = new ClassPathXmlApplicationContext(
-					"org/nebulaframework/core/grid/cluster/node/grid-node.xml");
+					"org/nebulaframework/grid/cluster/node/grid-node.xml");
 			GridNode node = (GridNode) ctx.getBean("localNode");
 
 			log.info("GridNode ID : " + node.getId());
@@ -123,11 +133,13 @@ public class MandelbrotApp extends JFrame {
 
 					});
 			
+			app.setFuture(future);
 			// Block till job finishes
 			future.getResult();
 			app.setDone(true);
-
+			
 			sw.stop();
+			
 			log.info("GridJob Finished. Duration " + sw.getLastTaskTimeMillis()
 					+ " ms");
 
@@ -135,13 +147,7 @@ public class MandelbrotApp extends JFrame {
 			System.in.read();
 			node.getNodeRegistrationService().unregister();
 
-			log.info("Unregistered, Terminating...");
-			System.exit(0);
-
-		} catch (RegistrationException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -163,6 +169,7 @@ public class MandelbrotApp extends JFrame {
 
 	public void setDone(boolean done) {
 		this.done = done;
+		repaint();
 	}
 
 	public void setProgress(int progress) {
@@ -199,7 +206,7 @@ public class MandelbrotApp extends JFrame {
 
 	private void displayResult(MandelbrotResult result) {
 		
-		this.setTitle("Rendering...");
+		if (!shutdown) this.setTitle("Rendering...");
 		
 		int j = 0;
 		for (int l = result.getStart(); j < result.getLines(); j++, l++) {
@@ -213,4 +220,9 @@ public class MandelbrotApp extends JFrame {
 		repaint();
 	}
 
+	public void setFuture(GridJobFuture future) {
+		this.future = future;
+	}
+
+	
 }

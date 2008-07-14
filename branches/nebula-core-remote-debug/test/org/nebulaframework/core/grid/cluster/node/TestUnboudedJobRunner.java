@@ -30,7 +30,7 @@ public class TestUnboudedJobRunner {
 			StopWatch sw = new StopWatch();
 			sw.start();
 			
-			ApplicationContext ctx = new ClassPathXmlApplicationContext("org/nebulaframework/core/grid/cluster/node/grid-node.xml");
+			ApplicationContext ctx = new ClassPathXmlApplicationContext("org/nebulaframework/grid/cluster/node/grid-node.xml");
 			GridNode node = (GridNode) ctx.getBean("localNode");
 			
 			log.info("GridNode ID : " + node.getId());

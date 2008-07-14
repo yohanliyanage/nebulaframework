@@ -21,7 +21,6 @@ import java.util.UUID;
 
 import javax.jms.ConnectionFactory;
 
-import org.apache.activemq.command.ActiveMQQueue;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJob;
@@ -30,14 +29,14 @@ import org.nebulaframework.core.job.SplitAggregateGridJob;
 import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.core.job.exceptions.GridJobRejectionException;
 import org.nebulaframework.core.job.future.GridJobFuture;
+import org.nebulaframework.core.job.future.GridJobFutureClientProxy;
+import org.nebulaframework.core.job.future.InternalGridJobFuture;
 import org.nebulaframework.grid.cluster.manager.services.facade.ClusterManagerServicesFacade;
 import org.nebulaframework.grid.cluster.manager.services.jobs.JMSNamingSupport;
 import org.nebulaframework.grid.cluster.node.GridNode;
 import org.nebulaframework.util.hashing.SHA1Generator;
+import org.nebulaframework.util.jms.JMSRemotingSupport;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.jms.listener.DefaultMessageListenerContainer;
-import org.springframework.jms.remoting.JmsInvokerProxyFactoryBean;
-import org.springframework.jms.remoting.JmsInvokerServiceExporter;
 
 /**
  * Implementation of {@code JobSubmissionService}. Allows the {@code GridNode}
@@ -117,8 +116,7 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
 	 * {@inheritDoc}
 	 * <p>
 	 * This method delegates to each {@GridJob} submission to internal
-	 * overloaded version of method
-	 * {@link #submitJob(GridJob, GridArchive)}
+	 * overloaded version of method {@link #submitJob(GridJob, GridArchive)}
 	 */
 	public Map<String, GridJobFuture> submitArchive(GridArchive archive) {
 		// Delegate to overloaded version
@@ -134,7 +132,7 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
 
 		if (callbacks == null) {
 			// TODO Detect Callbacks automatically ?
-			callbacks = new HashMap<String, ResultCallback>(); // TODO Remove?
+			callbacks = new HashMap<String, ResultCallback>();
 		}
 
 		// Retrieve GridJob Class Names
@@ -151,7 +149,8 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
 						.newInstance();
 
 				// Submit and get GridJobFuture
-				futureMap.put(className, submitJob(job, archive, callbacks.get(className)));
+				futureMap.put(className, submitJob(job, archive, callbacks
+						.get(className)));
 
 			} catch (GridJobRejectionException e) {
 				// Job Rejected
@@ -203,16 +202,12 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
 		log.debug("Submitted");
 
 		// Create local proxy to interface remote service
-		JmsInvokerProxyFactoryBean proxyFactory = new JmsInvokerProxyFactoryBean();
-		proxyFactory.setConnectionFactory(connectionFactory);
-		proxyFactory.setQueueName(JMSNamingSupport.getFutureQueueName(jobId));
-		proxyFactory.setServiceInterface(GridJobFuture.class);
-
-		// Manually call the afterPropertiesSet() to allow object to initialize
-		proxyFactory.afterPropertiesSet();
+		String queueName = JMSNamingSupport.getFutureQueueName(jobId);
+		InternalGridJobFuture future = JMSRemotingSupport
+				.createProxy(connectionFactory, queueName, InternalGridJobFuture.class);
 
 		// Return Proxy
-		return (GridJobFuture) proxyFactory.getObject();
+		return new GridJobFutureClientProxy(future);
 	}
 
 	private String exposeCallback(ResultCallback callback) {
@@ -222,22 +217,10 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
 				+ SHA1Generator.generate("" + this.node.getClusterId()
 						+ this.node.getId() + UUID.randomUUID());
 
-		ActiveMQQueue queue = new ActiveMQQueue(queueName);
-		
-		// Export Service
-		JmsInvokerServiceExporter exporter = new JmsInvokerServiceExporter();
-		exporter.setServiceInterface(ResultCallback.class);
-		exporter.setService(callback);
-		exporter.afterPropertiesSet();
+		ConnectionFactory cf = GridNode.getInstance().getConnectionFactory();
+		JMSRemotingSupport.createService(cf, queueName, callback,
+											ResultCallback.class);
 
-		DefaultMessageListenerContainer container = new DefaultMessageListenerContainer();
-		container.setConnectionFactory(connectionFactory);
-		container.setDestination(queue);
-		container.setMessageListener(exporter);
-		container.afterPropertiesSet();
-		
-		// TODO Create Job End Hook to Clean Up
-		
 		return queueName;
 	}
 

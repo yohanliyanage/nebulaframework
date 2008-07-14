@@ -8,8 +8,8 @@ import org.nebulaframework.core.job.deploy.GridJobInfo;
 import org.nebulaframework.core.job.exceptions.GridJobPermissionDeniedException;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.manager.services.jobs.JMSNamingSupport;
+import org.nebulaframework.util.jms.JMSRemotingSupport;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
-import org.springframework.jms.remoting.JmsInvokerServiceExporter;
 
 // TODO FixDoc
 public class RemoteClusterJobServiceImpl implements InternalRemoteClusterJobService, RemoteClusterJobService {
@@ -28,21 +28,12 @@ public class RemoteClusterJobServiceImpl implements InternalRemoteClusterJobServ
 	}		
 
 	protected void initialize() {
+		
 		// Create JMS Stuff and expose service
-		
-		JmsInvokerServiceExporter exporter = new JmsInvokerServiceExporter();
-		exporter.setService(this);
-		exporter.setServiceInterface(RemoteClusterJobService.class);
-		exporter.afterPropertiesSet();
-		
-		container = new DefaultMessageListenerContainer();
-		container.setDestinationName(JMSNamingSupport.getRemoteJobServiceQueueName());
-		container.setConnectionFactory(connectionFactory);
-		container.setMessageListener(exporter);
-		container.setMessageSelector("targetClusterId = '" + cluster.getClusterId() + "'");
-		container.afterPropertiesSet();
-		
+		String queueName = JMSNamingSupport.getRemoteJobServiceQueueName();
+		JMSRemotingSupport.createService(connectionFactory, queueName, this, RemoteClusterJobService.class);
 		log.debug("[RemoteJobService] Initialized");
+		
 	}
 	
 	/* (non-Javadoc)

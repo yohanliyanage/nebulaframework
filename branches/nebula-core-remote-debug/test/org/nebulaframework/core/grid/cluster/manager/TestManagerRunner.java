@@ -50,7 +50,7 @@ public class TestManagerRunner {
 		log.info("ClusterManager Starting");
 		StopWatch sw = new StopWatch();
 		sw.start();
-		ctx = new ClassPathXmlApplicationContext("org/nebulaframework/core/grid/cluster/manager/cluster-manager.xml");
+		ctx = new ClassPathXmlApplicationContext("org/nebulaframework/grid/cluster/manager/cluster-manager.xml");
 		sw.stop();
 		log.info("ClusterManager Started Up. [" + sw.getLastTaskTimeMillis() + " ms]");
 		return (ClusterManager) ctx.getBean("clusterManager");

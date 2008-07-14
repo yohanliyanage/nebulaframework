@@ -14,8 +14,6 @@
 
 package org.nebulaframework.grid.cluster.node.services.message;
 
-import org.nebulaframework.grid.service.event.ServiceEvent;
-import org.nebulaframework.grid.service.event.ServiceHookCallback;
 import org.nebulaframework.grid.service.message.ServiceMessage;
 
 /**
@@ -49,5 +47,4 @@ public interface ServiceMessagesSupport {
 	 */
 	public ServiceMessage getLastMessage();
 	
-	public void addServiceHook(ServiceEvent event, ServiceHookCallback callback);
 }

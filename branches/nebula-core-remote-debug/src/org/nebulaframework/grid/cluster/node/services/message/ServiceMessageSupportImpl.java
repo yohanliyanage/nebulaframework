@@ -14,17 +14,11 @@
 
 package org.nebulaframework.grid.cluster.node.services.message;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.grid.cluster.node.GridNode;
-import org.nebulaframework.grid.service.event.ServiceEvent;
-import org.nebulaframework.grid.service.event.ServiceHookCallback;
+import org.nebulaframework.grid.service.event.ServiceEventsSupport;
 import org.nebulaframework.grid.service.message.ServiceMessage;
-import org.nebulaframework.grid.service.message.ServiceMessageType;
 
 /**
  * Implementation of {@code ServiceMessagesSupport}. Handles
@@ -50,7 +44,6 @@ public class ServiceMessageSupportImpl implements ServiceMessagesSupport {
 	private GridNode node; // Owner Node
 	private ServiceMessage message; // Last Message
 
-	private List<ServiceHookElement> hooks = new ArrayList<ServiceHookElement>();
 
 	/**
 	 * Constructs a {@code ServiceMessageSupportImpl} instance for given
@@ -96,78 +89,15 @@ public class ServiceMessageSupportImpl implements ServiceMessagesSupport {
 				log.debug("[ServiceMessage]Job Message ignored as no JobExecutionService is registered");
 			}
 		}
-		if (message.isClusterMessage()) {
-			processClusterMessage(message);
-		}
-
-		// TODO Write the rest of code to manage message and notify relevant
-		// parties
-
-		notifyHooks(message);
+		
+		// Notify Service Event
+		ServiceEventsSupport.getInstance().onServiceMessage(message);
 
 	}
 
-	// TODO FixDoc
-	private void notifyHooks(final ServiceMessage message) {
-		new Thread(new Runnable() {
-			public void run() {
-				for (ServiceHookElement hook : hooks) {
-					if (hook.getEvent().getType()== message.getType()) {
-						if (hook.getEvent().getMessage()!=null) {
-							if (hook.getEvent().getMessage().equals(message.getMessage())) {
-								hook.getCallback().onServiceEvent();
-							}
-						}
-						else {
-							hook.getCallback().onServiceEvent();
-						}
-					}
-				}
-			}
-		}).start();
-	}
 
-	// TODO Fix Doc
-	protected void processClusterMessage(ServiceMessage message) {
-		String clusterId = message.getMessage();
 
-		// Process only messages from own Cluster
-		if (!node.getClusterId().equals(UUID.fromString(clusterId))) {
-			return;
-		}
 
-		// Cluster Shutdown, Shutdown Node
-		if (message.getType() == ServiceMessageType.CLUSTER_SHUTDOWN) {
-			// TODO Fail Over ?
-			node.shutdown(true, true);
-		}
-	}
 
-	// TODO FixDoc
-	public void addServiceHook(ServiceEvent event, ServiceHookCallback callback) {
-		// TODO Auto-generated method stub
-
-	}
-
-	// TODO FixDoc
-	private class ServiceHookElement {
-		private ServiceEvent event;
-		private ServiceHookCallback callback;
-
-		public ServiceHookElement(ServiceEvent event, ServiceHookCallback callback) {
-			super();
-			this.event = event;
-			this.callback = callback;
-		}
-
-		public ServiceEvent getEvent() {
-			return event;
-		}
-
-		public ServiceHookCallback getCallback() {
-			return callback;
-		}
-
-	}
 
 }

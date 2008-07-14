@@ -89,22 +89,4 @@ public class GridJobInfo implements Serializable {
 		return this.archive != null;
 	}
 
-	// TODO Externalizable ?
-//	/**
-//	 * {@inheritDoc}
-//	 */
-//	public void readExternal(ObjectInput in) throws IOException,
-//			ClassNotFoundException {
-//		this.jobId = in.readUTF();
-//		this.archive = (GridArchive) in.readObject();
-//	}
-//
-//	/**
-//	 * {@inheritDoc}
-//	 */	
-//	public void writeExternal(ObjectOutput out) throws IOException {
-//		out.writeUTF(jobId);
-//		out.writeObject(archive);
-//	}
-
 }

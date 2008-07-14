@@ -118,21 +118,4 @@ public class ServiceMessage implements Serializable {
 		return type + " : " + message;
 	}
 
-	// TODO Externalizable ?
-//	/**
-//	 * {@inheritDoc}
-//	 */
-//	public void readExternal(ObjectInput in) throws IOException,
-//			ClassNotFoundException {
-//		this.type = ServiceMessageType.valueOf(in.readUTF());
-//		this.message = in.readUTF();
-//	}
-//
-//	/**
-//	 * {@inheritDoc}
-//	 */
-//	public void writeExternal(ObjectOutput out) throws IOException {
-//		out.writeUTF(type.name());
-//		out.writeUTF((message==null)?"":message);
-//	}
 }
