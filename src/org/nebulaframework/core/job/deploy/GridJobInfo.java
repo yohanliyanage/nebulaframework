@@ -17,8 +17,8 @@ package org.nebulaframework.core.job.deploy;
 import java.io.Externalizable;
 import java.io.Serializable;
 
-import org.nebulaframework.core.grid.cluster.manager.services.jobs.ClusterJobService;
 import org.nebulaframework.core.job.archive.GridArchive;
+import org.nebulaframework.grid.cluster.manager.services.jobs.ClusterJobService;
 
 /**
  * Holds information regarding an active GridJob, and delivered

@@ -19,15 +19,16 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nebulaframework.core.grid.cluster.manager.ClusterManager;
-import org.nebulaframework.core.grid.cluster.manager.services.jobs.ClusterJobServiceImpl;
-import org.nebulaframework.core.grid.cluster.manager.services.registration.ClusterRegistrationServiceImpl;
 import org.nebulaframework.deployment.classloading.GridNodeClassLoader;
 import org.nebulaframework.deployment.classloading.node.exporter.GridNodeClassExporter;
+import org.nebulaframework.grid.cluster.manager.ClusterManager;
+import org.nebulaframework.grid.cluster.manager.services.jobs.ClusterJobServiceImpl;
+import org.nebulaframework.grid.cluster.manager.services.registration.ClusterRegistrationServiceImpl;
 import org.springframework.util.Assert;
 import org.springframework.util.StopWatch;
 
@@ -272,6 +273,18 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 			
 			// Construct Thread Pool Executor with 1 Thread
 			executorService = new ScheduledThreadPoolExecutor(1);
+			executorService.setThreadFactory(new ThreadFactory(){
+
+				// Use a Custom ThreadFactory to make use 
+				// of MIN_PRIORITY threads for GC
+				public Thread newThread(Runnable r) {
+					Thread t = new Thread(r);
+					t.setPriority(Thread.MIN_PRIORITY);
+					return t;
+				}
+			
+			});
+			
 			executorService.scheduleWithFixedDelay(this, CACHE_GC_INITIAL_DELAY_SECS, CACHE_GC_SEQ_DELAY_SECS, TimeUnit.SECONDS);
 		}
 
@@ -322,7 +335,7 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 			}
 			
 			stopWatch.stop();
-			log.debug("[Cache GC] [Released " + released + " bytes. "+ stopWatch.getTotalTimeMillis() +" ms]");
+			log.debug("[Class Cache GC] Released " + released + " bytes. "+ stopWatch.getTotalTimeMillis() +" ms");
 		}
 		
 	}

@@ -1,7 +1,7 @@
 package test.mandelbrot;
 
-import org.nebulaframework.core.GridExecutionException;
 import org.nebulaframework.core.task.GridTask;
+import org.nebulaframework.grid.GridExecutionException;
 
 public class MandelbrotTask implements GridTask<MandelbrotResult> {
 

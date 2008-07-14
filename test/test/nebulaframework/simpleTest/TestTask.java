@@ -16,8 +16,8 @@ package test.nebulaframework.simpleTest;
 import java.util.Random;
 
 import org.apache.tools.ant.AntClassLoader;
-import org.nebulaframework.core.GridExecutionException;
 import org.nebulaframework.core.task.GridTask;
+import org.nebulaframework.grid.GridExecutionException;
 
 /**
  * Task Implementation for Test Job.
