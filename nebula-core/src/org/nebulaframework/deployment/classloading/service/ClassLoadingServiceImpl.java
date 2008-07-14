@@ -19,15 +19,16 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nebulaframework.core.grid.cluster.manager.ClusterManager;
-import org.nebulaframework.core.grid.cluster.manager.services.jobs.ClusterJobServiceImpl;
-import org.nebulaframework.core.grid.cluster.manager.services.registration.ClusterRegistrationServiceImpl;
 import org.nebulaframework.deployment.classloading.GridNodeClassLoader;
 import org.nebulaframework.deployment.classloading.node.exporter.GridNodeClassExporter;
+import org.nebulaframework.grid.cluster.manager.ClusterManager;
+import org.nebulaframework.grid.cluster.manager.services.jobs.InternalClusterJobService;
+import org.nebulaframework.grid.cluster.manager.services.registration.InternalClusterRegistrationService;
 import org.springframework.util.Assert;
 import org.springframework.util.StopWatch;
 
@@ -88,28 +89,29 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 	private int cacheSize = 0;							// Current Cache Size (KB)
 	private ClassCacheGC cacheGC = new ClassCacheGC();	// Garbage Collector
 	
-	private ClusterJobServiceImpl jobServiceImpl;			
-	private ClusterRegistrationServiceImpl regServiceImpl;	
+	private InternalClusterJobService jobService;			
+	private InternalClusterRegistrationService regService;	
 
 	/**
 	 * Constructs a {@code ClassLoadingServiceImpl}.
 	 * 
-	 * @param jobServiceImpl JobService Implementation Reference
-	 * @param regServiceImpl Registration Service Implementation Reference
+	 * @param jobService Internal JobService Reference
+	 * @param regService Internal Registration Service Implementation Reference
 	 * 
 	 * @throws IllegalArgumentException if any argument is {@code null}
 	 */
-	public ClassLoadingServiceImpl(ClusterJobServiceImpl jobServiceImpl,
-			ClusterRegistrationServiceImpl regServiceImpl) 
+	public ClassLoadingServiceImpl(InternalClusterJobService jobService,
+			InternalClusterRegistrationService regService) 
 			throws IllegalArgumentException {
+		
 		super();
 		
 		// Check for null
-		Assert.notNull(jobServiceImpl);
-		Assert.notNull(regServiceImpl);
+		Assert.notNull(jobService);
+		Assert.notNull(regService);
 		
-		this.jobServiceImpl = jobServiceImpl;
-		this.regServiceImpl = regServiceImpl;
+		this.jobService = jobService;
+		this.regService = regService;
 	}
 
 	/**
@@ -136,10 +138,10 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 			/* -- Remote Loading -- */
 			
 			// Get the owner node
-			UUID ownerId = jobServiceImpl.getProfile(jobId).getOwner();
+			UUID ownerId = jobService.getProfile(jobId).getOwner();
 
 			// Get ClassExporter of owner node
-			GridNodeClassExporter exporter = regServiceImpl
+			GridNodeClassExporter exporter = regService
 					.getGridNodeDelegate(ownerId).getClassExporter();
 
 			// Request class export
@@ -272,6 +274,18 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 			
 			// Construct Thread Pool Executor with 1 Thread
 			executorService = new ScheduledThreadPoolExecutor(1);
+			executorService.setThreadFactory(new ThreadFactory(){
+
+				// Use a Custom ThreadFactory to make use 
+				// of MIN_PRIORITY threads for GC
+				public Thread newThread(Runnable r) {
+					Thread t = new Thread(r);
+					t.setPriority(Thread.MIN_PRIORITY);
+					return t;
+				}
+			
+			});
+			
 			executorService.scheduleWithFixedDelay(this, CACHE_GC_INITIAL_DELAY_SECS, CACHE_GC_SEQ_DELAY_SECS, TimeUnit.SECONDS);
 		}
 
@@ -313,7 +327,7 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 					CacheEntry entry = iterator.next();
 					
 					// If Job is not Active anymore
-					if (!jobServiceImpl.isActiveJob(entry.getJobId())) {
+					if (!jobService.isActiveJob(entry.getJobId())) {
 						cacheSize -= entry.getByteSize();
 						released += entry.getByteSize();
 						iterator.remove(); // Remove from cache
@@ -322,7 +336,7 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 			}
 			
 			stopWatch.stop();
-			log.debug("[Cache GC] [Released " + released + " bytes. "+ stopWatch.getTotalTimeMillis() +" ms]");
+			log.debug("[Class Cache GC] Released " + released + " bytes. "+ stopWatch.getTotalTimeMillis() +" ms");
 		}
 		
 	}

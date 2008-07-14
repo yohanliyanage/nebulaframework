@@ -15,14 +15,18 @@ package org.nebulaframework.core.task;
 
 import java.io.Serializable;
 
-import org.nebulaframework.core.GridExecutionException;
-import org.nebulaframework.core.job.GridJob;
+import org.nebulaframework.core.job.SplitAggregateGridJob;
+import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
+import org.nebulaframework.grid.GridExecutionException;
 
 /**
  * This interface defines the contract for a task which can be executed on a remote node of the grid.
  * The remote code should be given under {@link GridTask#execute()} method.
  * <p>
- * {@link GridJob}s will be split into {@code GridTask}s at the time of {@code split} operation.
+ * {@link SplitAggregateGridJob}s will be split into {@code GridTask}s at the time of {@code split} operation.
+ * <p>
+ * {@link UnboundedGridJob}s will generate {@code GridTask} at each invocation of {@link UnboundedGridJob#task()}
+ * method.
  * 
  * @author Yohan Liyanage
  * @version 1.0
