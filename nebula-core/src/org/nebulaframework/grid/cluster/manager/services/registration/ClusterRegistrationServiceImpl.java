@@ -103,6 +103,9 @@ public class ClusterRegistrationServiceImpl implements
 
 		log.info("Node registered [ID:" + nodeId + "]");
 
+		// Start HeartBeat Tracking
+		cluster.getHeartBeatService().addNode(nodeId);
+		
 		// Return Registration Data to Node
 		return reg;
 	}

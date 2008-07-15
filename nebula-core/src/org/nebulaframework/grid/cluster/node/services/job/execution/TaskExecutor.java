@@ -35,8 +35,8 @@ import org.nebulaframework.core.task.GridTaskResultImpl;
 import org.nebulaframework.deployment.classloading.GridArchiveClassLoader;
 import org.nebulaframework.deployment.classloading.GridNodeClassLoader;
 import org.nebulaframework.deployment.classloading.service.ClassLoadingService;
-import org.nebulaframework.grid.cluster.manager.services.jobs.JMSNamingSupport;
 import org.nebulaframework.grid.cluster.node.GridNode;
+import org.nebulaframework.util.jms.JMSNamingSupport;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 

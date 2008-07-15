@@ -46,6 +46,11 @@ public enum ServiceMessageType {
 	NODE_UNREGISTERED,
 	
 	/**
+	 * No heart beat from a GridNode (Disconnected). 
+	 */
+	HEARTBEAT_FAILED,
+	
+	/**
 	 * {@code ClusterManager} is shutting down.
 	 */
 	CLUSTER_SHUTDOWN
