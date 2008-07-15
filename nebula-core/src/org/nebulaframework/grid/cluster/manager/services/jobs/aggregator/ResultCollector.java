@@ -91,8 +91,6 @@ public class ResultCollector implements JobExecutionManager, GridJobStateListene
 			// Check if Job has finished
 			finished = (taskCount == 0)&&(profile.getFuture().getState()== GridJobState.EXECUTING);
 
-			// TODO Remove
-			//log.debug("Task Count : " + taskCount + " | State : " + profile.getFuture().getState());
 			
 			// If Job Finished
 			if (finished) { 
@@ -111,6 +109,11 @@ public class ResultCollector implements JobExecutionManager, GridJobStateListene
 		}
 	}
 
+	/**
+	 * Invokes the aggregation process by calling
+	 * the {@code aggregateResults} method of the
+	 * {@code AggregatorService}.
+	 */
 	private synchronized void doAggregate() {
 		if (!aggregated) {
 			aggregated = true;
