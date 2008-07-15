@@ -105,6 +105,9 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
 		return submitJob(job, null);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	public GridJobFuture submitJob(GridJob<?, ?> job, ResultCallback callback)
 			throws GridJobRejectionException {
 
@@ -123,7 +126,9 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
 		return submitArchive(archive, null);
 	}
 
-	// TODO FixDoc : Map<ClassName, callback>
+	/**
+	 * {@inheritDoc}
+	 */
 	public Map<String, GridJobFuture> submitArchive(GridArchive archive,
 			Map<String, ResultCallback> callbacks) {
 
@@ -210,6 +215,14 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
 		return new GridJobFutureClientProxy(future);
 	}
 
+	/**
+	 * Exposes the given {@code ResultCallback} object to be a
+	 * JMS Remote service using Spring JMS Remoting API.
+	 * 
+	 * @param callback {@code ResultCallback} to be remote enabled
+	 * 
+	 * @return JMS Queue Name to be used for communications
+	 */
 	private String exposeCallback(ResultCallback callback) {
 
 		// Generate QueueName [nebula.job.callback.<SHA1>]

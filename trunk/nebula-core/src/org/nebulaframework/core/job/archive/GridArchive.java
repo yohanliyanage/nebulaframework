@@ -218,7 +218,7 @@ public class GridArchive implements Serializable {
 	 * @return if success, {@code true}, otherwise {@code false}.
 	 */
 	protected static boolean verify(File file) {
-		// TODO Implement to verify the NAR
+		// FIXME Implement to verify the NAR
 		return true;
 	}	
 	
@@ -321,7 +321,13 @@ public class GridArchive implements Serializable {
 		return false;
 	}	
 	
-	// TODO FixDoc
+	/**
+	 * Returns true if the given interface is a sub-interface
+	 * of {@code GridJob} marker interface.
+	 * 
+	 * @param intrface interface to check
+	 * @return if {@code GridJob}, {@code true}, otherwise {@code false}
+	 */
 	private static boolean isGridJobInterface(Class<?> intrface) {
 		for(Class<?> iface : intrface.getInterfaces()) {
 			if (iface.getName().equals(GridJob.class.getName())) {

@@ -19,8 +19,8 @@ import java.util.List;
 import org.nebulaframework.core.task.GridTask;
 
 /**
- * Represents a Split-Aggregate model Job which is to be 
- * executed on Grid. 
+ * Represents a Split-Aggregate model Job which is can be 
+ * executed on Nebula Grid. 
  * <p>
  * A Job will be split into multiple {@link GridTask}s and 
  * executed on remote nodes, using the {@link #split()} method.
@@ -29,6 +29,10 @@ import org.nebulaframework.core.task.GridTask;
  * {@code GridTask}s will be then aggregated using the
  * {@link #aggregate(List)} method, and final result will be
  * returned.
+ * <p>
+ * If it is necessary to obtain the intermediate results of
+ * each task execution, provide a {@code ResultCallback} when the job
+ * is submitted. Refer to {@link ResultCallback} for more information.
  * 
  * @param <T> Type of intermediate results of {@code GridTask}s
  * @param <R> Type of Final Result of the {@code GridJob}

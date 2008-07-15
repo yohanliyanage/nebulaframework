@@ -45,13 +45,27 @@ public interface JobSubmissionService {
 	 * If failed to submit, it throws an unchecked {@code GridJobRejectionException}.
 	 * 
 	 * @param job {@code GridJob} Job to submit
+	 * 
 	 * @return {@code GridJobFuture} proxy
+	 * 
 	 * @throws GridJobRejectionException if submission failed
 	 */
 	public GridJobFuture submitJob(GridJob<?,?> job) throws GridJobRejectionException;
 	
 	
-	// TODO FixDoc callback : Intermediate result callback
+	/**
+	 * Submits the given {@code GridJob} to the Grid through {@code ClusterManager}, and
+	 * attaches the given {@code ResultCallback} to obtain intermediate results.
+	 * If successful, returns a (proxy) reference to {@code GridJobFuture} for the Job.
+	 * If failed to submit, it throws an unchecked {@code GridJobRejectionException}.
+	 * 
+	 * @param job {@code GridJob} Job to submit
+	 * @param callback {@code ResultCallback} object
+	 * 
+	 * @return {@code GridJobFuture} proxy
+	 * 
+	 * @throws GridJobRejectionException if submission failed
+	 */
 	public GridJobFuture submitJob(GridJob<?,?> job, ResultCallback callback) throws GridJobRejectionException;
 	
 	/**
@@ -73,6 +87,25 @@ public interface JobSubmissionService {
 	 */
 	public Map<String, GridJobFuture> submitArchive(GridArchive archive);
 	
-	// TODO FixDoc : callbacks : Intermediate result callback
+	/**
+	 * Submits the given {@code GridArchive} to the Grid through {@code ClusterManager}
+	 * and attaches the given {@code ResultCallback}s to obtain intermediate results.
+	 * <p>
+	 * Each {@code GridJob} with in the {@code GridArchive will be submitted separately.
+	 * For each successful submission, the {@code GridJobFuture} will be inserted to a
+	 * Map, against the fully qualified class name of the {@code GridJob} class. If a 
+	 * {@code GridJob} fails to submit, a {@code null} value will be inserted in place
+	 * of the {@code GridJobFuture}.
+	 * <p>
+	 * Note that this method does not throw any exception on failure to 
+	 * submit a {@code GridJob}.
+	 * 
+	 * @param archive {@code GridArchive} to submit
+	 * @param callbacks A {@link Map} which provides callbacks to be used
+	 * against fully qualified class names of GridJobs.
+	 * 
+	 * @return A {@code Map> containing {@code GridJobFuture} against fully
+	 * qualified class name of the {@code GridJob} class
+	 */
 	public Map<String, GridJobFuture> submitArchive(GridArchive archive, Map<String, ResultCallback> callbacks);
 }

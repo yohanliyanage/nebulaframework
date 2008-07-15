@@ -100,7 +100,6 @@ public class GridNodeClassExporterSupport {
 		// Check for nulls
 		String queueName = getExporterQueueName(nodeId);
 		
-		
 		// Return Proxy Object
 		GridNodeClassExporter proxy = JMSRemotingSupport.createProxy(cf, queueName, GridNodeClassExporter.class);
 		

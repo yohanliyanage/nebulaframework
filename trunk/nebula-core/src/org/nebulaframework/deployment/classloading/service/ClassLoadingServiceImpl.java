@@ -270,7 +270,7 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 		 */
 		public ClassCacheGC() {
 			super();
-			log.debug("[Cache GC] Created");
+			log.debug("[Class Cache GC] Created");
 			
 			// Construct Thread Pool Executor with 1 Thread
 			executorService = new ScheduledThreadPoolExecutor(1);

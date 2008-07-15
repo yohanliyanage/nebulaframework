@@ -89,6 +89,7 @@
 				</property>
 				<property name="serviceInterface" value="org.nebulaframework.grid.cluster.manager.services.jobs.remote.RemoteClusterJobService" />
 				<property name="messageConverter">
+					<!-- create a message converter which ensures message is dispatched to correct cluster -->
 					<bean class="org.nebulaframework.grid.cluster.manager.services.jobs.remote.RemoteJobRequestMessageConverter" />
 				</property>
 			</bean>
@@ -109,10 +110,7 @@
 		</property>		
 		<property name="unboundedService">
 			<!--  Unbounded Job Service -->
-			<bean class="org.nebulaframework.grid.cluster.manager.services.jobs.unbounded.UnboundedJobServiceImpl">
-				<property name="connectionFactory" ref="jmsConnectionFactory" />
-				<property name="jobService" ref="clusterJobService" />
-			</bean>
+			<bean class="org.nebulaframework.grid.cluster.manager.services.jobs.unbounded.UnboundedJobServiceImpl" />
 		</property>		
 	</bean>
 	

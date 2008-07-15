@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 2008 Yohan Liyanage. 
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
+ * you may not use this file except in compliance with the License. 
+ * You may obtain a copy of the License at 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS, 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 package org.nebulaframework.core.job.future;
 
 import java.io.Serializable;
@@ -16,7 +29,21 @@ import org.nebulaframework.grid.cluster.node.GridNode;
 import org.nebulaframework.util.hashing.SHA1Generator;
 import org.nebulaframework.util.jms.JMSRemotingSupport;
 
-// TODO FixDoc
+/**
+ * Client-side proxy for GridJobFuture. This proxy wraps the remote 
+ * InternalGridJobFuture service proxy returned after submitting a 
+ * {@code GridJob}. 
+ * <p>
+ * This delegates most of the operations to the remote service, but 
+ * provides additional support which is not supported by the remote 
+ * service, such as {@code #getResult} methods. Furthermore, this proxy 
+ * attempts to minimize the remote calls.
+ * 
+ * @author Yohan Liyanage
+ * @version 1.0
+ * 
+ * @see GridJobFuture
+ */
 public class GridJobFutureClientProxy implements GridJobFuture {
 
 	private static Log log = LogFactory.getLog(GridJobFutureClientProxy.class);
@@ -39,14 +66,12 @@ public class GridJobFutureClientProxy implements GridJobFuture {
 		super();
 		this.future = future;
 		
-		// TODO Check Job type and do dis dude ;)
-		
 		// Attach a ResultCallback to track results
 		if (future.isFinalResultSupported()) {
+			
 			addFinalResultCallback(new ResultCallback () {
-	
+				
 				public void onResult(Serializable result) {
-					
 					GridJobFutureClientProxy.this.result = result;
 					jobFinished = true;
 					
@@ -54,7 +79,6 @@ public class GridJobFutureClientProxy implements GridJobFuture {
 					synchronized (mutex) {
 						mutex.notifyAll();
 					}
-					
 				}
 				
 			});
@@ -76,7 +100,7 @@ public class GridJobFutureClientProxy implements GridJobFuture {
 	 */
 	public Exception getException() {
 		if (!jobFinished) {
-			
+			throw new IllegalStateException("Job has finished. getException not supported");
 		}
 		return (result instanceof Exception) ? (Exception) result : null;
 	}
@@ -149,6 +173,9 @@ public class GridJobFutureClientProxy implements GridJobFuture {
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	public boolean isJobFinished() {
 		return jobFinished;
 	}
@@ -170,12 +197,25 @@ public class GridJobFutureClientProxy implements GridJobFuture {
 		}
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
 	public void addFinalResultCallback(ResultCallback callback) {
 		// Remote Enable callback and add it
 		String queueName = exposeCallback(callback);
 		future.addFinalResultCallback(queueName);
 	}
 
+	/**
+	 * Exposes the given {@code ResultCallback} by remote
+	 * enabling it using JMS Remoting API.
+	 * 
+	 * @param callback {@code ResultCallback} to be remote 
+	 * enabled
+	 * 
+	 * @return Name of the Queue to be used for communication 
+	 * with callback
+	 */
 	private String exposeCallback(ResultCallback callback) {
 
 		// Generate QueueName [nebula.job.callback.<SHA1>]

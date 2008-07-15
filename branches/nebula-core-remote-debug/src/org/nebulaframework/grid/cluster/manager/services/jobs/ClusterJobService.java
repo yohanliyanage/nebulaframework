@@ -17,16 +17,21 @@ package org.nebulaframework.grid.cluster.manager.services.jobs;
 import java.util.UUID;
 
 import org.nebulaframework.core.job.GridJob;
+import org.nebulaframework.core.job.ResultCallback;
 import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.core.job.deploy.GridJobInfo;
 import org.nebulaframework.core.job.exceptions.GridJobPermissionDeniedException;
 import org.nebulaframework.core.job.exceptions.GridJobRejectionException;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
+import org.nebulaframework.grid.cluster.node.services.job.submission.JobSubmissionService;
 
 /**
  * {@code ClusterJobService} is responsible for the {@code GridJob} submission and
  * execution, with in a {@code ClusterManager}. This interface defines the API for 
  * implementations of this service.
+ * <p>
+ * Invocation of this API is done by the {@link JobSubmissionService} implementation
+ * of a {@code GridNode}.
  * 
  * @author Yohan Liyanage
  * @version 1.0
@@ -51,7 +56,24 @@ public interface ClusterJobService {
 	public String submitJob(UUID owner,
 			GridJob<?,?> job) throws GridJobRejectionException;
 	
-	// TODO FixDoc
+	/**
+	 * Submits a {@code GridJob} to the {@code ClusterManager}, which 
+	 * results in job enqueue and infrastructure allocation, and  also
+	 * allows to specify a {@code ResuleCallback}, by specifying the
+	 * JMS {@code Queue Name} to be used for communication with callback.
+	 * <p>
+	 * For more information about callbacks, refer to {@link ResultCallback}, 
+	 * {@link JobSubmissionService}.
+	 * 
+	 * @param owner Owner of Job (Node Id)
+	 * @param job GridJob
+	 * @param resultCallbackQueue JMS QueueName used for ResultCallback 
+	 * communication
+	 * 
+	 * @return String JobId assigned for the submitted Job
+	 * 
+	 * @throws GridJobRejectionException if job is rejected
+	 */
 	public String submitJob(UUID owner, GridJob<?,?> job,  String resultCallbackQueue) throws GridJobRejectionException;
 	
 	/**
@@ -71,7 +93,29 @@ public interface ClusterJobService {
 	public String submitJob(UUID owner,
 			GridJob<?,?> job, GridArchive archive) throws GridJobRejectionException;
 	
-	// TODO FixDoc
+	/**
+	 * Submits an <i>archived</i> {@code GridJob} with the given
+	 * result callback queue, to the {@code ClusterManager}, 
+	 * which results in job enqueue and infrastructure allocation.
+	 * <p>
+	 * This overloaded version accepts a {@code GridArchive}, 
+	 * which contains the submitted {@code GridJob} and  also
+	 * allows to specify a {@code ResuleCallback}, by specifying the
+	 * JMS {@code Queue Name} to be used for communication with callback.
+	 * <p>
+	 * For more information about callbacks, refer to {@link ResultCallback}, 
+	 * {@link JobSubmissionService}.
+	 * 
+	 * @param owner Owner of Job (Node Id)
+	 * @param job GridJob
+	 * @param archive GridArchive, if applicable. This may be {@code null}.
+	 * @param resultCallbackQueue JMS QueueName used for ResultCallback 
+	 * communication
+	 * 
+	 * @return String JobId assigned for the submitted Job
+	 * 
+	 * @throws GridJobRejectionException if job is rejected
+	 */
 	public String submitJob(UUID owner,
 			GridJob<?,?> job, GridArchive archive, String resultCallbackQueue) throws GridJobRejectionException;
 	
