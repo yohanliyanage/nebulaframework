@@ -15,11 +15,6 @@
 package org.nebulaframework.grid.cluster.node;
 
 import java.io.Serializable;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 /**
  * GridNodeInfo Implementation. Holds information regarding a node of Grid.
@@ -30,32 +25,22 @@ import org.apache.commons.logging.LogFactory;
 public class GridNodeProfileImpl implements Serializable, GridNodeProfile {
 
 	private static final long serialVersionUID = -7303863519997272578L;
-
-	private static Log log = LogFactory.getLog(GridNodeProfileImpl.class);
-
-	private InetAddress ipAddress;	// IP Address
+	
+	private String ipAddress;	// IP Address
 	private String name;			// System Name
-	private String processor;		// Processor
-	private double clockSpeed;		// Processor ClockSpeed (MHz)
-	private double memory;			// RAM (MB)
+	private String architecture;	// System Architecture
 	private String OS;				// Operating System
-
+	private String javaVersion;		// Java Version
+	private String javaVendor;		// Java Vendor
+	
 	/**
-	 * Constructor. Detects IPAddress through {@code InetAddress}.
+	 * Constructor.
 	 * 
 	 */
 	public GridNodeProfileImpl() {
 		super();
-		detectNodeInfo();
 	}
 
-	private void detectNodeInfo() {
-		try {
-			ipAddress = InetAddress.getLocalHost();
-		} catch (UnknownHostException e) {
-			log.warn("[GridNodeProfile] Unable to resolve local IP Address");
-		}
-	}
 
 	/**
 	 * {@inheritDoc}
@@ -77,8 +62,8 @@ public class GridNodeProfileImpl implements Serializable, GridNodeProfile {
 	/**
 	 * {@inheritDoc}
 	 */
-	public String getProcessor() {
-		return processor;
+	public String getArhitecture() {
+		return architecture;
 	}
 
 	/**
@@ -87,48 +72,16 @@ public class GridNodeProfileImpl implements Serializable, GridNodeProfile {
 	 * @param processor
 	 *            Processor Info
 	 */
-	public void setProcessor(String processor) {
-		this.processor = processor;
+	public void setArchitecture(String archiecture) {
+		this.architecture = archiecture;
 	}
+
+
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public double getClockSpeed() {
-		return clockSpeed;
-	}
-
-	/**
-	 * Sets ClockSpeed of Processor in MHz
-	 * 
-	 * @param clockSpeed
-	 *            Processor FSB in MHz
-	 */
-	public void setClockSpeed(double clockSpeed) {
-		this.clockSpeed = clockSpeed;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public double getMemory() {
-		return memory;
-	}
-
-	/**
-	 * Sets total RAM memory available in MBs
-	 * 
-	 * @param memory
-	 *            Memory Size in MB
-	 */
-	public void setMemory(double memory) {
-		this.memory = memory;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public String getOS() {
+	public String getOSName() {
 		return OS;
 	}
 
@@ -138,7 +91,7 @@ public class GridNodeProfileImpl implements Serializable, GridNodeProfile {
 	 * @param os
 	 *            OS Name
 	 */
-	public void setOS(String os) {
+	public void setOSName(String os) {
 		OS = os;
 	}
 
@@ -147,22 +100,61 @@ public class GridNodeProfileImpl implements Serializable, GridNodeProfile {
 	 * <p>
 	 * {@code String} representation format is as follows:
 	 * <code>
-	 * <i>Name</i>|<i>IPAddress</i>|<i>Processor</i>@<i>ClockSpeed</i>MHz|<i>Memory</i>MB|<i>OS</i>
+	 * <i>Name</i>|<i>IPAddress</i>|<i>OS</i>|<i>Architecture</i>
 	 * </code> 
 	 */
 	@Override
 	public String toString() {
-		return name + "|" + ipAddress + "|" + processor + "@"
-				+ clockSpeed + "MHz|" + memory + "MB|" + OS;
+		return name + "|" + ipAddress + "|" + OS + "|" + architecture  ;
 	}
 
 	/**
 	 * Returns the IP Address of this {@code GridNode}.
 	 * 
-	 * @return {@code InetAddress} IP Address
+	 * @return {@code String} IP Address
 	 */
-	public InetAddress getIpAddress() {
+	public String getIpAddress() {
 		return ipAddress;
+	}
+
+	/**
+	 * Sets the IP Address of this {@code GridNode}.
+	 * 
+	 * @param ipAddress IP Address
+	 */
+	public void setIpAddress(String ipAddress) {
+		this.ipAddress = ipAddress;
+	}
+
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public String getJavaVersion() {
+		return javaVersion;
+	}
+
+	/**
+	 * Sets the Java Version of this Node
+	 * @param javaVersion Java Version
+	 */
+	public void setJavaVersion(String javaVersion) {
+		this.javaVersion = javaVersion;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public String getJavaVendor() {
+		return javaVendor;
+	}
+
+	/**
+	 * Sets the vendor of Java
+	 * @param vendor name
+	 */
+	public void setJavaVendor(String vendor) {
+		javaVendor = vendor;
 	}
 
 }

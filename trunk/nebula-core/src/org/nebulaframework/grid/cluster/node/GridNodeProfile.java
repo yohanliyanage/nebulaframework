@@ -14,49 +14,52 @@
 
 package org.nebulaframework.grid.cluster.node;
 
-import java.net.InetAddress;
-
 
 /**
  * Holds information regarding a node of Grid.
+ * 
  * @author Yohan Liyanage
- *
+ * 
  */
 public interface GridNodeProfile {
 
 	/**
 	 * Returns user-friendly name for Node
+	 * 
 	 * @return String name
 	 */
-	public abstract String getName();
+	public String getName();
 
 	/**
 	 * Returns Processor Information
+	 * 
 	 * @return String Processor Information
 	 */
-	public abstract String getProcessor();
+	public String getArhitecture();
 
-	/**
-	 * Returns ClockSpeed of Processor (FSB) in MHz
-	 * @return double ClockSpeed in MHz
-	 */
-	public abstract double getClockSpeed();
-
-	/**
-	 * Returns total RAM memory available in MBs
-	 * @return Memory Size in MB
-	 */
-	public abstract double getMemory();
-	
 	/**
 	 * Returns the Operating System Name
+	 * 
 	 * @return OS Name
 	 */
-	public abstract String getOS();
+	public String getOSName();
 
 	/**
 	 * Returns the IP Address of Node
-	 * @return InetAddress IP Address
+	 * 
+	 * @return IP Address
 	 */
-	public abstract InetAddress getIpAddress();
+	public String getIpAddress();
+	
+	/**
+	 * Returns the version of Java
+	 * @return Java version
+	 */
+	public String getJavaVersion();
+	
+	/**
+	 * Returns the name of Java Vendor
+	 * @return Java Vendor Name
+	 */ 
+	public String getJavaVendor();
 }

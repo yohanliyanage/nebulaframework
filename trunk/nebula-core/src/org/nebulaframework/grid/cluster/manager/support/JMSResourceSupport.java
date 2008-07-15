@@ -22,7 +22,7 @@ import org.apache.activemq.command.ActiveMQQueue;
 import org.apache.activemq.command.ActiveMQTopic;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nebulaframework.grid.GridInfo;
+import org.nebulaframework.grid.Grid;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 
 /**
@@ -67,7 +67,7 @@ public class JMSResourceSupport {
 	private static void removeDestination(final ActiveMQDestination destination) {
 		
 		// Not supported on GridNodes (only ClusterManagers)
-		if (GridInfo.isNode()) throw new UnsupportedOperationException("GridNode cannot remove Queues");
+		if (Grid.isNode()) throw new UnsupportedOperationException("GridNode cannot remove Queues");
 		
 		final BrokerService broker = ClusterManager.getInstance().getBrokerService();
 		
