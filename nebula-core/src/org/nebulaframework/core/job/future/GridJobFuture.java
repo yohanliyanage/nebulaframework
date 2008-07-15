@@ -19,7 +19,7 @@ import java.util.concurrent.Future;
 import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.GridJobState;
 import org.nebulaframework.core.job.ResultCallback;
-import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
+import org.nebulaframework.core.job.UnboundedGridJob;
 import org.nebulaframework.grid.GridExecutionException;
 import org.nebulaframework.grid.GridTimeoutException;
 
@@ -90,7 +90,13 @@ public interface GridJobFuture {
 	public Serializable getResult(long timeout) 
 			throws GridExecutionException, GridTimeoutException, IllegalStateException;
 
-	// TODO FixDoc
+	/**
+	 * Adds a {@link ResultCallback} which will be invoked
+	 * (with the final result) when the final result for the 
+	 * {@code GridJob} is available.
+	 * 
+	 * @param callback ResultCallback
+	 */
 	public void addFinalResultCallback(ResultCallback callback);
 	
 	/**

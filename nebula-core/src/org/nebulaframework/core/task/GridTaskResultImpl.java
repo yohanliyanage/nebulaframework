@@ -114,6 +114,9 @@ public class GridTaskResultImpl implements GridTaskResult {
 		return this.exception;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	public String getJobId() {
 		return this.jobId;
 	}

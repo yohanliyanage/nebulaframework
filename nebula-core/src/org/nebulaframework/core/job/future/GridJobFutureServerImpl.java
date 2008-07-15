@@ -26,7 +26,7 @@ import org.nebulaframework.core.job.GridJobState;
 import org.nebulaframework.core.job.GridJobStateListener;
 import org.nebulaframework.core.job.ResultCallback;
 import org.nebulaframework.core.job.SplitAggregateGridJob;
-import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
+import org.nebulaframework.core.job.UnboundedGridJob;
 import org.nebulaframework.grid.GridExecutionException;
 import org.nebulaframework.grid.GridTimeoutException;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
@@ -238,9 +238,10 @@ public class GridJobFutureServerImpl implements InternalGridJobFuture, GridJobFu
 		throw new UnsupportedOperationException("Only supported by Client Side Proxy");
 	}
 	
-	// TODO FixDOc
+	/**
+	 * {@inheritDoc}
+	 */
 	public void addFinalResultCallback(String queueName) throws IllegalStateException {
-		
 		
 		// If final result is not supported, exception (i.e. Unbounded Jobs)
 		if (!isFinalResultSupported()) {
