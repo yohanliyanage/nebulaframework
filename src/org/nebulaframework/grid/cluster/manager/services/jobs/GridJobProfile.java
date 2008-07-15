@@ -20,6 +20,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -45,25 +47,28 @@ import org.nebulaframework.core.task.GridTaskResult;
 public class GridJobProfile {
 
 	private static Log log = LogFactory.getLog(GridJobProfile.class);
-	
+
 	private String jobId; // JobId of GridJob
 	private UUID owner; // Owner Node Id (Submitter)
-	private GridJob<? extends Serializable, ? extends Serializable> job; // GridJob class Reference
+	private GridJob<? extends Serializable, ? extends Serializable> job; 
+	
 	private GridJobFutureServerImpl future; // GridJobFuture for the Job
 	private GridArchive archive; // If exists, the GridArchive of Job
 
-	private JobExecutionManager executionManager;
+	private JobExecutionManager executionManager; 
 	private boolean stopped;
-	
-	private ResultCallback callbackProxy;
+
+	private ResultCallback callbackProxy; // Intermediate Results Callback
+	private ExecutorService callbackExecutor; // Thread Pool Executor for callbacks
 	
 	// Tasks of GridJob, against TaskId (Sequence Number)
-	private Map<Integer, GridTask<?>> taskMap = Collections.synchronizedMap(new HashMap<Integer, GridTask<?>>());
+	private Map<Integer, GridTask<?>> taskMap = Collections
+			.synchronizedMap(new HashMap<Integer, GridTask<?>>());
 
 	// Results for GridTasks, against TaskId (Sequence Number)
-	private Map<Integer, GridTaskResult> resultMap = Collections.synchronizedMap(new HashMap<Integer, GridTaskResult>());
+	private Map<Integer, GridTaskResult> resultMap = Collections
+			.synchronizedMap(new HashMap<Integer, GridTaskResult>());
 
-	
 	/**
 	 * Returns JobId of the Job
 	 * 
@@ -106,7 +111,7 @@ public class GridJobProfile {
 	 * 
 	 * @return {@code GridJob} instance for the Job
 	 */
-	public GridJob<?,?> getJob() {
+	public GridJob<?, ?> getJob() {
 		return job;
 	}
 
@@ -116,10 +121,9 @@ public class GridJobProfile {
 	 * @param job
 	 *            {@code GridJob} instance
 	 */
-	public void setJob(GridJob<?,?> job) {
+	public void setJob(GridJob<?, ?> job) {
 		this.job = job;
 	}
-
 
 	/**
 	 * Returns the {@code GridJobFutureImpl} for the Job.
@@ -140,33 +144,58 @@ public class GridJobProfile {
 		this.future = future;
 	}
 
-	// TODO FixDoc
-//	public synchronized void addResult(int taskId, GridTaskResult result) {
-//		this.resultMap.put(taskId, result);
-//		fireCallback(result.getResult());
-//	}
-	
-	public synchronized int addResultAndRemoveTask(int taskId, GridTaskResult result) {
-		
+	/**
+	 * Adds the {@code GridTaskResult} for the given {@code taskId}
+	 * to the Results collection and removes the {@code GridTask} from
+	 * active tasks collection.
+	 * <p>
+	 * Returns the outstanding task count.
+	 * 
+	 * @param taskId taskId
+	 * @param result {@code GridTaskResult}
+	 * 
+	 * @return Outstanding task count
+	 */
+	public synchronized int addResultAndRemoveTask(int taskId,
+			GridTaskResult result) {
+
+		// If no such taskId in taskMap
 		if (!this.taskMap.containsKey(taskId)) {
-			throw new IllegalArgumentException("No such Task in TaskQueue for Task Id :" + taskId);
+			throw new IllegalArgumentException(
+					"No such Task in TaskMap for Task Id :" + taskId);
 		}
-		this.taskMap.remove(taskId);
-		this.resultMap.put(taskId, result);
 		
+		// Remove Task from Task Map
+		this.taskMap.remove(taskId);
+		
+		// Add result to Result Map
+		this.resultMap.put(taskId, result);
+
+		// Fire intermediate result callback
 		fireCallback(result.getResult());
+		
+		// return outstanding task count
 		return taskMap.size();
 	}
-	
-	// TODO FixDoc
+
+	/**
+	 * Fires the intermediate result callback (proxy), with
+	 * the result value, if it is available.
+	 * 
+	 * @param result new result
+	 */
 	public void fireCallback(final Serializable result) {
-		
-		if (callbackProxy == null) return;
-		
-		new Thread(new Runnable() {
+
+		// If no callback registered, return
+		if (callbackProxy == null)
+			return;
+
+		// Invoke onResult on callback with result
+		callbackExecutor.submit(new Runnable() {
 			public void run() {
 				try {
 					callbackProxy.onResult(result);
+					
 				} catch (Exception e) {
 					// Ignore if Job has been stopped
 					if (!stopped) {
@@ -174,57 +203,70 @@ public class GridJobProfile {
 					}
 				}
 			}
-		}).start();
+		});
+		
 	}
 
-	// TODO FixDoc
+	/**
+	 * Adds a {@code GridTask} to the outstanding Tasks collection.
+	 * 
+	 * @param taskId taskId
+	 * @param task {@code GridTask}
+	 */
 	public synchronized void addTask(int taskId, GridTask<?> task) {
 		this.taskMap.put(taskId, task);
 	}
-	
-	// TODO FixDoc
+
+	/**
+	 * Removes a {@code GridTask} from the outstanding Tasks collection.
+	 * In order to remove a task due to successful execution,
+	 * use {@link #addResultAndRemoveTask(int, GridTaskResult)} instead.
+	 * 
+	 * @param taskId taskId
+	 * @return removed {@code GridTask} 
+	 */
 	public synchronized GridTask<?> removeTask(int taskId) {
 		return this.taskMap.remove(taskId);
 	}
-	
-	// TODO FixDoc
+
+	/**
+	 * Returns the {@code GridTask} for given {@code taskId}.
+	 * 
+	 * @param taskId taskId
+	 * @return GridTask for given taskId
+	 */
 	public GridTask<?> getTask(int taskId) {
 		return this.taskMap.get(taskId);
 	}
-	
-	// TODO FixDoc
+
+	/**
+	 * Returns the outstanding Task Count.
+	 * That is, the remaining tasks in the Tasks collection,
+	 * without results.
+	 * 
+	 * @return outstanding task count
+	 */
 	public synchronized int getTaskCount() {
 		return this.taskMap.size();
 	}
-	
-	// TODO FixDoc
+
+	/**
+	 * Returns the total of results collected.
+	 * 
+	 * @return number of results collected
+	 */
 	public synchronized int getResultCount() {
 		return this.resultMap.size();
 	}
-	
-	// TODO FixDoc
+
+	/**
+	 * Returns the collected results as a collection.
+	 * 
+	 * @return results
+	 */
 	public synchronized Collection<GridTaskResult> getResults() {
 		return this.resultMap.values();
 	}
-	
-//	
-//	/**
-//	 * Returns the Map of GridTasks for the Job.
-//	 * 
-//	 * @return GridTasks Map
-//	 */
-//	public Map<Integer, GridTask<?>> getTaskMap() {
-//		return taskMap;
-//	}
-//
-//	/**
-//	 * Returns the Map of GridTaskResults for the Job.
-//	 * 
-//	 * @return GridTaskResults Map
-//	 */
-//	public Map<Integer, GridTaskResult> getResultMap() {
-//		return resultMap;
-//	}
 
 	/**
 	 * Returns the {@code GridArchive} of the Job, or {@code null} if not
@@ -247,41 +289,55 @@ public class GridJobProfile {
 	}
 
 	/**
-	 * Returns a {@code boolean} value indicating whether the 
-	 * Job is an archived job.
+	 * Returns a {@code boolean} value indicating whether the Job is an archived
+	 * job.
 	 * 
-	 * @return {@code true} if the Job is Archived, {@code false}
-	 *         otherwise.
+	 * @return {@code true} if the Job is Archived, {@code false} otherwise.
 	 */
 	public boolean isArchived() {
 		return this.archive != null;
 	}
 
-	
 	/**
 	 * Returns {@code true} if this {@code GridJob} has been stopped.
+	 * 
 	 * @return value {@code true} if stopped, {@code false} otherwise
 	 */
 	public boolean isStopped() {
 		return stopped;
 	}
 
-	// TODO FixDoc
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public String toString() {
-		return this.jobId + (isArchived()?" [Archived]" : " [Non-Archive]");
+		return this.jobId + (isArchived() ? " [Archived]" : " [Non-Archive]");
 	}
 
-	// TODO FixDoc
+	/**
+	 * Sets the {@code ResultCallback} which is to be invoked
+	 * for each intermediate result received. This method 
+	 * accepts the proxy object which can be used to pass the
+	 * result to client.
+	 * <p>
+	 * This method also creates the {@code SingleThreadExecutor}
+	 * which is used to execute the notification process.
+	 * 
+	 * @param proxy {@code ResultCallback} proxy
+	 * 
+	 * @see ResultCallback
+	 */
 	public void setResultCallback(ResultCallback proxy) {
 		this.callbackProxy = proxy;
+		this.callbackExecutor = Executors.newSingleThreadExecutor();
 	}
-
 
 	/**
 	 * Sets the {@code JobExecutionManager} of this {@code GridJob}.
 	 * 
-	 * @param executionManager Execution Manager
+	 * @param executionManager
+	 *            Execution Manager
 	 */
 	public void setExecutionManager(JobExecutionManager executionManager) {
 		this.executionManager = executionManager;
@@ -289,10 +345,12 @@ public class GridJobProfile {
 
 	/**
 	 * Cancels the {@code GridJob} represented by this {@code GridJobProfile}.
-	 * @return a {@code boolean} value indicating success ({@code true}) / failure ({@code false}).
+	 * 
+	 * @return a {@code boolean} value indicating success ({@code true}) /
+	 *         failure ({@code false}).
 	 */
 	public boolean cancel() {
-		if (this.executionManager==null) {
+		if (this.executionManager == null) {
 			log.warn("Cannot Stop Job as No Execution Manager exsits");
 			return false;
 		}
@@ -300,5 +358,4 @@ public class GridJobProfile {
 		return this.executionManager.cancel();
 	}
 
-	
 }

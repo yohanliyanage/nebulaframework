@@ -69,13 +69,29 @@ public class ClusterManagerServicesFacadeImpl implements
 		return this.cluster.getJobService().submitJob(owner, job);
 	}
 
-	// TODO Fix Doc
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * Delegates to {@code ClusterManager}'s {@code ClusterJobService} to
+	 * submit a given {@code GridJob}.
+	 * 
+	 * @see ClusterJobService#submitJob(UUID, GridJob, GridArchive, String)
+	 */
 	public String submitJob(UUID owner, GridJob<?, ?> job,
 			String resultCallbackQueue) throws GridJobRejectionException {
 		return this.cluster.getJobService().submitJob(owner, job, resultCallbackQueue);
 	}
 	
-	// TODO Fix Doc
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * Delegates to {@code ClusterManager}'s {@code ClusterJobService} to
+	 * submit a given {@code GridJob}, which is included in the given
+	 * {@code GridArchive}.
+	 * 
+	 * @see GridArchive
+	 * @see ClusterJobService#submitJob(UUID, GridJob, GridArchive, String)
+	 */
 	public String submitJob(UUID owner, GridJob<?, ?> job, GridArchive archive,
 			String resultCallbackQueue) throws GridJobRejectionException {
 		return this.cluster.getJobService().submitJob(owner, job, archive, resultCallbackQueue);
@@ -89,7 +105,7 @@ public class ClusterManagerServicesFacadeImpl implements
 	 * {@code GridArchive}.
 	 * 
 	 * @see GridArchive
-	 * @see ClusterJobService#submitJob(UUID, GridJob)
+	 * @see ClusterJobService#submitJob(UUID, GridJob, GridArchive)
 	 */
 	public String submitJob(UUID owner, GridJob<?, ?> job, GridArchive archive)
 			throws GridJobRejectionException {
