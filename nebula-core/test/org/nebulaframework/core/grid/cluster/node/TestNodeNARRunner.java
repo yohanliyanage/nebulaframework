@@ -18,11 +18,10 @@ import java.io.File;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.xbean.spring.context.ClassPathXmlApplicationContext;
 import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.core.job.future.GridJobFuture;
+import org.nebulaframework.grid.Grid;
 import org.nebulaframework.grid.cluster.node.GridNode;
-import org.springframework.context.ApplicationContext;
 import org.springframework.remoting.RemoteInvocationFailureException;
 import org.springframework.util.StopWatch;
 
@@ -38,8 +37,7 @@ public class TestNodeNARRunner {
 			StopWatch sw = new StopWatch();
 			sw.start();
 			
-			ApplicationContext ctx = new ClassPathXmlApplicationContext("org/nebulaframework/grid/cluster/node/grid-node.xml");
-			GridNode node = (GridNode) ctx.getBean("localNode");
+			GridNode node = Grid.startGridNode();
 			
 			log.info("GridNode ID : " + node.getId());
 			

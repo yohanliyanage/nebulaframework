@@ -21,7 +21,6 @@ import org.apache.activemq.broker.BrokerService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.deployment.classloading.service.ClassLoadingServiceSupport;
-import org.nebulaframework.grid.GridInfo;
 import org.nebulaframework.grid.ID;
 import org.nebulaframework.grid.cluster.manager.services.facade.ClusterManagerServicesFacade;
 import org.nebulaframework.grid.cluster.manager.services.heartbeat.InternalClusterHeartBeatService;
@@ -344,9 +343,6 @@ public class ClusterManager implements InitializingBean {
 	 * @throws Exception if dependencies are not set or ClassLoadingService  fails with Exceptions.
 	 */
 	public void afterPropertiesSet() throws Exception {
-		
-		// Set GridInfo to be ClusterManager
-		GridInfo.initialize(true);
 		
 		// Assertions, to ensure that the class was properly initialized,
 		// if used outside the container.

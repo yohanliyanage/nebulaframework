@@ -14,14 +14,10 @@
 
 package org.nebulaframework.core.grid.cluster.node;
 
-import java.io.IOException;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.xbean.spring.context.ClassPathXmlApplicationContext;
+import org.nebulaframework.grid.Grid;
 import org.nebulaframework.grid.cluster.node.GridNode;
-import org.nebulaframework.grid.cluster.registration.RegistrationException;
-import org.springframework.context.ApplicationContext;
 import org.springframework.util.StopWatch;
 
 public class TestNodeWorker {
@@ -36,16 +32,22 @@ public class TestNodeWorker {
 			StopWatch sw = new StopWatch();
 			sw.start();
 			
-			ApplicationContext ctx = new ClassPathXmlApplicationContext("org/nebulaframework/grid/cluster/node/grid-node.xml");
-			GridNode node = (GridNode) ctx.getBean("localNode");
+			// Start Grid Node
+			GridNode node = Grid.startGridNode();
 			
 			sw.stop();
 			log.info("GridNode Started Up. [" + sw.getLastTaskTimeMillis() + " ms]");
 			
 			log.info("GridNode ID : " + node.getId());
 			
-			node.getNodeRegistrationService().register();
-			log.info("Registered in Cluster : " + node.getNodeRegistrationService().getRegistration().getClusterId());
+			try {
+				node.getNodeRegistrationService().register();
+				log.info("Registered in Cluster : " + node.getNodeRegistrationService().getRegistration().getClusterId());
+			} catch (RuntimeException e) {
+				System.err.println("Exception");
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			
 			log.debug("Press any key to unregister GridNode and terminate");
 			System.in.read();
@@ -53,10 +55,6 @@ public class TestNodeWorker {
 			
 			log.info("Unregistered, Terminating...");
 			System.exit(0);
-		} catch (RegistrationException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

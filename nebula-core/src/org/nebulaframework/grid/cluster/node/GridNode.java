@@ -21,7 +21,6 @@ import javax.jms.ConnectionFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.deployment.classloading.node.exporter.GridNodeClassExporterSupport;
-import org.nebulaframework.grid.GridInfo;
 import org.nebulaframework.grid.ID;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.manager.services.facade.ClusterManagerServicesFacade;
@@ -325,9 +324,6 @@ public class GridNode implements InitializingBean{
 	 * @throws Exception if dependencies are not set or GridNodeClassExporter fails with Exceptions.
 	 */
 	public void afterPropertiesSet() throws Exception {
-		
-		// Set GridInfo to be Node
-		GridInfo.initialize(false);
 		
 		// Start Class Exporter Service
 		GridNodeClassExporterSupport.startService();

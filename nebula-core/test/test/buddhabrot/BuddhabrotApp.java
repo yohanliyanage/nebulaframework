@@ -27,12 +27,11 @@ import javax.swing.JFrame;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.xbean.spring.context.ClassPathXmlApplicationContext;
 import org.nebulaframework.core.job.ResultCallback;
 import org.nebulaframework.core.job.future.GridJobFuture;
+import org.nebulaframework.grid.Grid;
 import org.nebulaframework.grid.cluster.node.GridNode;
 import org.nebulaframework.grid.cluster.registration.RegistrationException;
-import org.springframework.context.ApplicationContext;
 import org.springframework.util.StopWatch;
 
 public class BuddhabrotApp extends JFrame {
@@ -116,9 +115,8 @@ public class BuddhabrotApp extends JFrame {
 			StopWatch sw = new StopWatch();
 			sw.start();
 
-			ApplicationContext ctx = new ClassPathXmlApplicationContext(
-					"org/nebulaframework/grid/cluster/node/grid-nonworker-node.xml");
-			GridNode node = (GridNode) ctx.getBean("localNode");
+		
+			GridNode node = Grid.startLightGridNode();
 
 			log.info("GridNode ID : " + node.getId());
 

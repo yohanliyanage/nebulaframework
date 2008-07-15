@@ -20,9 +20,7 @@ import org.apache.activemq.command.ActiveMQTopic;
 import org.apache.activemq.network.NetworkConnector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.xbean.spring.context.ClassPathXmlApplicationContext;
-import org.nebulaframework.grid.cluster.manager.ClusterManager;
-import org.springframework.context.ApplicationContext;
+import org.nebulaframework.grid.Grid;
 import org.springframework.util.StopWatch;
 
 
@@ -30,13 +28,21 @@ public class TestManagerRunner {
 	
 	private static Log log = LogFactory.getLog(TestManagerRunner.class);
 	
-	private static ApplicationContext ctx;
-	
 	public static void main(String[] args) throws Exception {
 		
-		//ClusterManager mgr = startContainer();
-		startContainer();
-		BrokerService broker = (BrokerService) ctx.getBean("broker");
+
+		log.info("ClusterManager Starting");
+		
+		StopWatch sw = new StopWatch();
+		sw.start();
+		
+		Grid.startClusterManager();
+		
+		sw.stop();
+		log.info("ClusterManager Started Up. [" + sw.getLastTaskTimeMillis() + " ms]");
+		
+		
+		BrokerService broker = (BrokerService) Grid.getApplicationContext().getBean("broker");
 		
 		System.out.println("Press any key to Add new Network Broker");
 		System.in.read();
@@ -60,14 +66,5 @@ public class TestManagerRunner {
 //		mgr.shutdown();
 	}
 	
-	public static ClusterManager startContainer() {
-		log.info("ClusterManager Starting");
-		StopWatch sw = new StopWatch();
-		sw.start();
-		ctx = new ClassPathXmlApplicationContext("org/nebulaframework/grid/cluster/manager/cluster-manager.xml");
-		sw.stop();
-		log.info("ClusterManager Started Up. [" + sw.getLastTaskTimeMillis() + " ms]");
-		return (ClusterManager) ctx.getBean("clusterManager");
-	}
 	
 }
