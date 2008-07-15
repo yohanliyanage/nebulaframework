@@ -12,11 +12,11 @@
  * limitations under the License.
  */
 
-package org.nebulaframework.grid.cluster.manager.services.jobs;
+package org.nebulaframework.util.jms;
 
 /**
- * A support class which returns JMS Resource Names bound to a given
- * JobId.
+ * A support class which returns JMS Resource Names for
+ * given parameters.
  * 
  * @author Yohan Liyanage
  * @version 1.0
@@ -54,6 +54,11 @@ public class JMSNamingSupport {
 	}
 
 	public static String getRemoteJobServiceQueueName() {
-		return "nebula.cluster.remote.jobservice.queue";
+		return "nebula.grid.jobservice.queue";
 	}
+	
+	public static String getHeartBeatServiceQueueName() {
+		return "nebula.grid.heartbeat.queue";
+	}
+	
 }

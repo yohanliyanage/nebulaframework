@@ -34,6 +34,9 @@ import org.nebulaframework.grid.cluster.manager.services.jobs.aggregator.Aggrega
 import org.nebulaframework.grid.cluster.manager.services.jobs.remote.RemoteClusterJobService;
 import org.nebulaframework.grid.cluster.manager.services.jobs.splitter.SplitterService;
 import org.nebulaframework.grid.cluster.manager.services.jobs.unbounded.UnboundedJobService;
+import org.nebulaframework.grid.service.event.ServiceEvent;
+import org.nebulaframework.grid.service.event.ServiceEventsSupport;
+import org.nebulaframework.grid.service.event.ServiceHookCallback;
 import org.nebulaframework.grid.service.message.ServiceMessage;
 import org.nebulaframework.grid.service.message.ServiceMessageType;
 import org.nebulaframework.util.hashing.SHA1Generator;
@@ -188,6 +191,9 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 			new AssertionError("Unsupported GridJob Type");
 		}
 
+		// Track to see if Job Submitter Node Fails
+		stopIfNodeFails(owner, jobId);
+		
 		// Notify Job Start to Workers
 		notifyJobStart(jobId);
 
@@ -195,6 +201,32 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		return jobId;
 	}
 
+	/**
+	 * Stops execution of the given {@code GridJob} if the
+	 * specified {@code GridNode} fails or leaves the Grid.
+	 * 
+	 * @param nodeId {@code GridNode} Id
+	 * @param jobId {@code GridJob} Id
+	 */
+	private void stopIfNodeFails(UUID nodeId, final String jobId) {
+		
+		ServiceEvent event = new ServiceEvent();
+		event.addType(ServiceMessageType.HEARTBEAT_FAILED);
+		event.addType(ServiceMessageType.NODE_UNREGISTERED);
+		event.setMessage(nodeId.toString());
+		
+		ServiceHookCallback callback = new ServiceHookCallback() {
+			public void onServiceEvent() {
+				try {
+					cancelJob(jobId);
+				} catch (IllegalArgumentException e) {
+					// Job Already Stopped
+				}
+			}
+		};
+		
+		ServiceEventsSupport.getInstance().addServiceHook(event, callback);
+	}
 
 	/**
 	 * Starts given {@code SplitAggregateJob} on the Grid.

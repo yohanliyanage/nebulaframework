@@ -66,6 +66,11 @@
 			</bean>
 		</property>
 		<property name="jobService" ref="clusterJobService" />
+		<property name="heartBeatService">
+			<bean class="org.nebulaframework.grid.cluster.manager.services.heartbeat.ClusterHeartBeatServiceImpl">
+				<constructor-arg ref="jmsConnectionFactory" />
+			</bean>
+		</property>
 		<property name="brokerUrl" value="${cluster.serviceUrl}" />
 		<property name="connectionFactory" ref="jmsConnectionFactory" />
 		<property name="brokerService" ref="broker" />

@@ -24,6 +24,7 @@ import org.nebulaframework.deployment.classloading.service.ClassLoadingServiceSu
 import org.nebulaframework.grid.GridInfo;
 import org.nebulaframework.grid.ID;
 import org.nebulaframework.grid.cluster.manager.services.facade.ClusterManagerServicesFacade;
+import org.nebulaframework.grid.cluster.manager.services.heartbeat.InternalClusterHeartBeatService;
 import org.nebulaframework.grid.cluster.manager.services.jobs.ClusterJobService;
 import org.nebulaframework.grid.cluster.manager.services.jobs.InternalClusterJobService;
 import org.nebulaframework.grid.cluster.manager.services.jobs.remote.InternalRemoteClusterJobService;
@@ -84,6 +85,7 @@ public class ClusterManager implements InitializingBean {
 	private InternalClusterRegistrationService clusterRegistrationService;
 	private InternalClusterJobService jobService;
 	private InternalRemoteClusterJobService remoteJobService;
+	private InternalClusterHeartBeatService heartBeatService;
 	
 	/**
 	 * <b>Private Constructor</b> which instantiates ClusterManager, 
@@ -249,6 +251,32 @@ public class ClusterManager implements InitializingBean {
 	public void setJobService(InternalClusterJobService jobService) {
 		this.jobService = jobService;
 	}
+
+	/**
+	 * Returns the {@code ClusterHeartBeatService} of this cluster,
+	 * which keeps track of the {@code GridNode}s.
+	 * 
+	 * @return {@code ClusterHeartBeatService} of this Cluster
+	 */
+	public InternalClusterHeartBeatService getHeartBeatService() {
+		return heartBeatService;
+	}
+	
+	/**
+	 * Sets the {@code ClusterHeartBeatService} of this cluster,
+	 * which keeps track of the {@code GridNode}s.
+	 * <p>
+	 * <b>Note : </b>This is a <b>required</b> dependency.
+	 * <p>
+	 * <i>Spring Injected</i>
+	 * 
+	 * @param heartBeatService {@code InternalClusterHeartBeatService} of this Cluster
+	 */
+	@Required
+	public void setHeartBeatService(InternalClusterHeartBeatService heartBeatService) {
+		this.heartBeatService = heartBeatService;
+	}
+
 
 	/**
 	 * Sets the JMS {@code ConnectionFactory} used by the {@code ClusterManager} to 

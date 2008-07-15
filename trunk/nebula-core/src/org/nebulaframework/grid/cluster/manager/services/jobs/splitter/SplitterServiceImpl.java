@@ -28,7 +28,7 @@ import org.nebulaframework.core.job.exceptions.SplitException;
 import org.nebulaframework.core.task.GridTask;
 import org.nebulaframework.grid.cluster.manager.services.jobs.GridJobProfile;
 import org.nebulaframework.grid.cluster.manager.services.jobs.InternalClusterJobService;
-import org.nebulaframework.grid.cluster.manager.services.jobs.JMSNamingSupport;
+import org.nebulaframework.util.jms.JMSNamingSupport;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.core.MessagePostProcessor;

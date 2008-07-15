@@ -32,9 +32,9 @@ import org.nebulaframework.core.job.future.GridJobFuture;
 import org.nebulaframework.core.job.future.GridJobFutureClientProxy;
 import org.nebulaframework.core.job.future.InternalGridJobFuture;
 import org.nebulaframework.grid.cluster.manager.services.facade.ClusterManagerServicesFacade;
-import org.nebulaframework.grid.cluster.manager.services.jobs.JMSNamingSupport;
 import org.nebulaframework.grid.cluster.node.GridNode;
 import org.nebulaframework.util.hashing.SHA1Generator;
+import org.nebulaframework.util.jms.JMSNamingSupport;
 import org.nebulaframework.util.jms.JMSRemotingSupport;
 import org.springframework.beans.factory.annotation.Required;
 

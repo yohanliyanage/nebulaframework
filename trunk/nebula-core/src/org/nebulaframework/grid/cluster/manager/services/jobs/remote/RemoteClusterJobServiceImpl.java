@@ -21,7 +21,7 @@ import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.deploy.GridJobInfo;
 import org.nebulaframework.core.job.exceptions.GridJobPermissionDeniedException;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
-import org.nebulaframework.grid.cluster.manager.services.jobs.JMSNamingSupport;
+import org.nebulaframework.util.jms.JMSNamingSupport;
 import org.nebulaframework.util.jms.JMSRemotingSupport;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 

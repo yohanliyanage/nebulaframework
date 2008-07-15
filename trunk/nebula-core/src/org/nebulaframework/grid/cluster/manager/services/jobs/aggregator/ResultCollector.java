@@ -67,6 +67,7 @@ public class ResultCollector implements JobExecutionManager, GridJobStateListene
 		
 		// Create Job End Service Hook for Clean Up
 		CleanUpSupport.shutdownContainerWhenFinished(profile.getJobId(), container);
+		
 	}
 
 	/**

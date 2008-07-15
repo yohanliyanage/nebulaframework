@@ -22,6 +22,7 @@ import org.nebulaframework.core.job.ResultCallback;
 import org.nebulaframework.core.job.future.GridJobFutureServerImpl;
 import org.nebulaframework.core.job.future.InternalGridJobFuture;
 import org.nebulaframework.grid.cluster.manager.support.CleanUpSupport;
+import org.nebulaframework.util.jms.JMSNamingSupport;
 import org.nebulaframework.util.jms.JMSRemotingSupport;
 import org.springframework.beans.factory.annotation.Required;
 

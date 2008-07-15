@@ -25,6 +25,7 @@ import org.nebulaframework.grid.GridInfo;
 import org.nebulaframework.grid.ID;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.manager.services.facade.ClusterManagerServicesFacade;
+import org.nebulaframework.grid.cluster.node.services.heartbeat.HeartBeatInvoker;
 import org.nebulaframework.grid.cluster.node.services.job.execution.JobExecutionService;
 import org.nebulaframework.grid.cluster.node.services.job.submission.JobSubmissionService;
 import org.nebulaframework.grid.cluster.node.services.message.ServiceMessagesSupport;
@@ -330,6 +331,9 @@ public class GridNode implements InitializingBean{
 		
 		// Start Class Exporter Service
 		GridNodeClassExporterSupport.startService();
+		
+		// Start Heart Beat Service
+		new HeartBeatInvoker().start();
 	}
 	
 	public UUID getClusterId() {
