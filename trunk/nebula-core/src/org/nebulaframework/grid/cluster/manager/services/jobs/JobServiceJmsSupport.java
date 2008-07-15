@@ -131,9 +131,16 @@ public class JobServiceJmsSupport {
 		return future;
 	}
 	
-	
-
-	// TODO FixDoc
+	/**
+	 * Creates and returns a {@code ResultCallback} proxy which can be used
+	 * to access the {@code ResultCallback} exposed through the given
+	 * JMS Queue Name.
+	 * 
+	 * @param jobId JobId of Result Queue
+	 * @param resultCallbackQueue JMS Queue Name
+	 * 
+	 * @return proxy for {@code ResultCallback} 
+	 */
 	public  ResultCallback createResultCallbackProxy(String jobId, String resultCallbackQueue) {
 		
 		// Clean Up Hook

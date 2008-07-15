@@ -23,12 +23,12 @@ import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.ResultCallback;
 import org.nebulaframework.core.job.SplitAggregateGridJob;
+import org.nebulaframework.core.job.UnboundedGridJob;
 import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.core.job.deploy.GridJobInfo;
 import org.nebulaframework.core.job.exceptions.GridJobPermissionDeniedException;
 import org.nebulaframework.core.job.exceptions.GridJobRejectionException;
 import org.nebulaframework.core.job.future.GridJobFutureServerImpl;
-import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.manager.services.jobs.aggregator.AggregatorService;
 import org.nebulaframework.grid.cluster.manager.services.jobs.remote.RemoteClusterJobService;
@@ -111,13 +111,17 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		return submitJob(owner, job, archive, null);
 	}
 
-	// TODO FixDoc
+	/**
+	 * {@inheritDoc}
+	 */
 	public String submitJob(UUID owner, GridJob<?, ?> job,
 			String resultCallbackQueue) throws GridJobRejectionException {
 		return submitJob(owner, job, null, resultCallbackQueue);
 	}
 
-	// TODO FixDoc	
+	/**
+	 * {@inheritDoc}
+	 */	
 	public String submitJob(UUID owner, GridJob<?, ?> job, GridArchive archive,
 			String resultCallbackQueue) throws GridJobRejectionException {
 
@@ -171,7 +175,7 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 			// Start Split Aggregate Job
 			startSplitAggregateJob(profile);
 			
-		} else if (job instanceof UnboundedGridJob<?, ?>) {
+		} else if (job instanceof UnboundedGridJob<?>) {
 			
 			// Disallow Final Results
 			profile.getFuture().setFinalResultSupported(false);
@@ -192,7 +196,11 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	}
 
 
-	// TODO FixDoc
+	/**
+	 * Starts given {@code SplitAggregateJob} on the Grid.
+	 * 
+	 * @param profile GridJobProfile
+	 */
 	private void startSplitAggregateJob(GridJobProfile profile) {
 		// Start Splitter & Aggregator for GridJob
 		splitterService.startSplitter(profile);
@@ -200,7 +208,11 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 
 	}
 
-	// TODO FixDoc
+	/**
+	 * Starts given {@code UnboundedGridJob} on the Grid.
+	 * 
+	 * @param profile GridJobProfile
+	 */
 	private void startUnboundedJob(GridJobProfile profile) {
 		unboundedService.startJobProcessing(profile);
 	}
@@ -469,7 +481,16 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		this.jmsSupport = jmsSupport;
 	}
 
-	// TODO FixDoc
+	/**
+	 * Sets the {@code RemoteClusterJobService} proxy to be
+	 * used by the {@code ClusterManager}.
+	 * <p>
+	 * <b>Note : </b>This is a <b>required</b> dependency.
+	 * <p>
+	 * <i>Spring Injected</i>
+	 * 
+	 * @param remoteJobServiceProxy proxy
+	 */
 	@Required
 	public void setRemoteJobServiceProxy(
 			RemoteClusterJobService remoteJobServiceProxy) {

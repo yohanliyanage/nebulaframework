@@ -21,6 +21,7 @@ import org.apache.activemq.broker.BrokerService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.deployment.classloading.service.ClassLoadingServiceSupport;
+import org.nebulaframework.grid.GridInfo;
 import org.nebulaframework.grid.ID;
 import org.nebulaframework.grid.cluster.manager.services.facade.ClusterManagerServicesFacade;
 import org.nebulaframework.grid.cluster.manager.services.jobs.ClusterJobService;
@@ -316,6 +317,9 @@ public class ClusterManager implements InitializingBean {
 	 */
 	public void afterPropertiesSet() throws Exception {
 		
+		// Set GridInfo to be ClusterManager
+		GridInfo.initialize(true);
+		
 		// Assertions, to ensure that the class was properly initialized,
 		// if used outside the container.
 		Assert.notNull(brokerUrl);
@@ -327,16 +331,38 @@ public class ClusterManager implements InitializingBean {
 		ClassLoadingServiceSupport.startClassLoadingService();
 		
 		// Start Remote Cluster Job Service
-		remoteJobService = new RemoteClusterJobServiceImpl(this,connectionFactory);
+		remoteJobService = new RemoteClusterJobServiceImpl(this);
 	}
 	
-	// TODO Fix Doc
+	/**
+	 * Shutdowns the {@code ClusterManager}, but does not force the 
+	 * shutdown (Soft Shutdown). If attempt to shutdown gracefully fails 
+	 * due to any reason, the shutdown operation will not be carried out further.
+	 * <p>
+	 * Refer to {@link #shutdown(boolean)} to invoke a forced shutdown.
+	 * 
+	 * @see #shutdown(boolean)
+	 */
 	public void shutdown() {
 		// Soft Shutdown
 		shutdown(false);
 	}
 	
-	// TODO Fix Doc
+	/**
+	 * Shutdowns the {@code ClusterManager}, and allows to state whether
+	 * a forced shutdown should be done.
+	 * <p>
+	 * In a forceful shutdown, if a graceful shutdown is not possible,
+	 * any exceptions will be logged, but the shutdown operation will
+	 * be carried out.
+	 * <p>
+	 * In case of a non-forced (soft) shutdown, any exceptions during 
+	 * shutdown will abort the shutdown operation.
+	 * 
+	 * @param force boolean indicating whether this operation should be forced
+	 * or not.
+	 * 
+	 */
 	public void shutdown(boolean force) {
 		
 		// TODO Implement Rest
