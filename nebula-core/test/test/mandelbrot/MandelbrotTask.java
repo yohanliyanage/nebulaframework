@@ -88,7 +88,7 @@ public class MandelbrotTask implements GridTask<MandelbrotResult> {
 	                long n = 0;
 	                x = 0.0;
 	                y = 0.0;
-	                while ( (n < 250L) && ( (x*x)+(y*y) < 4.0) ) {
+	                while ( (n < 1000000L) && ( (x*x)+(y*y) < 4.0) ) {
 	                    xx = x * x - y * y + a;
 	                    y = 2 * x * y + b;
 	                    x = xx;

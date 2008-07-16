@@ -29,6 +29,7 @@ import org.nebulaframework.deployment.classloading.node.exporter.GridNodeClassEx
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.manager.services.jobs.InternalClusterJobService;
 import org.nebulaframework.grid.cluster.manager.services.registration.InternalClusterRegistrationService;
+import org.nebulaframework.util.hashing.SHA1Generator;
 import org.springframework.util.Assert;
 import org.springframework.util.StopWatch;
 
@@ -125,13 +126,27 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 		Assert.notNull(name);
 		
 		try {
-			log.debug("[ClassLoadingService] finding class " + name);
+			log.debug("[ClassLoadingService] Finding Class " + name);
 
 			// Check in cache, if found, return
 			synchronized (this) {
 				if (this.cache.containsKey(name)) {
 					CacheEntry entry = this.cache.get(name);
-					return entry.getBytes();
+					byte[] bytes = entry.getBytes();
+					
+					// If same job, return class
+					if (jobId.equals(entry.getJobId())) {
+						return bytes;
+						
+					}
+					// If old class, check if class has changed
+					if (SHA1Generator.generateAsString(bytes).equals(getHash(jobId, name))) {
+						// If Class has not changed (hash match)
+						return bytes;
+					}
+					else {
+						log.debug("[ClassLoadingService] Class Updated " + name);
+					}
 				}
 			}
 			
@@ -162,18 +177,34 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 			}
 			
 			// Class Not Found
-			log.debug("[ClassLoadingService] cannot find class");
+			log.debug("[ClassLoadingService] Cannot Find Class");
 			throw new ClassNotFoundException(
 					"ClassLoaderService cannot locate class");
 			
 		} catch (Exception e) { 
-			log.debug("[ClassLoadingService] Cannot find class due to exception");
+			log.debug("[ClassLoadingService] Cannot Find Class Due to Exception");
 			throw new ClassNotFoundException(
 					"ClassLoaderService Cannot find class due to exception", e);
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
+	public String getHash(String jobId, String name)
+			throws ClassNotFoundException, IllegalArgumentException {
+		
+		// Get the owner node
+		UUID ownerId = jobService.getProfile(jobId).getOwner();
 
+		// Get ClassExporter of owner node
+		GridNodeClassExporter exporter = regService
+				.getGridNodeDelegate(ownerId).getClassExporter();
+
+		// Request class hash
+		return exporter.classHash(name);
+	}
+	
 	/**
 	 * Nested wrapper class for class definitions which are stored
 	 * in the local cache. Allows to store meta data along
@@ -340,4 +371,5 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 		}
 		
 	}
+
 }

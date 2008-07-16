@@ -55,4 +55,20 @@ public interface ClassLoadingService {
 	public byte[] findClass(String jobId, String name) 
 			throws ClassNotFoundException, IllegalArgumentException;
 
+	/**
+	 * Returns the SHA1-Hash for the given class, if the class can be
+	 * found through the {@code GridNodeClassExporter} service of
+	 * the submitter {@code GridNode}.
+	 * 
+	 * @param jobId JobId of {@code GridJob}
+	 * @param name Class Name
+	 * 
+	 * @return the SHA1-Hash for given class's definition
+	 * 
+	 * @throws ClassNotFoundException if class is not found
+	 * @throws IllegalArgumentException if any of the arguments is {@code null}
+	 */
+	public String getHash(String jobId, String name) 
+			throws ClassNotFoundException, IllegalArgumentException;
+
 }

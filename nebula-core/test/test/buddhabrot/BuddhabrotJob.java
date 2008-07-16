@@ -17,8 +17,6 @@ package test.buddhabrot;
 import java.awt.Color;
 import java.io.Serializable;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.UnboundedGridJob;
 import org.nebulaframework.core.job.annotations.UnboundedProcessingSettings;
 import org.nebulaframework.core.task.GridTask;
@@ -27,7 +25,6 @@ import org.nebulaframework.core.task.GridTask;
 public class BuddhabrotJob implements UnboundedGridJob<BuddhabrotResult> {
 
 	private static final long serialVersionUID = 8997815059325788647L;
-	private static Log log = LogFactory.getLog(BuddhabrotJob.class);
 	
 	private int width;
 	private int height;
@@ -56,10 +53,7 @@ public class BuddhabrotJob implements UnboundedGridJob<BuddhabrotResult> {
 	}
 
 	public GridTask<BuddhabrotResult> task() {
-		
-		log.debug("Returning Raw Job");
-		
-		// Return Raw Job
+		// Return Task
 		return new BuddhabrotTask(width, height);
 	}
 	
@@ -115,8 +109,6 @@ public class BuddhabrotJob implements UnboundedGridJob<BuddhabrotResult> {
 
 		int[][] rgb = new int[width][height];
 
-		System.err.println("Cal RGB " + rgb.length + " , " + rgb[0].length);
-		
 		for (int x = 0; x < width; x++) {
 			for (int y = 0; y < height; y++) {
 				double blue = exposureBlue[x][y] / (maxexposureBlue / 2.5);

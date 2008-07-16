@@ -39,8 +39,8 @@ public class SequentialMandelbrotApp extends JFrame {
 	private double y2 = 3.3;
 
 	// dimensions of window
-	private static final int WIDTH = 300;
-	private static final int HEIGHT = 300;
+	private static final int WIDTH = 600;
+	private static final int HEIGHT = 600;
 
 	// dimensions of window (used for computation)
 	private int ymid = HEIGHT / 2;

@@ -45,11 +45,12 @@
 		<constructor-arg>
 			<!-- Create Grid Node Profile -->
 			<bean class="org.nebulaframework.grid.cluster.node.GridNodeProfileImpl">
-				<property name="clockSpeed" value="2000" />
-				<property name="memory" value="2048" />
-				<property name="name" value="Link" />
-				<property name="processor" value="Intel Core Duo T2500" />
-				<property name="OS" value="Microsoft Windows XP SP2" />
+				<property name="architecture" value="${os.arch}" />
+				<property name="OSName" value="${os.name}" />
+				<property name="javaVersion" value="${java.version}" />
+				<property name="javaVendor" value="${java.vendor}" />
+				<property name="name" value="${net.name}" />
+				<property name="ipAddress" value="${net.ip}" />
 			</bean>
 		</constructor-arg>
 		<property name="nodeRegistrationService"> 
