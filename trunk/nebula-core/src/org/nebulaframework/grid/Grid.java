@@ -92,6 +92,7 @@ public class Grid {
 		}
 		
 		applicationContext = new NebulaApplicationContext(CLUSTER_SPRING_CONTEXT, props);
+		clusterManager = true;
 		return (ClusterManager) applicationContext.getBean("clusterManager");
 	}
 
@@ -129,6 +130,7 @@ public class Grid {
 		}
 		
 		applicationContext = new NebulaApplicationContext(GRIDNODE_CONTEXT, props);
+		clusterManager = false;
 		return (GridNode) applicationContext.getBean("localNode");
 	}
 	
@@ -166,6 +168,7 @@ public class Grid {
 		}
 		
 		applicationContext = new NebulaApplicationContext(GRIDNODE_LIGHT_CONTEXT, props);
+		clusterManager = false;
 		return (GridNode) applicationContext.getBean("localNode");
 	}
 

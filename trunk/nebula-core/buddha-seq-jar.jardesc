@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="WINDOWS-1252"?>
+<jardesc>
+<jar path="C:/Documents and Settings/Yohan/Desktop/Worker/seq-buddha.jar"/>
+<options buildIfNeeded="false" compress="true" descriptionLocation="/Nebula-Trunk/buddha-seq-jar.jardesc" exportErrors="false" exportWarnings="false" includeDirectoryEntries="false" overwrite="false" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
+<storedRefactorings deprecationInfo="true" structuralOnly="false"/>
+<selectedProjects/>
+<manifest generateManifest="true" mainClassHandleIdentifier="=Nebula-Trunk/test&lt;test.buddhabrot.sequential{SwingRunner.java[SwingRunner" manifestLocation="/Nebula-Trunk/MANIFEST.MF" manifestVersion="1.0" reuseManifest="false" saveManifest="false" usesManifest="true">
+<sealing sealJar="false">
+<packagesToSeal/>
+<packagesToUnSeal/>
+</sealing>
+</manifest>
+<selectedElements exportClassFiles="true" exportJavaFiles="false" exportOutputFolder="false">
+<javaElement handleIdentifier="=Nebula-Trunk/test&lt;test.buddhabrot.sequential"/>
+</selectedElements>
+</jardesc>

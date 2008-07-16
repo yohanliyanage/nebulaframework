@@ -163,7 +163,7 @@ public class SwingRunner extends JFrame implements ResultListener {
 			
 			public void run() {
 				System.err.println(new Date());
-				new SwingRunner(150, 150);
+				new SwingRunner(600, 600);
 			}
 
 		});

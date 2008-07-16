@@ -112,8 +112,6 @@ public class UnboundedJobProcessor implements JobExecutionManager {
 		
 		// Validate Arguments
 		Assert.notNull(profile);
-		Assert.notNull(connectionFactory);
-		Assert.notNull(jobService);
 
 		if (!(profile.getJob() instanceof UnboundedGridJob<?>)) {
 			throw new IllegalArgumentException("GridJob is not a UnboundedGridJob");

@@ -19,10 +19,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Buddhabrot {
 
-	public static final long PLOT_SIZE = 10000L;
-	private static final int RED_DWELL = 50000;
-	private static final int GREEN_DWELL = 5000;
-	private static final int BLUE_DWELL = 500;
+	public static final long PLOT_SIZE = 100000L;
+	private static final int RED_DWELL = 20000;
+	private static final int GREEN_DWELL = 6000;
+	private static final int BLUE_DWELL = 20;
 
 	// exposure counters for each pixel & color
 	private int[][] exposureBlue;	// ?

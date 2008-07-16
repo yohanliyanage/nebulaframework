@@ -43,8 +43,6 @@ public class BuddhabrotResult implements Serializable {
 			this.exposureGreen = CompressionUtils.compress(exposureGreen);
 			this.exposureBlue = CompressionUtils.compress(exposureBlue);
 			
-			System.err.println("Compressed Size : " + ((exposureBlue.length + exposureGreen.length + exposureRed.length) / 1024) + " KB");
-			
 			this.bufferSize = calculateBuffer(exposureBlue.length, exposureBlue[0].length);
 			
 		} catch (IOException e) {
