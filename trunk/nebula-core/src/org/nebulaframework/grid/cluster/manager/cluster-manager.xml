@@ -34,7 +34,7 @@
 	
 	<amq:broker id="broker" persistent="false" useJmx="true">
 		<amq:transportConnectors>
-			<amq:transportConnector uri="${cluster.serviceUrl}" />
+			<amq:transportConnector uri="${cluster.serviceUrl}:61616" />
 		</amq:transportConnectors>
 	</amq:broker>
  	
@@ -46,7 +46,7 @@
 		</property>
 	</bean>
 	 -->
-	<amq:connectionFactory id="jmsConnectionFactory" brokerURL="${cluster.serviceUrl}" />
+	<amq:connectionFactory id="jmsConnectionFactory" brokerURL="${cluster.serviceUrl}:61616" />
 
 	<!-- ClusterManager -->
 	<bean id="clusterManager" class="org.nebulaframework.grid.cluster.manager.ClusterManager" factory-method="getInstance">

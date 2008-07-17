@@ -13,16 +13,14 @@
  */
 package org.nebulaframework.grid;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.Properties;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.nebulaframework.configuration.ConfigurationSupport;
+import org.nebulaframework.discovery.ClusterDiscoverySupport;
+import org.nebulaframework.discovery.GridNodeDiscoverySupport;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.node.GridNode;
 import org.nebulaframework.util.spring.NebulaApplicationContext;
-import org.nebulaframework.util.system.SystemUtils;
 
 /**
  * The general access point to Nebula Grid. Allows to configure
@@ -33,11 +31,21 @@ import org.nebulaframework.util.system.SystemUtils;
  */
 public class Grid {
 	
+	// FIXME 61616 is hard coded in Cluster + Node Spring XML
+	/** Cluster Service Port (JMS Broker) */
+	public static final int SERVICE_PORT = 61616;
+	
 	/** Cluster Configuration Properties File */
-	public static final String CLUSTER_CONFIGURATION = "nebula-cluster.properties";
+	public static final String CLUSTER_PROPERTY_CONFIGURATION = "nebula-cluster.properties";
+	
+	/** Cluster XML Properties File */
+	public static final String CLUSTER_XML_CONFIGURATION = "nebula-cluster.xml";
 	
 	/** Grid Node Configuration Properties File */
-	public static final String GRIDNODE_CONFIGURATION = "nebula-client.properties";
+	public static final String GRIDNODE_PROPERTY_CONFIGURATION = "nebula-client.properties";
+	
+	/** Grid Node XML Properties File */
+	public static final String GRIDNODE_XML_CONFIGURATION = "nebula-client.xml";
 	
 	/** Cluster Spring Beans Configuration File */
 	public static final String CLUSTER_SPRING_CONTEXT = "org/nebulaframework/grid/cluster/manager/cluster-manager.xml";
@@ -49,8 +57,6 @@ public class Grid {
 	public static final String GRIDNODE_LIGHT_CONTEXT = "org/nebulaframework/grid/cluster/node/grid-nonworker-node.xml";
 	
 	
-	
-	private static Log log = LogFactory.getLog(Grid.class);
 	
 	private static NebulaApplicationContext applicationContext = null;
 	private static boolean clusterManager = false;
@@ -80,19 +86,14 @@ public class Grid {
 		}
 		
 		
-		Properties props = new Properties();
+		// Detect Configuration
+		Properties config = ConfigurationSupport.detectClusterConfiguration();
 		
-		try {
-			props.load(new FileInputStream(CLUSTER_CONFIGURATION));
-			
-		} catch (IOException e) {
-			log.warn("[Grid] Failed to read " + CLUSTER_CONFIGURATION, e);
-			// TODO Fail Over To Default
-			throw new AssertionError(e);
-		}
+		// Register with any Colombus Servers
+		ClusterDiscoverySupport.registerColombus(config);
 		
-		applicationContext = new NebulaApplicationContext(CLUSTER_SPRING_CONTEXT, props);
 		clusterManager = true;
+		applicationContext = new NebulaApplicationContext(CLUSTER_SPRING_CONTEXT, config);
 		return (ClusterManager) applicationContext.getBean("clusterManager");
 	}
 
@@ -114,22 +115,13 @@ public class Grid {
 			throw new IllegalStateException("A Grid Memeber Already Started in VM");
 		}
 		
-		Properties props = new Properties();
+		// Detect Configuration
+		Properties config = ConfigurationSupport.detectNodeConfiguration();
 		
-		// Get SystemInfo
-		SystemUtils.detectSystemInfo(props);
+		// Discover Cluster If Needed
+		GridNodeDiscoverySupport.discover(config);
 		
-		
-		try {
-			props.load(new FileInputStream(GRIDNODE_CONFIGURATION));
-			
-		} catch (IOException e) {
-			log.warn("[Grid] Failed to read " + GRIDNODE_CONFIGURATION, e);
-			// TODO Fail Over To Default
-			throw new AssertionError(e);
-		}
-		
-		applicationContext = new NebulaApplicationContext(GRIDNODE_CONTEXT, props);
+		applicationContext = new NebulaApplicationContext(GRIDNODE_CONTEXT, config);
 		clusterManager = false;
 		return (GridNode) applicationContext.getBean("localNode");
 	}
@@ -152,23 +144,13 @@ public class Grid {
 			throw new IllegalStateException("A Grid Memeber Already Started in VM");
 		}
 		
-		Properties props = new Properties();
+		Properties config = ConfigurationSupport.detectNodeConfiguration();
 		
-		// Get SystemInfo
-		SystemUtils.detectSystemInfo(props);
+		// Discover Cluster If Needed
+		GridNodeDiscoverySupport.discover(config);
 		
-		
-		try {
-			props.load(new FileInputStream(GRIDNODE_CONFIGURATION));
-			
-		} catch (IOException e) {
-			log.warn("[Grid] Failed to read " + GRIDNODE_CONFIGURATION, e);
-			// TODO Fail Over To Default
-			throw new AssertionError(e);
-		}
-		
-		applicationContext = new NebulaApplicationContext(GRIDNODE_LIGHT_CONTEXT, props);
 		clusterManager = false;
+		applicationContext = new NebulaApplicationContext(GRIDNODE_LIGHT_CONTEXT, config);
 		return (GridNode) applicationContext.getBean("localNode");
 	}
 

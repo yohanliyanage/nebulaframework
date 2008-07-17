@@ -21,6 +21,8 @@ import org.apache.activemq.broker.BrokerService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.deployment.classloading.service.ClassLoadingServiceSupport;
+import org.nebulaframework.discovery.multicast.MulticastDiscovery;
+import org.nebulaframework.discovery.ws.WSDiscovery;
 import org.nebulaframework.grid.ID;
 import org.nebulaframework.grid.cluster.manager.services.facade.ClusterManagerServicesFacade;
 import org.nebulaframework.grid.cluster.manager.services.heartbeat.InternalClusterHeartBeatService;
@@ -356,6 +358,12 @@ public class ClusterManager implements InitializingBean {
 		
 		// Start Remote Cluster Job Service
 		remoteJobService = new RemoteClusterJobServiceImpl(this);
+		
+		// Start Multicast Discovery Service
+		MulticastDiscovery.startService();
+		
+		// Register on Colombus Server(s) If Available
+		WSDiscovery.registerCluster();
 	}
 	
 	/**

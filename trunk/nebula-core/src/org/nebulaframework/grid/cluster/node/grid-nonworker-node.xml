@@ -38,7 +38,7 @@
 		</property>
 	</bean>
 	-->
-	<amq:connectionFactory id="jmsConnectionFactory" brokerURL="${cluster.url}" />
+	<amq:connectionFactory id="jmsConnectionFactory" brokerURL="${cluster.service}" />
 
 	<!-- Local Node Instance -->
 	<bean id="localNode" class="org.nebulaframework.grid.cluster.node.GridNode" factory-method="createNode">
