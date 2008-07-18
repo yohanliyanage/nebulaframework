@@ -10,11 +10,25 @@ import org.nebulaframework.configuration.ConfigurationKeys;
 import org.nebulaframework.discovery.ws.WSDiscovery;
 import org.nebulaframework.grid.Grid;
 
-// TODO FixDoc
+/**
+ * Discovery Support for GridNodes. This class provides
+ * support routines which allows to discover clusters
+ * using Property Files, XML Configuration, Multicast
+ * and Colombus Web Service Discovery.
+ * 
+ * @author Yohan Liyanage
+ * @version 1.0
+ */
 public class GridNodeDiscoverySupport {
 	
 	private static Log log = LogFactory.getLog(GridNodeDiscoverySupport.class);
 	
+	/**
+	 * Attempts to discover a cluster using the given
+	 * GridNode configuration.
+	 * 
+	 * @param config GridNode Configuration
+	 */
 	public static void discover(Properties config) {
 		
 		InetAddress cluster = null;
@@ -31,6 +45,9 @@ public class GridNodeDiscoverySupport {
 			
 			return;
 		}
+		
+		
+		// FIXME Multicast Commented to test WS
 		
 		/* -- No User Specified Cluster Service URL : Attempt Discovery -- */
 		

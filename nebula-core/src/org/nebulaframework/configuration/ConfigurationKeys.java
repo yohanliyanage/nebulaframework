@@ -1,16 +1,41 @@
 package org.nebulaframework.configuration;
 
-// TODO FixDOc
+/**
+ * Enumeration which contains key names values used in
+ * Configuration Property File.
+ * 
+ * @author Yohan Liyanage
+ * @version 1.0
+ */
 public enum ConfigurationKeys {
 	
-	CLUSTER_SERVICE("cluster.service"), COLOMBUS_SERVERS ("colombus.servers");
+	/**
+	 * Cluster Service URL (Broker)
+	 */
+	CLUSTER_SERVICE("cluster.service"), 
+	
+	/**
+	 * Colombus Servers (List, splitted by ',')
+	 */
+	COLOMBUS_SERVERS ("colombus.servers");
 	
 	private String value = "";
 	
+	/**
+	 * Constructs a {@link ConfigurationKeys} instance with
+	 * given String as value.
+	 * 
+	 * @param value value of key
+	 */
 	private ConfigurationKeys(String value) {
 		this.value = value;
 	}
 
+	/**
+	 * Returns the value of this Configuration Key.
+	 * 
+	 * @return String value of Configuration Key.
+	 */
 	public String getValue() {
 		return value;
 	}
