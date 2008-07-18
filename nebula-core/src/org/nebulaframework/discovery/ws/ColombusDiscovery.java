@@ -1,5 +1,7 @@
 package org.nebulaframework.discovery.ws;
 
+import javax.jws.WebService;
+
 /**
  * {@code ColombusDiscovery} allows Nebula Grid Members to 
  * detect Clusters using a Web Service based discovery
@@ -14,6 +16,7 @@ package org.nebulaframework.discovery.ws;
  * @author Yohan Liyanage
  * @version 1.0
  */
+@WebService
 public interface ColombusDiscovery {
 	
 	/**

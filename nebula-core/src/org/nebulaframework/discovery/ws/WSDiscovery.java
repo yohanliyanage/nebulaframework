@@ -6,10 +6,7 @@ import java.util.concurrent.Executors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.xfire.XFireFactory;
-import org.codehaus.xfire.client.XFireProxyFactory;
-import org.codehaus.xfire.service.Service;
-import org.codehaus.xfire.service.binding.ObjectServiceFactory;
+import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.nebulaframework.grid.Grid;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.service.event.ServiceEvent;
@@ -22,6 +19,7 @@ public class WSDiscovery {
 	
 	public static final String WS_DISCOVERY_PATH = "Colombus/Discovery";
 	public static final String WS_MANAGER_PATH = "Colombus/Manager";
+	public static final String WS_NAMESPACE = "http://ws.discovery.nebulaframework.org";
 	
 	private static Log log = LogFactory.getLog(WSDiscovery.class);
 	private static String[] urls = null;
@@ -79,23 +77,24 @@ public class WSDiscovery {
 
 	protected static void doRegisterCluster(String url) {
 		
-		URL urlObj=null;
+		URL wsdlURL=null;
 		
 		try {
 			
-			urlObj = new URL(url);
+			log.debug("[WSDiscovery] Connecting Colombus on " + url);
+			
+			wsdlURL = new URL(url + "?wsdl");
 			 
-			// FIXME This uses XFire, use new CXF
-			
-			// Create XFire WS Client
-			Service service = new ObjectServiceFactory().create(ColombusManager.class);
-			XFireProxyFactory factory = new XFireProxyFactory(XFireFactory.newInstance().getXFire());
-			final ColombusManager mgr = (ColombusManager) factory.create(service, url);
-			
+			// Create CXF JAX-WS Proxy
+			JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
+			factory.setServiceClass(ColombusManager.class);
+			factory.setAddress(url);
+			final ColombusManager mgr = (ColombusManager) factory.create();
+
 			// Get Broker Service Host IP
 			String serviceUrl = ClusterManager.getInstance().getBrokerUrl();
 			final String serviceIP = NetUtils.getHostAddress(serviceUrl);
-
+			
 			// Register in Colombus Service
 			mgr.registerCluster(serviceIP);
 			
@@ -115,19 +114,20 @@ public class WSDiscovery {
 			ServiceEventsSupport.getInstance().addServiceHook(event, callback);
 			log.info("[WSDiscovery] Registered on Colombus Server " + new URL(url).getHost());
 		} catch (Exception e) {
-			log.warn("[WSDiscovery] Registration Failed : " + ((urlObj!=null) ? urlObj.getHost() : "?"));
+			log.warn("[WSDiscovery] Registration Failed : " + ((wsdlURL!=null) ? wsdlURL.getHost() : "?"));
 		}		
 	}
 
 	public static String discoverCluster(String url) throws Exception {
 		
-		// Create XFire WS Client
-		Service service = new ObjectServiceFactory().create(ColombusDiscovery.class);
-		XFireProxyFactory factory = new XFireProxyFactory(XFireFactory.newInstance().getXFire());
-		ColombusDiscovery mgr = (ColombusDiscovery) factory.create(service, url);
-
+		// Create CXF JAX-WS Proxy
+		JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
+		factory.setServiceClass(ColombusDiscovery.class);
+		factory.setAddress(url);
+		final ColombusDiscovery discovery = (ColombusDiscovery) factory.create();
+		
 		// Attempt Discovery
-		String cluster = mgr.discover();
+		String cluster = discovery.discover();
 		
 		if (cluster==null) {
 			// Discovery Failed

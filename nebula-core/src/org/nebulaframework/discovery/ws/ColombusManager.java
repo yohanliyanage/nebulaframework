@@ -1,5 +1,7 @@
 package org.nebulaframework.discovery.ws;
 
+import javax.jws.WebService;
+
 /**
  * {@code ColombusManager} is the management interface of
  * Colombus Servers. This interface allows to add / remove
@@ -11,6 +13,7 @@ package org.nebulaframework.discovery.ws;
  * @author Yohan Liyanage
  * @version 1.0
  */
+@WebService
 public interface ColombusManager {
 	
 	/**
