@@ -12,21 +12,40 @@ import org.nebulaframework.grid.Grid;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.util.net.NetUtils;
 
-// TODO Fix Doc
+/**
+ * Implementation of Multicast Discovery. This class provides necessary
+ * mechanisms to discover clusters using multicast messages. All 
+ * ClusterManager's will start a multicast discovery service which listens
+ * to multicast requests for a specific IP Address. When such a message
+ * is received, it will respond on a designated response channel (another
+ * multicast IP Address).
+ *  
+ * @author Yohan Liyanage
+ * @version 1.0
+ */
 public class MulticastDiscovery {
 
 	private static Log log = LogFactory.getLog(MulticastDiscovery.class);
 	
+	/** Multicast Service Port */
 	public static final int SERVICE_PORT = 8787;
+	
+	/** Request Channel IP Address */
 	public static final InetAddress SERVICE_REQUEST_IP;
+	
+	/** Response Channel IP Address*/
 	public static final InetAddress SERVICE_RESPONSE_IP;
+	
+	/** Default Greeting Message */
 	public static final String GREET_MSG = "ALOHA";
+	
+	/** Multicast Discovery Timout */
 	public static final long TIMEOUT = 5000L;
 
 	private InetAddress cluster = null;
 	
 	/**
-	 * Static initilizer to resolve multicast
+	 * Static initilization to resolve Multicast
 	 * service IP Address.
 	 */
 	static {
@@ -39,18 +58,26 @@ public class MulticastDiscovery {
 		}
 	}
 	
+	/** 
+	 * Private Constructor. No External Instantiation.
+	 */
 	private MulticastDiscovery() {
 		// No External Instantiation
 	}
 	
-	public static void startService() throws IOException {
+	/**
+	 * Starts Multicast Discovery Service. This can only
+	 * be invoked by a Nebula ClusterManager.
+	 * 
+	 * @throws IOException if occurred during operation
+	 * @throws UnsupportedOperationException if invoked by non-ClusterManager nodes.
+	 */
+	public static void startService() throws IOException, UnsupportedOperationException {
 		
 		// Only allowed for ClusterManagers
 		if (! Grid.isClusterManager()) {
 			throw new UnsupportedOperationException("Multicast Discovery Service can be enabled only for ClusterManagers");
 		}
-		
-
 		
 		// Start Service
 		Thread t = new Thread(new Runnable() {
@@ -61,7 +88,8 @@ public class MulticastDiscovery {
 					// Start Multicast Socket and listen for Requests
 					final MulticastSocket mSock = new MulticastSocket(SERVICE_PORT);
 					mSock.joinGroup(SERVICE_REQUEST_IP);
-					
+
+					// Infinite Loop
 					while (true) {
 						// Buffer (for Greeting Message)
 						byte[] msg = new byte[GREET_MSG.getBytes("UTF-8").length];
@@ -69,7 +97,7 @@ public class MulticastDiscovery {
 						// Create Datagram Packet
 						DatagramPacket packet = new DatagramPacket(msg, msg.length);
 						
-						// Receive Request
+						// Wait and Receive Request
 						mSock.receive(packet);
 						log.debug("[MulticastDiscovery] Received Discovery Request");
 						
@@ -96,11 +124,15 @@ public class MulticastDiscovery {
 			}
 			
 		});
-		t.setDaemon(true);
-		t.start();
+		t.setDaemon(true);	// Run as Daemon thread
+		t.start();			// Start Service
 		log.debug("[MulticastDiscovery] Service Started");
 	}
 	
+	/**
+	 * Responds  to a Multicast Discovery Request by publishing
+	 * the IP Address of Service into response channel. 
+	 */
 	protected static void doRespond() {
 		
 		// Only allowed for ClusterManagers
@@ -117,10 +149,12 @@ public class MulticastDiscovery {
 			// Create Response Packet
 			DatagramPacket response = new DatagramPacket(hostIp, hostIp.length, SERVICE_RESPONSE_IP, SERVICE_PORT);
 			
+			// Create Multicast Socket
 			MulticastSocket resSock = new MulticastSocket();
 			
 			// Send response
 			resSock.send(response);
+			
 			log.debug("[MulticastDiscovery] Responded Discovery Request");
 		} catch (Exception e) {
 			log.error("[MulticastDiscovery] Service Failed to Reply",e);
@@ -128,12 +162,25 @@ public class MulticastDiscovery {
 		
 	}
 
+	/**
+	 * Invoked by GridNodes to detect Clusters with in multicast
+	 * reachable network range. The discovery process returns 
+	 * without results if no cluster was discovered with in 
+	 * a fixed duration, set by {@link #TIMEOUT}.
+	 * 
+	 * @return IP Address of detected Cluster (InetAddress)
+	 */
 	public static InetAddress discoverCluster() {
+		
 		log.info("[MulticastDiscovery] Attempting to discover cluster");
+		
+		// Synchronization Mutex
 		final Object mutex = new Object();
 
+		// Create Instance of MulticastDiscovery
 		final MulticastDiscovery mDisc = new MulticastDiscovery();
 		
+		// Execute on a seperate Thread
 		new Thread(new Runnable(){
 
 			public void run() {
@@ -171,6 +218,12 @@ public class MulticastDiscovery {
 		return mDisc.cluster;
 	}
 	
+	/**
+	 * Discovery Process to identify Clusters with in 
+	 * network.
+	 * 
+	 * @throws IOException if occurred during operation
+	 */
 	private void doDiscover() throws IOException {
 		
 		// Send Request

@@ -3,13 +3,30 @@ package org.nebulaframework.util.net;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-// TODO FixDoc
+/**
+ * Network related utility operations for Nebula Framework.
+ * 
+ * @author Yohan Liyanage
+ * @version 1.0
+ */
 public class NetUtils {
 
+	/**
+	 * Returns the Host Name as a String, parsed from
+	 * the given URL.
+	 * <p>
+	 * For example, for URL {@code tcp://host:port/xyz},
+	 * host name is '{@code host}'.
+	 * 
+	 * @param url URL as a String
+	 * @return Host Name from URL.
+	 */
 	public static String getHostName(String url) {
 
+		// Split from :// and : and get Host Name Part
 		String hostName = url.split("://")[1].split(":")[0];
 
+		// For localhost loopback, detect real network name
 		if (hostName.equals("localhost") || hostName.equals("127.0.0.1")) {
 			try {
 				// Local Address : Find Real Network IP
@@ -23,28 +40,46 @@ public class NetUtils {
 		return hostName;
 	}
 
-	public static String getHostAddress(String url) {
+	/**
+	 * Returns the Host Address (IP Address) of the given 
+	 * URL. This method uses {@link InetAddress#getByName(String)}
+	 * to detect the IP Address of the given host.
+	 * 
+	 * @param url URL as a String
+	 * @return Host Address as String
+	 */
+	public static String getHostAddress(String url) throws UnknownHostException {
 
+		// Split from :// and : and get Host Name Part
 		String hostAddress = url.split("://")[1].split(":")[0];
 
-		try {
-			if (hostAddress.equals("localhost")
-					|| hostAddress.equals("127.0.0.1")) {
-				
-				// Local Address : Find Real Network IP
-				hostAddress = InetAddress.getLocalHost().getHostAddress();
+		// For localhost loopback, detect real network name
+		if (hostAddress.equals("localhost")
+				|| hostAddress.equals("127.0.0.1")) {
+			
+			// Local Address : Find Real Network IP
+			hostAddress = InetAddress.getLocalHost().getHostAddress();
 
-			} else {
-				hostAddress = InetAddress.getByName(hostAddress)
-						.getHostAddress();
-			}
-		} catch (UnknownHostException e) {
-			// Should not happen
-			throw new AssertionError(e);
+		} else {
+			// Find IP Address
+			hostAddress = InetAddress.getByName(hostAddress)
+					.getHostAddress();
 		}
+		
 		return hostAddress;
 	}
 	
+	/**
+	 * Returns the Host Address of a given URL as byte[].
+	 * 
+	 * @param url URL as a String
+	 * 
+	 * @return Host IP Address, as byte[]
+	 * 
+	 * @throws UnknownHostException if Host Name cannot be mapped to IP Address
+	 * 
+	 * @see {@link #getHostAddress(String)}
+	 */
 	public static byte[] getHostAddressAsBytes(String url) throws UnknownHostException {
 		return InetAddress.getByName(getHostAddress(url)).getAddress();
 	}

@@ -1,6 +1,12 @@
 package org.nebulaframework.configuration;
 
-// TODO FixDoc
+/**
+ * This exception denotes an exceptional situation occurred during
+ * the configuration of a Nebula Grid Member.
+ * 
+ * @author Yohan Liyanage
+ * @version 1.0
+ */
 public class ConfigurationException extends RuntimeException {
 
 	private static final long serialVersionUID = 4653298956700502661L;
