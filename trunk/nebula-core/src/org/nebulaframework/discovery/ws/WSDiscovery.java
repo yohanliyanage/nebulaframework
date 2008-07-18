@@ -85,6 +85,8 @@ public class WSDiscovery {
 			
 			urlObj = new URL(url);
 			 
+			// FIXME This uses XFire, use new CXF
+			
 			// Create XFire WS Client
 			Service service = new ObjectServiceFactory().create(ColombusManager.class);
 			XFireProxyFactory factory = new XFireProxyFactory(XFireFactory.newInstance().getXFire());
