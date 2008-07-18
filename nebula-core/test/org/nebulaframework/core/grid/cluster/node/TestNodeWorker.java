@@ -45,7 +45,6 @@ public class TestNodeWorker {
 				log.info("Registered in Cluster : " + node.getNodeRegistrationService().getRegistration().getClusterId());
 			} catch (RuntimeException e) {
 				System.err.println("Exception");
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			

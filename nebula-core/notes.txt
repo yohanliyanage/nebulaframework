@@ -12,4 +12,8 @@ Currently ServiceMessages are duplicated, but this is not a issue as duplicates 
 MANDELBROT GOT STUCK ONCE AFTER ALL RESULTS WERE SENT. TRY 2 FIND BUG. 
 (Aggregate was not invoked. All results collected. 3 Nodes, Medium time tasks (600x600 ~1000000L))
 
-Class Loading, Wat 2 do for old classes ?
+
+---
+
+The WS client uses old XFire Stuff, Fix this to use new CXF.
+
