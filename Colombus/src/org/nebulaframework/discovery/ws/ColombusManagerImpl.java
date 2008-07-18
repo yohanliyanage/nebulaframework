@@ -2,6 +2,8 @@ package org.nebulaframework.discovery.ws;
 
 import javax.jws.WebService;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.discovery.ws.datastore.ClusterData;
 import org.nebulaframework.discovery.ws.datastore.ColombusServices;
 
@@ -19,10 +21,13 @@ import org.nebulaframework.discovery.ws.datastore.ColombusServices;
 @WebService(endpointInterface="org.nebulaframework.discovery.ws.ColombusManager", serviceName="ColombusManager")
 public class ColombusManagerImpl implements ColombusManager {
 
+	private static Log log = LogFactory.getLog(ColombusManagerImpl.class);
+	
 	/**
 	 * {@inheritDoc}
 	 */
 	public void registerCluster(String ip) {
+		log.info("[ColombusManager] Cluster Registered : " + ip);
 		ClusterData.addCluster(ip);
 	}
 
@@ -30,6 +35,7 @@ public class ColombusManagerImpl implements ColombusManager {
 	 * {@inheritDoc}
 	 */
 	public void registerColombusService(String ip) {
+		log.info("[ColombusManager] Colombus Peer Registered : " + ip);
 		ColombusServices.addColombusServer(ip);
 	}
 
@@ -37,6 +43,7 @@ public class ColombusManagerImpl implements ColombusManager {
 	 * {@inheritDoc}
 	 */
 	public void unregisterCluster(String ip) {
+		log.info("[ColombusManager] Cluster Unregistered : " + ip);
 		ClusterData.removeCluster(ip);
 	}
 
@@ -44,6 +51,7 @@ public class ColombusManagerImpl implements ColombusManager {
 	 * {@inheritDoc}
 	 */
 	public void unregisterColombusService(String ip) {
+		log.info("[ColombusManager] Colombus Peer Unregistered : " + ip);
 		ColombusServices.removeColombusServer(ip);
 	}
 }

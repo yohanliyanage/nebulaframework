@@ -1,6 +1,9 @@
 package org.nebulaframework.discovery.ws;
 
 import javax.jws.WebService;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.discovery.ws.datastore.ClusterData;
 
 /**
@@ -21,10 +24,13 @@ import org.nebulaframework.discovery.ws.datastore.ClusterData;
 @WebService(endpointInterface="org.nebulaframework.discovery.ws.ColombusDiscovery", serviceName="ColombusDiscovery")
 public class ColombusDiscoveryImpl implements ColombusDiscovery {
 	
+	private static Log log = LogFactory.getLog(ColombusDiscoveryImpl.class);
+	
 	/**
 	 * {@inheritDoc}
 	 */
 	public String discover() {
+		log.debug("[ColombusDiscovery] Discovery Request Received");
 		return ClusterData.nextCluster();
 	}
 
