@@ -2,6 +2,8 @@ package org.nebulaframework.discovery.ws.colombus;
 
 import javax.xml.ws.Endpoint;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.discovery.ws.ColombusDiscovery;
 import org.nebulaframework.discovery.ws.ColombusDiscoveryImpl;
 import org.nebulaframework.discovery.ws.ColombusManagerImpl;
@@ -16,6 +18,8 @@ import org.nebulaframework.discovery.ws.ColombusManagerImpl;
  */
 public class ColombusServer {
 
+	private static Log log = LogFactory.getLog(ColombusServer.class);
+	
 	private static int port = 9000;
 	
 	/**
@@ -38,26 +42,38 @@ public class ColombusServer {
 			}
 		}
 		
+		long t1 = System.currentTimeMillis();
+		log.info("[Colombus Server] Starting Up");
+		
+		// Start Web Services
 		startDiscoveryService();
 		startManagerService();
+		
+		log.info("[Colombus Server] Started in " + (System.currentTimeMillis()-t1) + "ms");
 	}
 
 	/**
 	 * Creates the Service EndPoint for Discovery Service.
 	 */
 	private static void startDiscoveryService() {
+		
 		ColombusDiscoveryImpl discoveryImpl = new ColombusDiscoveryImpl();
 		String address = "http://localhost:"+ port +"/Colombus/Discovery";
 		Endpoint.publish(address, discoveryImpl);
+		
+		log.debug("[Colombus Server] Published EndPoint : " + address);
 	}
 	
 	/**
 	 * Creates Service EndPoint for Management Service
 	 */
 	private static void startManagerService() {
+		
 		ColombusManagerImpl managerImpl = new ColombusManagerImpl();
 		String address = "http://localhost:"+ port +"/Colombus/Manager";
 		Endpoint.publish(address, managerImpl);
+		
+		log.debug("[Colombus Server] Published EndPoint : " + address);
 	}
 	
 	/**
