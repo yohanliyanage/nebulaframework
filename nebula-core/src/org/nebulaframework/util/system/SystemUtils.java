@@ -44,8 +44,8 @@ public class SystemUtils {
 	public static void detectSystemInfo(Properties props) {
 		Map<String, String> map = detectSystemInfo();
 		
-		for (String key : map.keySet()) {
-			props.put(key, map.get(key));
+		for (Map.Entry<String,String> entry : map.entrySet()) {
+			props.put(entry.getKey(), entry.getValue());
 		}
 	}
 	

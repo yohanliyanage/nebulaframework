@@ -40,10 +40,6 @@ public class Buddhabrot {
 	
 	int fullWidth;
 	int fullHeight;
-	int startX;
-	int startY;
-	int processWidth;
-	int processHeight;
 	
 	private ResultListener resultListener;
 	
@@ -56,10 +52,6 @@ public class Buddhabrot {
 
 		this.fullWidth = fullWidth;
 		this.fullHeight = fullHeight;
-		this.startX = startX;
-		this.startY = startY;
-		this.processWidth = processWidth;
-		this.processHeight = processHeight;
 		this.resultListener = listener;	
 		
 	}
@@ -97,7 +89,6 @@ public class Buddhabrot {
 		}
 		
 		refresh();
-		System.gc();
 	}
 
 

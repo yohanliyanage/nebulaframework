@@ -73,7 +73,7 @@ public class BuddhabrotResult implements Serializable {
 	public int[][] getExposureRed() {
 		
 		// If we have cached results, return it
-		if (red_cache!=null) return red_cache;
+		if (red_cache!=null) return red_cache.clone();
 		
 		// Else calculate and return
 		try {
@@ -86,7 +86,7 @@ public class BuddhabrotResult implements Serializable {
 	public  int[][] getExposureGreen() {
 		
 		// If we have cached results, return it
-		if (green_cache!=null) return green_cache;
+		if (green_cache!=null) return green_cache.clone();
 		
 		// Else calculate and return
 		try {
@@ -99,7 +99,7 @@ public class BuddhabrotResult implements Serializable {
 	public int[][] getExposureBlue() {
 		
 		// If we have cached results, return it
-		if (blue_cache!=null) return blue_cache;
+		if (blue_cache!=null) return blue_cache.clone();
 		
 		// Else calculate and return
 		try {

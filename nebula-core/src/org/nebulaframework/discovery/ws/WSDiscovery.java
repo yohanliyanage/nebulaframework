@@ -1,6 +1,10 @@
 package org.nebulaframework.discovery.ws;
 
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -14,6 +18,7 @@ import org.nebulaframework.grid.service.event.ServiceEventsSupport;
 import org.nebulaframework.grid.service.event.ServiceHookCallback;
 import org.nebulaframework.grid.service.message.ServiceMessageType;
 import org.nebulaframework.util.net.NetUtils;
+import org.springframework.util.Assert;
 
 public class WSDiscovery {
 	
@@ -22,47 +27,54 @@ public class WSDiscovery {
 	public static final String WS_NAMESPACE = "http://ws.discovery.nebulaframework.org";
 	
 	private static Log log = LogFactory.getLog(WSDiscovery.class);
-	private static String[] urls = null;
+	private static URL[] urls = null;
 	
 	private static ExecutorService exService = Executors.newSingleThreadExecutor();
 	
 	public static void setUrls(String[] urls) {
-		WSDiscovery.urls = urls;
+		
+		List<URL> lst = new ArrayList<URL> ();
+		for (String strUrl : urls) {
+			try {
+				// Process and build full WS URL
+				StringBuilder wsURL = new StringBuilder(strUrl.trim());
+				if (wsURL.toString().endsWith("/")) wsURL.append("/");
+				wsURL.append(WSDiscovery.WS_MANAGER_PATH);
+				
+				// Create and enlist URL object
+				URL url = new URL(wsURL.toString());
+				lst.add(url);
+			} catch (MalformedURLException e) {
+				log.warn("Malformed URL in Colombus Server URLs : " + strUrl);
+			}
+		}
+		
+		WSDiscovery.urls = lst.toArray(new URL[] {});
 	}
 
 	public static void registerCluster() {
+		
+		if (! Grid.isClusterManager()) {
+			throw new UnsupportedOperationException("Allowed only to ClusterManagers");
+		}
+		
 		if (urls==null) {
 			log.debug("[WSDiscovery] No Colombus Servers to Register");
 			return;
 		}
 		
-		String host = null;
-		
 		// Register on each Colombus Server
-		for (String url : urls) {
-			try {
-				
-				host = null;
-				host = new URL(url.trim()).getHost();
-				
-				// Process and build full WS URL
-				StringBuilder wsURL = new StringBuilder(url.trim());
-				if (!url.trim().endsWith("/")) wsURL.append("/");
-				wsURL.append(WSDiscovery.WS_MANAGER_PATH);
-				
-				// Register
-				registerCluster(wsURL.toString());
-				
-			} catch (Exception e) {
-				log.warn("[WSDiscovery] Failed to Register : " + host,e);
-			}
+		for (URL url : urls) {
+			registerCluster(url);
 		}
 		
 		// Shutdown ThreadExecutor when finished
 		exService.shutdown();
 	}
 	
-	public static void registerCluster(final String url)  {
+	public static void registerCluster(final URL url)  throws IllegalArgumentException {
+		
+		Assert.notNull(url);
 		
 		if (! Grid.isClusterManager()) {
 			throw new UnsupportedOperationException("Allowed only to ClusterManagers");
@@ -75,47 +87,45 @@ public class WSDiscovery {
 		});
 	}
 
-	protected static void doRegisterCluster(String url) {
+	protected static void doRegisterCluster(URL url) throws IllegalArgumentException {
 		
-		URL wsdlURL=null;
-		
-		try {
+			Assert.notNull(url);
 			
-			log.debug("[WSDiscovery] Connecting Colombus on " + url);
-			
-			wsdlURL = new URL(url + "?wsdl");
-			 
-			// Create CXF JAX-WS Proxy
-			JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
-			factory.setServiceClass(ColombusManager.class);
-			factory.setAddress(url);
-			final ColombusManager mgr = (ColombusManager) factory.create();
-
-			// Get Broker Service Host IP
-			String serviceUrl = ClusterManager.getInstance().getBrokerUrl();
-			final String serviceIP = NetUtils.getHostAddress(serviceUrl);
-			
-			// Register in Colombus Service
-			mgr.registerCluster(serviceIP);
-			
-			// Add Service Hook to  Unregister
-			ServiceEvent event = new ServiceEvent();
-			event.addType(ServiceMessageType.CLUSTER_SHUTDOWN);
-			event.setMessage(ClusterManager.getInstance().getClusterId().toString());
-			
-			ServiceHookCallback callback = new ServiceHookCallback() {
-
-				public void onServiceEvent() {
-					mgr.unregisterCluster(serviceIP);
-				}
+			try {
+				log.debug("[WSDiscovery] Connecting Colombus on " + url);
 				
-			};
-			
-			ServiceEventsSupport.getInstance().addServiceHook(event, callback);
-			log.info("[WSDiscovery] Registered on Colombus Server " + new URL(url).getHost());
-		} catch (Exception e) {
-			log.warn("[WSDiscovery] Registration Failed : " + ((wsdlURL!=null) ? wsdlURL.getHost() : "?"));
-		}		
+				// Create CXF JAX-WS Proxy
+				JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
+				factory.setServiceClass(ColombusManager.class);
+				factory.setAddress(url.toString());
+				final ColombusManager mgr = (ColombusManager) factory.create();
+
+				// Get Broker Service Host IP
+				String serviceUrl = ClusterManager.getInstance().getBrokerUrl();
+				final String serviceIP = NetUtils.getHostAddress(serviceUrl);
+				
+				// Register in Colombus Service
+				mgr.registerCluster(serviceIP);
+
+				// Register for Cluster Shutdown Event to Unregister Cluster
+				ServiceEvent event = new ServiceEvent();
+				event.addType(ServiceMessageType.CLUSTER_SHUTDOWN);
+				event.setMessage(ClusterManager.getInstance().getClusterId().toString());
+				
+				ServiceHookCallback callback = new ServiceHookCallback() {
+
+					public void onServiceEvent() {
+						mgr.unregisterCluster(serviceIP);
+					}
+					
+				};
+				
+				ServiceEventsSupport.getInstance().addServiceHook(event, callback);
+				log.info("[WSDiscovery] Registered on Colombus Server " + url.getHost());
+				
+			} catch (UnknownHostException e) {
+				log.warn("[WSDiscovery] Registration Failed : " + url.getHost());
+			}
 	}
 
 	public static String discoverCluster(String url) throws Exception {

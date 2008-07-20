@@ -62,7 +62,7 @@ public class GridNodeClassLoader extends ClassLoader {
 	protected ClassLoadingService classLoadingService; // 
 
 	// Remote Loaded Classes. Note: Uses SoftReference. May be nulled by GC
-	protected static Map<String, ClassEntry> loaded = new HashMap<String, ClassEntry>();
+	protected final static Map<String, ClassEntry> loaded = new HashMap<String, ClassEntry>();
 
 	/**
 	 * Constructs a {@code GridNodeClassLoader} for the given {@code GridJob},
@@ -87,7 +87,7 @@ public class GridNodeClassLoader extends ClassLoader {
 			throws IllegalArgumentException {
 
 		super(parent);
-
+		
 		Assert.notNull(jobId);
 		Assert.notNull(classLoadingService);
 
@@ -271,7 +271,7 @@ public class GridNodeClassLoader extends ClassLoader {
 				return false;
 
 			ClassEntry ce = (ClassEntry) obj;
-			return classDefinition.equals(ce.getClassDefinition())
+			return classDefinition.length==ce.getClassDefinition().length
 					&& jobId.equals(ce.getJobId());
 		}
 

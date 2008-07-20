@@ -106,7 +106,7 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 	 *            JMS {@code ConnectionFactory}
 	 */
 	@Required
-	public void setConnectionFactory(ConnectionFactory connectionFactory) {
+	public synchronized void setConnectionFactory(ConnectionFactory connectionFactory) {
 		this.connectionFactory = connectionFactory;
 	}
 
@@ -211,7 +211,7 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 	 * 
 	 * @param jobId JobId of new Job
 	 */
-	protected synchronized void startNewJob(String jobId) {
+	protected void startNewJob(String jobId) {
 
 		log.info("[JobExecution] Starting Non-Archive Job {" + jobId + "}");
 
@@ -230,7 +230,7 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 	 * 
 	 * @param jobId JobId of new Job
 	 */
-	protected synchronized void startNewArchivedJob(String jobId,
+	protected void startNewArchivedJob(String jobId,
 			GridArchive archive) {
 
 		log.info("[JobExecution] Starting Archived Job {" + jobId + "}");
@@ -380,7 +380,7 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 	 * 
 	 * @throws Exception if dependencies are not set.
 	 */
-	public void afterPropertiesSet() throws Exception {
+	public synchronized void afterPropertiesSet() throws Exception {
 		
 		// Check required dependencies
 		Assert.notNull(node);

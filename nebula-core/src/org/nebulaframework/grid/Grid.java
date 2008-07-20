@@ -80,7 +80,7 @@ public class Grid {
 	 */
 	public static ClusterManager startClusterManager() throws IllegalStateException{
 
-		if (applicationContext != null) {
+		if (isInitialized()) {
 			// A Grid Member has already started in this VM
 			throw new IllegalStateException("A Grid Memeber Already Started in VM");
 		}
@@ -110,7 +110,7 @@ public class Grid {
 	 */
 	public static GridNode startGridNode() throws IllegalStateException {
 		
-		if (applicationContext != null) {
+		if (isInitialized()) {
 			// A Grid Member has already started in this VM
 			throw new IllegalStateException("A Grid Memeber Already Started in VM");
 		}
@@ -139,7 +139,7 @@ public class Grid {
 	 */
 	public static GridNode startLightGridNode() throws IllegalStateException {
 		
-		if (applicationContext != null) {
+		if (isInitialized()) {
 			// A Grid Member has already started in this VM
 			throw new IllegalStateException("A Grid Memeber Already Started in VM");
 		}
@@ -187,6 +187,15 @@ public class Grid {
 	 */
 	public static boolean isNode() {
 		return ! clusterManager;
+	}
+	
+	/**
+	 * Returns true if this Grid has been initialized before.
+	 * 
+	 * @return true if this Grid has been initialized.
+	 */
+	protected static boolean isInitialized() {
+		return applicationContext !=null;
 	}
 
 	

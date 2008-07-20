@@ -268,8 +268,10 @@ public class NebulaApplicationContext extends ClassPathXmlApplicationContext {
 
 		// Load Properties
 		Properties props = new Properties();
-		props.load(new FileInputStream(propsLocation));
-
+		FileInputStream fin = new FileInputStream(propsLocation);
+		props.load(fin);
+		fin.close();
+		
 		// Create Context
 		PropertyPlaceholderConfigurer configurer = new PropertyPlaceholderConfigurer();
 		configurer.setProperties(props);

@@ -228,7 +228,7 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 		 * 
 		 * @throws IllegalArgumentException if any argument is {@code null}.
 		 */
-		public CacheEntry(String jobId, String name, byte[] bytes) 
+		protected CacheEntry(String jobId, String name, byte[] bytes) 
 				throws IllegalArgumentException{
 			
 			super();
@@ -248,7 +248,7 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 		 * 
 		 * @return the {@code byte[]} of class definition
 		 */
-		public byte[] getBytes() {
+		protected byte[] getBytes() {
 			return bytes;
 		}
 
@@ -257,7 +257,7 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 		 * 
 		 * @return size of class definition, in bytes
 		 */
-		public int getByteSize() {
+		protected int getByteSize() {
 			return bytes.length;
 		}
 		
@@ -267,7 +267,7 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 		 * 
 		 * @return fully qualified class name
 		 */
-		public String getName() {
+		protected String getName() {
 			return name;
 		}
 
@@ -276,7 +276,7 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 		 * 
 		 * @return JobID of request
 		 */
-		public String getJobId() {
+		protected String getJobId() {
 			return jobId;
 		}
 	}

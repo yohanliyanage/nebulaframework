@@ -29,9 +29,9 @@ public class BuddhabrotJob implements UnboundedGridJob<BuddhabrotResult> {
 	private int width;
 	private int height;
 	
-	private int[][] exposureRed = new int[width][height];
-	private int[][] exposureGreen = new int[width][height];
-	private int[][] exposureBlue = new int[width][height];
+	private int[][] exposureRed;
+	private int[][] exposureGreen;
+	private int[][] exposureBlue;
 	
 	// max values for normalization
 	private int maxexposureBlue; 
