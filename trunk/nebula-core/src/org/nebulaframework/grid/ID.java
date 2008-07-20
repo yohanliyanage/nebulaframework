@@ -91,7 +91,7 @@ public class ID {
 
 		if (mac != null) {
 			// MAC Info available, use it to generate UUID
-			return UUID.nameUUIDFromBytes(new String(mac + (new Date()).getTime()).getBytes());
+			return UUID.nameUUIDFromBytes((mac + (new Date()).getTime()).getBytes());
 		} else {
 			// MAC Info not available, fallback to Random UUID
 			return UUID.randomUUID();

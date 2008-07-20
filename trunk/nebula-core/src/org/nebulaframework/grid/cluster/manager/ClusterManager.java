@@ -413,19 +413,13 @@ public class ClusterManager implements InitializingBean {
 		serviceMessageSender.sendServiceMessage(message);
 		
 		// Other clean up operations
-		
-		new Thread(new Runnable() {
 
-			public void run() {
-				try {
-					// Wait 1 second for messages to go // TODO Revise
-					Thread.sleep(1000);
-				} catch(InterruptedException ex) {
-					log.error(ex);
-				}
-				System.exit(0);
-			}
-			
-		}).start();
+		try {
+			// Wait 1 second for messages to go // TODO Revise
+			Thread.sleep(1000);
+		} catch(InterruptedException ex) {
+			log.error(ex);
+		}
+		System.exit(0);
 	}
 }

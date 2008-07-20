@@ -109,8 +109,11 @@ public class SequentialMandelbrotApp extends JFrame {
 		// Block until done
 		try {
 			log.debug("Waiting");
+			
 			synchronized (this) {
-				SequentialMandelbrotApp.this.wait();
+				while(!done) {
+					this.wait();
+				}
 			}
 			log.debug("Notified");
 		} catch (InterruptedException e) {
@@ -129,6 +132,7 @@ public class SequentialMandelbrotApp extends JFrame {
 		}
 		
 		synchronized (this) {
+			done = true;
 			this.notify();
 		}
 		
@@ -178,7 +182,7 @@ public class SequentialMandelbrotApp extends JFrame {
 	
 
 	@Override
-	public void paint(Graphics g) {
+	public synchronized void paint(Graphics g) {
 		if (done) {
 			g.drawImage(offscreen, 0, 0, this);
 			this.setTitle("Done");
@@ -188,10 +192,6 @@ public class SequentialMandelbrotApp extends JFrame {
 			g.drawRect(WIDTH / 4, 10, WIDTH / 2, 5);
 			g.fillRect(WIDTH / 4, 11, (progress * (WIDTH / 2)) / HEIGHT, 4);
 		}
-	}
-
-	public void setDone(boolean done) {
-		this.done = done;
 	}
 
 	public void setProgress(int progress) {

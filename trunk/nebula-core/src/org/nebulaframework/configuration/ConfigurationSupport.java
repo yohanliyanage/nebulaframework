@@ -94,14 +94,23 @@ public class ConfigurationSupport {
 	 * @return boolean value indicating success / failure
 	 */
 	private static boolean readPropertyFile(Properties props, String fileName) {
+		FileInputStream fis = null;
 		try {
 			// Load Properties
-			props.load(new FileInputStream(fileName));
+			fis = new FileInputStream(fileName);
+			props.load(fis);
 			return true;
 		} catch (IOException e) {
 			log.debug("[GridConfiguration] Failed to Read Properties : " + Grid.GRIDNODE_PROPERTY_CONFIGURATION, e);
 			return false;
+		} finally {
+			try {
+				fis.close();
+			} catch (IOException e) {
+				log.error("Unable to Close FileInputStream",e);
+			}
 		}
+		
 	}
 	
 	/**

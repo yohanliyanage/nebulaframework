@@ -29,14 +29,14 @@ public class MandelbrotResult implements Serializable {
 		super();
 		this.start = start;
 		this.lines = lines;
-		this.points = points;
+		this.points = points.clone();
 	}
 	
 	public int getStart() {
 		return start;
 	}
 	public long[][] getPoints() {
-		return points;
+		return points.clone();
 	}
 
 	public int getLines() {

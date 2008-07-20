@@ -188,7 +188,7 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 
 		} else {
 			// Unsupported Type
-			new AssertionError("Unsupported GridJob Type");
+			throw new AssertionError("Unsupported GridJob Type");
 		}
 
 		// Track to see if Job Submitter Node Fails

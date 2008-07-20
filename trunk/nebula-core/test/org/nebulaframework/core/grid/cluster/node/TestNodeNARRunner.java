@@ -15,13 +15,17 @@
 package org.nebulaframework.core.grid.cluster.node;
 
 import java.io.File;
+import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.archive.GridArchive;
+import org.nebulaframework.core.job.archive.GridArchiveException;
 import org.nebulaframework.core.job.future.GridJobFuture;
 import org.nebulaframework.grid.Grid;
+import org.nebulaframework.grid.GridExecutionException;
 import org.nebulaframework.grid.cluster.node.GridNode;
+import org.nebulaframework.grid.cluster.registration.RegistrationException;
 import org.springframework.remoting.RemoteInvocationFailureException;
 import org.springframework.util.StopWatch;
 
@@ -53,7 +57,9 @@ public class TestNodeNARRunner {
 			
 			sw.start();
 			
-			GridArchive archive =  GridArchive.fromFile(new File("simpletestjob.nar"));
+			GridArchive archive;
+			archive = GridArchive.fromFile(new File("simpletestjob.nar"));
+
 			GridJobFuture future = (GridJobFuture) node.getJobSubmissionService().submitArchive(archive).values().toArray()[0];
 			
 			try {
@@ -74,8 +80,17 @@ public class TestNodeNARRunner {
 			
 			
 		} 
-		catch (Exception e) {
-			log.error(e);
+		catch (GridArchiveException e) {
+			
+		}
+		catch (GridExecutionException e) {
+			log.fatal("Execution Failed",e);
+		}
+		catch (RegistrationException e) {
+			log.error("Registration Failed",e);
+		}
+		catch (IOException e) {
+			log.error("IOException",e);
 		}
 
 	}
