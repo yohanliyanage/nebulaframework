@@ -9,8 +9,11 @@ import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -23,6 +26,7 @@ import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
+import javax.swing.JWindow;
 import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.UIManager;
@@ -222,7 +226,6 @@ public class ClusterMainUI extends JFrame {
 
 		startButton.addActionListener(new ActionListener() {
 
-			@Override
 			public void actionPerformed(ActionEvent e) {
 				doStartCluster();
 			}
@@ -231,7 +234,6 @@ public class ClusterMainUI extends JFrame {
 
 		shutdownButton.addActionListener(new ActionListener() {
 
-			@Override
 			public void actionPerformed(ActionEvent e) {
 				doShutdownCluster();
 			}
@@ -545,8 +547,38 @@ public class ClusterMainUI extends JFrame {
 	}
 
 	protected void showAbout() {
-		// TODO Auto-generated method stub
+		final JWindow window = new JWindow(this);
+		JLabel lbl = new JLabel(new ImageIcon(ClassLoader.getSystemResource("META-INF/resources/about.png")));
+		lbl.addMouseListener(new MouseAdapter() {
+			public void mousePressed(MouseEvent e) {
+				hideAbout(window);
+			}
+		});
 		
+		window.setSize(400, 200);
+		window.setLayout(new BorderLayout());
+		window.add(lbl, BorderLayout.CENTER);
+		window.setVisible(true);
+		window.setLocationRelativeTo(this);
+		new Thread(new Runnable() {
+
+			public void run() {
+				try {
+					Thread.sleep(5000);
+				} catch (InterruptedException e) {
+					// Ignore
+				}
+				
+				hideAbout(window);
+			}
+		}).start();
+	}
+	
+	protected void hideAbout(JWindow window) {
+		if (window.isVisible()) {
+			window.setVisible(false);
+			window.dispose();
+		}
 	}
 
 	protected void showHelp() {
@@ -591,7 +623,7 @@ public class ClusterMainUI extends JFrame {
 		}
 
 		ClusterMainUI ui = new ClusterMainUI();
-		
+		ui.setLocationRelativeTo(null);
 		ui.setVisible(true);
 		ui.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
