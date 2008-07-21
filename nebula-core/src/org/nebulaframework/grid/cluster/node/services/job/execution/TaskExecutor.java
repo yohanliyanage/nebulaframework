@@ -160,15 +160,12 @@ public class TaskExecutor {
 				// GridNodeClassLoader,
 				final ClassLoader nodeClassLoader = AccessController
 						.doPrivileged(new PrivilegedAction<ClassLoader>() {
-
-							@Override
 							public ClassLoader run() {
 								return new GridNodeClassLoader(jobId,
 										classLoadingService, Thread
 												.currentThread()
 												.getContextClassLoader());
 							}
-
 						});
 				
 				classLoader = nodeClassLoader;
@@ -179,13 +176,10 @@ public class TaskExecutor {
 					// chained to GridNodeClassLoader
 					ClassLoader archiveLoader = AccessController
 							.doPrivileged(new PrivilegedAction<ClassLoader>() {
-
-								@Override
 								public ClassLoader run() {
 									return new GridArchiveClassLoader(archive,
 											nodeClassLoader);
 								}
-
 							});
 					classLoader = archiveLoader;
 				}

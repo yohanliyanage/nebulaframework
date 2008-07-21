@@ -252,8 +252,6 @@ public class GridArchive implements Serializable {
 		// Instantiate ClassLoader for given File
 		ClassLoader classLoader = AccessController
 				.doPrivileged(new PrivilegedAction<ClassLoader>() {
-
-					@Override
 					public GridArchiveClassLoader run() {
 						return new GridArchiveClassLoader(file);
 					}
