@@ -107,6 +107,16 @@ public class ServiceMessage implements Serializable {
 	}
 
 	/**
+	 * Returns true if this message is a Peer Cluster related message.
+	 * That is, message types {@code PEER_CONNECTION, PEER_DISCONNECTION}.
+	 * 
+	 * @return if peer related, {@code true}, otherwise {@code false}
+	 */
+	public boolean isPeerMessage() {
+		return (type == ServiceMessageType.PEER_DISCONNECTION);
+	}
+	
+	/**
 	 * Returns a String representation of this {@code ServiceMessage}.
 	 * It is of format
 	 * <ul><li><code><i>type</i> : <i>message</i></code></li></ul>

@@ -71,7 +71,12 @@
 				<constructor-arg ref="jmsConnectionFactory" />
 			</bean>
 		</property>
-		<property name="brokerUrl" value="${cluster.service}" />
+		<property name="clusterInfo">
+			<bean class="org.nebulaframework.grid.cluster.manager.ClusterInfo">
+				<property name="serviceUrl" value="${cluster.service}" />
+				<property name="transports" value="${cluster.transports}" />
+			</bean>
+		</property>
 		<property name="connectionFactory" ref="jmsConnectionFactory" />
 		<property name="brokerService" ref="broker" />
 	</bean>
@@ -156,5 +161,22 @@
 				</property>
 			</bean>
 		</property>
+	</bean>
+	
+	<!-- Service Message Support -->
+	<bean id="serviceMessageSupport" class="org.nebulaframework.grid.cluster.manager.services.messaging.ClusterServiceMessageSupportImpl">
+	</bean>
+
+	<!-- Message Listener for Service Topic -->
+	<bean class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+		<property name="connectionFactory" ref="jmsConnectionFactory" />
+		<property name="messageListener">
+			<bean class="org.springframework.jms.listener.adapter.MessageListenerAdapter">
+				<property name="delegate" ref="serviceMessageSupport" />
+				<property name="defaultListenerMethod" value="onServiceMessage" />
+			</bean>
+		</property>
+		<property name="destinationName" value="nebula.cluster.service.topic" />
+		<property name="pubSubDomain" value="true" />
 	</bean>
 </beans>

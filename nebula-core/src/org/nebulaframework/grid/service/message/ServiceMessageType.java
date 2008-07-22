@@ -41,6 +41,11 @@ public enum ServiceMessageType {
 	JOB_CANCEL,
 	
 	/**
+	 * A GridNode has joined the Cluster.
+	 */
+	NODE_REGISTERED,
+	
+	/**
 	 * A GridNode has left the Grid.
 	 */
 	NODE_UNREGISTERED,
@@ -49,6 +54,16 @@ public enum ServiceMessageType {
 	 * No heart beat from a GridNode (Disconnected). 
 	 */
 	HEARTBEAT_FAILED,
+	
+	/**
+	 * Peer Cluster Connected.
+	 */
+	PEER_CONNECTION,
+	
+	/**
+	 * Peer Cluster is disconnected.
+	 */
+	PEER_DISCONNECTION,
 	
 	/**
 	 * {@code ClusterManager} is shutting down.

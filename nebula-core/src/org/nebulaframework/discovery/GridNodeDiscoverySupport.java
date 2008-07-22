@@ -1,14 +1,13 @@
 package org.nebulaframework.discovery;
 
-import java.net.InetAddress;
 import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.configuration.ConfigurationException;
 import org.nebulaframework.configuration.ConfigurationKeys;
+import org.nebulaframework.discovery.multicast.MulticastDiscovery;
 import org.nebulaframework.discovery.ws.WSDiscovery;
-import org.nebulaframework.grid.Grid;
 
 /**
  * Discovery Support for GridNodes. This class provides
@@ -31,21 +30,13 @@ public class GridNodeDiscoverySupport {
 	 */
 	public static void discover(Properties config) {
 		
-		InetAddress cluster = null;
+		String cluster = null;
 		
 		// If URL is specified by User, do not attempt discovery
-		if (config.containsKey(ConfigurationKeys.CLUSTER_SERVICE.getValue())) {
-			
+		if (config.containsKey(ConfigurationKeys.CLUSTER_SERVICE.value())) {
 			log.debug("[Discovery] Found Cluster Service in Configuration");
-			
-			// Update CLUSTER_SERVICE with Service Port
-			String clusterService = config.getProperty(ConfigurationKeys.CLUSTER_SERVICE.getValue());
-			clusterService = clusterService + ":" + Grid.SERVICE_PORT;
-			config.put(ConfigurationKeys.CLUSTER_SERVICE.getValue(), clusterService);
-			
 			return;
 		}
-		
 		
 		// FIXME Multicast Commented to test WS
 		
@@ -53,21 +44,21 @@ public class GridNodeDiscoverySupport {
 		
 		// (1). Attempt Multicast Discovery
 		
-//		cluster = MulticastDiscovery.discoverCluster();
-//		
-//		if (cluster != null) {	// Found
-//			// FIXME Multicast defaults to TCP ?? OK coz internal cluster comm is TCP by default ?
-//			config.put(ConfigurationKeys.CLUSTER_SERVICE.getValue(), "tcp://" + cluster.getHostAddress() + ":" + Grid.SERVICE_PORT);
-//			return;
-//		}
-//		else {
-//			log.warn("[Discovery] Multicast Discovery Failed");
-//		}
+		cluster = MulticastDiscovery.discoverCluster();
+		
+		if (cluster != null) {	// Found
+			// FIXME Multicast defaults to TCP ?? OK coz internal cluster comm is TCP by default ?
+			config.put(ConfigurationKeys.CLUSTER_SERVICE.value(), "tcp://" + cluster);
+			return;
+		}
+		else {
+			log.warn("[Discovery] Multicast Discovery Failed");
+		}
 		
 		// (2). Attempt Web Service Discovery
 		
-		if (config.containsKey(ConfigurationKeys.COLOMBUS_SERVERS.getValue())) {
-			String[] urls = config.getProperty(ConfigurationKeys.COLOMBUS_SERVERS.getValue()).split(",");
+		if (config.containsKey(ConfigurationKeys.COLOMBUS_SERVERS.value())) {
+			String[] urls = config.getProperty(ConfigurationKeys.COLOMBUS_SERVERS.value()).split(",");
 			
 			for (String url : urls) {
 				try {
@@ -81,7 +72,7 @@ public class GridNodeDiscoverySupport {
 					
 					// If Discovered
 					if (clusterHost!=null) {
-						cluster = InetAddress.getByName(clusterHost);
+						cluster = clusterHost;
 						break;
 					}
 				} catch (Exception e) {
@@ -91,7 +82,7 @@ public class GridNodeDiscoverySupport {
 			
 			if (cluster!=null) {
 				// Found
-				config.put(ConfigurationKeys.CLUSTER_SERVICE.getValue(), "tcp://" + cluster.getHostAddress() + ":" + Grid.SERVICE_PORT);
+				config.put(ConfigurationKeys.CLUSTER_SERVICE.value(), "tcp://" + cluster);
 				return;
 			}
 		}

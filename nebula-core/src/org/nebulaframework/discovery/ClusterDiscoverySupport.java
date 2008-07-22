@@ -21,10 +21,10 @@ public class ClusterDiscoverySupport {
 	 * @param config Cluster Configuration
 	 */
 	public static void registerColombus(Properties config) {
-		if (config.containsKey(ConfigurationKeys.COLOMBUS_SERVERS.getValue())) {
+		if (config.containsKey(ConfigurationKeys.COLOMBUS_SERVERS.value())) {
 			
 			// Read Server URLs
-			String servers = config.getProperty(ConfigurationKeys.COLOMBUS_SERVERS.getValue());
+			String servers = config.getProperty(ConfigurationKeys.COLOMBUS_SERVERS.value());
 			String[] urls = servers.split(",");
 			
 			// Set in WSDiscovery, to be invoked when Cluster Initialized

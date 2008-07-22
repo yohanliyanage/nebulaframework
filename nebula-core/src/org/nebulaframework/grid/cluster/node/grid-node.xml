@@ -93,8 +93,7 @@
 	</bean>
 	
 	<!-- Service Message Support -->
-	<bean id="serviceMessageSupport" class="org.nebulaframework.grid.cluster.node.services.message.ServiceMessageSupportImpl">
-		<constructor-arg ref="localNode" />
+	<bean id="serviceMessageSupport" class="org.nebulaframework.grid.cluster.node.services.message.NodeServiceMessageSupportImpl">
 	</bean>
 
 	<!-- Message Listener for Service Topic -->

@@ -26,6 +26,7 @@ import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.node.delegate.GridNodeDelegate;
 import org.nebulaframework.grid.cluster.registration.Registration;
 import org.nebulaframework.grid.cluster.registration.RegistrationImpl;
+import org.nebulaframework.grid.service.event.ServiceEventsSupport;
 import org.nebulaframework.grid.service.message.ServiceMessage;
 import org.nebulaframework.grid.service.message.ServiceMessageType;
 import org.springframework.beans.factory.annotation.Required;
@@ -90,7 +91,7 @@ public class ClusterRegistrationServiceImpl implements
 
 		// Set the Registration Data
 		RegistrationImpl reg = new RegistrationImpl();
-		reg.setBrokerUrl(this.cluster.getBrokerUrl());
+		reg.setBrokerUrl(this.cluster.getClusterInfo().getServiceUrl());
 		reg.setNodeId(nodeId);
 		reg.setClusterId(this.cluster.getClusterId());
 
@@ -103,6 +104,10 @@ public class ClusterRegistrationServiceImpl implements
 
 		log.info("Node registered [ID:" + nodeId + "]");
 
+		// Notify Service Event
+		ServiceMessage message = new ServiceMessage(nodeId.toString(),ServiceMessageType.NODE_REGISTERED);
+		ServiceEventsSupport.getInstance().onServiceMessage(message);
+		
 		// Start HeartBeat Tracking
 		cluster.getHeartBeatService().addNode(nodeId);
 		
@@ -142,6 +147,14 @@ public class ClusterRegistrationServiceImpl implements
 			throw new IllegalArgumentException(
 					"No such Node registered with Id " + nodeId);
 		}
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public int getNodeCount() {
+		return clusterNodes.size();
 	}
 
 }
