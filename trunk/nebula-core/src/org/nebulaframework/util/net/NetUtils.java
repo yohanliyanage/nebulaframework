@@ -84,4 +84,28 @@ public class NetUtils {
 		return InetAddress.getByName(getHostAddress(url)).getAddress();
 	}
 
+	/**
+	 * Returns the port number extracted from the given URL, if available.
+	 * If the URL does not contain port information, an illegal argument
+	 * @param url
+	 * @return
+	 * @throws IllegalArgumentException
+	 */
+	public static int getHostPort(String url) throws IllegalArgumentException {
+		try {
+			String port = url.split("://")[1].split(":")[1];
+			int portNum = Integer.parseInt(port);
+			if (portNum >= 0 && portNum <= 65535 ) {
+				return portNum;
+			}
+			else {
+				throw new IllegalArgumentException("Port Number Out of Range");
+			}
+		} catch (ArrayIndexOutOfBoundsException e) {
+			throw new IllegalArgumentException("No Port Information in URL : " + url);
+		} catch (NumberFormatException e) {
+			throw new IllegalArgumentException("Invalid URL String : " + url);
+		}
+	}
+
 }

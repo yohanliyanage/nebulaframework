@@ -34,7 +34,7 @@
 	
 	<amq:broker id="broker" persistent="false" useJmx="true">
 		<amq:transportConnectors>
-			<amq:transportConnector uri="${cluster.serviceUrl}:61616" />
+			<amq:transportConnector uri="${cluster.service}" />
 		</amq:transportConnectors>
 	</amq:broker>
  	
@@ -42,11 +42,11 @@
 	<!-- 
 	<bean id="jmsConnectionFactory" class="org.springframework.jms.connection.SingleConnectionFactory">
 		<property name="targetConnectionFactory">
-			<amq:connectionFactory brokerURL="${cluster.serviceUrl}" />
+			<amq:connectionFactory brokerURL="${cluster.service}" />
 		</property>
 	</bean>
 	 -->
-	<amq:connectionFactory id="jmsConnectionFactory" brokerURL="${cluster.serviceUrl}:61616" />
+	<amq:connectionFactory id="jmsConnectionFactory" brokerURL="${cluster.service}" />
 
 	<!-- ClusterManager -->
 	<bean id="clusterManager" class="org.nebulaframework.grid.cluster.manager.ClusterManager" factory-method="getInstance">
@@ -71,7 +71,7 @@
 				<constructor-arg ref="jmsConnectionFactory" />
 			</bean>
 		</property>
-		<property name="brokerUrl" value="${cluster.serviceUrl}" />
+		<property name="brokerUrl" value="${cluster.service}" />
 		<property name="connectionFactory" ref="jmsConnectionFactory" />
 		<property name="brokerService" ref="broker" />
 	</bean>

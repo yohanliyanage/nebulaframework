@@ -71,6 +71,19 @@ public class ConfigurationSupport {
 		if (readPropertyFile(props, Grid.CLUSTER_PROPERTY_CONFIGURATION)) {
 			// Property File Read
 			log.info("[GridConfiguration] Loading from Property File");
+			
+			// TODO Process and Update Props as Needed
+			
+			// Attach Service Port
+			String key = ConfigurationKeys.CLUSTER_SERVICE.getValue();
+			if (props.containsKey(key)) {
+				log.debug("Key Updated");
+				props.put(key, props.getProperty(key) + ":" + Grid.SERVICE_PORT);
+			}
+			else {
+				log.debug("KEY NOT FOUND : " + key);
+				System.exit(0);
+			}
 		}
 		else if (readXMLFile(props, Grid.CLUSTER_XML_CONFIGURATION)) {
 			// XML File Read
@@ -97,11 +110,13 @@ public class ConfigurationSupport {
 		FileInputStream fis = null;
 		try {
 			// Load Properties
+			log.debug("Config : " + fileName);
 			fis = new FileInputStream(fileName);
 			props.load(fis);
 			return true;
 		} catch (IOException e) {
-			log.debug("[GridConfiguration] Failed to Read Properties : " + Grid.GRIDNODE_PROPERTY_CONFIGURATION, e);
+	
+			log.debug("[GridConfiguration] Failed to Read Properties : " + fileName, e);
 			return false;
 		} finally {
 			try {
