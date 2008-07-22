@@ -50,4 +50,11 @@ public interface InternalClusterRegistrationService extends
 	 */
 	public GridNodeDelegate getGridNodeDelegate(UUID nodeId);
 
+	/**
+	 * Returns the total number of GridNodes registered with this
+	 * Cluster.
+	 * 
+	 * @return Node Count
+	 */
+	public int getNodeCount();
 }

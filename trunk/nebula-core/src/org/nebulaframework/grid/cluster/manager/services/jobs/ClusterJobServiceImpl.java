@@ -64,7 +64,8 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		InternalClusterJobService {
 
 	private static Log log = LogFactory.getLog(ClusterJobServiceImpl.class);
-
+	private static int finished = 0;
+	
 	private ClusterManager cluster;
 	private JobServiceJmsSupport jmsSupport;
 
@@ -421,18 +422,20 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	 *            JobId of the finished GridJob
 	 */
 	public void notifyJobEnd(String jobId) {
-		try {
-			// Create ServiceMessage for Job End Notification
-			ServiceMessage message = new ServiceMessage(jobId,
-					ServiceMessageType.JOB_END);
+			
+		
+		finished++;
+		
+		// Remove GridJob from Active GridJobs map
+		removeJob(jobId);
+		
+		// Create ServiceMessage for Job End Notification
+		ServiceMessage message = new ServiceMessage(jobId,
+				ServiceMessageType.JOB_END);
 
-			// Send ServiceMessage to GridNodes
-			cluster.getServiceMessageSender().sendServiceMessage(message);
-			log.debug("[ClusterJobService] Notified Job End {" + jobId + "}");
-		} finally {
-			// Remove GridJob from Active GridJobs map
-			removeJob(jobId);
-		}
+		// Send ServiceMessage to GridNodes
+		cluster.getServiceMessageSender().sendServiceMessage(message);
+		log.debug("[ClusterJobService] Notified Job End {" + jobId + "}");
 	}
 
 	/**
@@ -442,20 +445,20 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	 *            JobId of the canceled GridJob.
 	 */
 	public void notifyJobCancel(String jobId) {
-		try {
-			// Create ServiceMessage for Job Cancel Notification
-			ServiceMessage message = new ServiceMessage(jobId,
-					ServiceMessageType.JOB_CANCEL);
 
-			// Send ServiceMessage to GridNodes
-			cluster.getServiceMessageSender().sendServiceMessage(message);
-			log
-					.debug("[ClusterJobService] Notified Job Cancel {" + jobId
-							+ "}");
-		} finally {
-			// Remove GridJob from Active GridJobs map
-			removeJob(jobId);
-		}
+		finished++;
+		// Remove GridJob from Active GridJobs map
+		removeJob(jobId);
+		
+		// Create ServiceMessage for Job Cancel Notification
+		ServiceMessage message = new ServiceMessage(jobId,
+				ServiceMessageType.JOB_CANCEL);
+
+		// Send ServiceMessage to GridNodes
+		cluster.getServiceMessageSender().sendServiceMessage(message);
+		log.debug("[ClusterJobService] Notified Job Cancel {" + jobId
+						+ "}");
+
 	}
 
 	/**
@@ -610,6 +613,22 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	@Required
 	public void setUnboundedService(UnboundedJobService unboundedService) {
 		this.unboundedService = unboundedService;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public int getFinishedJobCount() {
+		return finished;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public int getActiveJobCount() {
+		return jobs.size();
 	}
 
 	

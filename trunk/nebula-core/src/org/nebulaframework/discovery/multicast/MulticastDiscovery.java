@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -23,6 +25,7 @@ import org.nebulaframework.util.net.NetUtils;
  * @author Yohan Liyanage
  * @version 1.0
  */
+// TODO Fix Doc and re check as algo changed
 public class MulticastDiscovery {
 
 	private static Log log = LogFactory.getLog(MulticastDiscovery.class);
@@ -42,7 +45,7 @@ public class MulticastDiscovery {
 	/** Multicast Discovery Timout */
 	public static final long TIMEOUT = 5000L;
 
-	private InetAddress cluster = null;
+	private String cluster = null;
 	
 	/**
 	 * Static initilization to resolve Multicast
@@ -142,12 +145,13 @@ public class MulticastDiscovery {
 		
 		try {
 			// Get Broker Service URL
-			String serviceUrl = ClusterManager.getInstance().getBrokerUrl();
+			String serviceUrl = ClusterManager.getInstance().getClusterInfo().getServiceUrl();
 			
-			byte[] hostIp = NetUtils.getHostAddressAsBytes(serviceUrl);
+			byte[] hostInfo = NetUtils.getHostInfoAsBytes(serviceUrl);
+			
 			
 			// Create Response Packet
-			DatagramPacket response = new DatagramPacket(hostIp, hostIp.length, SERVICE_RESPONSE_IP, SERVICE_PORT);
+			DatagramPacket response = new DatagramPacket(hostInfo, hostInfo.length, SERVICE_RESPONSE_IP, SERVICE_PORT);
 			
 			// Create Multicast Socket
 			MulticastSocket resSock = new MulticastSocket();
@@ -168,9 +172,9 @@ public class MulticastDiscovery {
 	 * without results if no cluster was discovered with in 
 	 * a fixed duration, set by {@link #TIMEOUT}.
 	 * 
-	 * @return IP Address of detected Cluster (InetAddress)
+	 * @return IP Address and Port of detected Cluster (String)
 	 */
-	public static InetAddress discoverCluster() {
+	public static String discoverCluster() {
 		
 		log.info("[MulticastDiscovery] Attempting to discover cluster");
 		
@@ -213,7 +217,7 @@ public class MulticastDiscovery {
 		}
 		
 		if (mDisc.cluster != null) {
-			log.info("[MulticastDiscovery] Discovered Cluster at " + mDisc.cluster.getHostAddress());
+			log.info("[MulticastDiscovery] Discovered Cluster at " + mDisc.cluster);
 		}
 		return mDisc.cluster;
 	}
@@ -236,13 +240,90 @@ public class MulticastDiscovery {
 		MulticastSocket resSock = new MulticastSocket(SERVICE_PORT);
 		resSock.joinGroup(SERVICE_RESPONSE_IP);
 		
-		byte[] hostIP = new byte[4]; // 4 = # of bytes for an IP Address
-		DatagramPacket response = new DatagramPacket(hostIP, hostIP.length);
+		// 9 = # of bytes for an IP Address + 5 byte port
+		DatagramPacket response = new DatagramPacket(new byte[9],9);
 		
 		// Receive
-		resSock.receive(response);
+		resSock.setSoTimeout((int)TIMEOUT);
+		try {
+			resSock.receive(response);
+		} catch (SocketTimeoutException e) {
+			log.debug("[MulticastDiscovery] Receive Timeout");
+			return;
+		}
 		
-		this.cluster = InetAddress.getByAddress(response.getData());
+		byte[] data = response.getData();
 		
+		byte[] ipBytes = Arrays.copyOfRange(data, 0,4);
+		byte[] portBytes = Arrays.copyOfRange(data, 4, 9);
+		
+		InetAddress ip = InetAddress.getByAddress(ipBytes);
+		StringBuilder sb = new StringBuilder(ip.getHostAddress());
+		sb.append(":");
+		for(byte b:portBytes) {
+			sb.append(b);
+		}
+		
+		this.cluster = sb.toString();
+	}
+	
+	//TODO FixDOc
+	public static void discoverPeerClusters() throws IOException {
+		
+		// Only allowed for ClusterManagers
+		if (! Grid.isClusterManager()) {
+			throw new UnsupportedOperationException("Multicast Discovery Service can be enabled only for ClusterManagers");
+		}
+		
+		log.info("[MulticastDiscovery] Discovering Peer Clusters...");
+		
+		// Send Request
+		byte[] greet = GREET_MSG.getBytes("UTF-8");
+		DatagramPacket request = new DatagramPacket(greet, greet.length, SERVICE_REQUEST_IP, SERVICE_PORT);
+		MulticastSocket reqSock = new MulticastSocket();
+		reqSock.send(request);
+		
+		// Wait for Response
+		MulticastSocket resSock = new MulticastSocket(SERVICE_PORT);
+		resSock.joinGroup(SERVICE_RESPONSE_IP);
+		
+		// 9 = # of bytes for an IP Address + 5 byte port
+		DatagramPacket response = new DatagramPacket(new byte[9],9);
+		
+		// Set Socket Timeout
+		resSock.setSoTimeout((int)TIMEOUT);
+		
+		try {
+			
+			// Loop until Socket Timeout Occurs
+			while(true) {
+				
+				// Receive
+				resSock.receive(response);
+				
+				byte[] data = response.getData();
+				
+				byte[] ipBytes = Arrays.copyOfRange(data, 0,4);
+				byte[] portBytes = Arrays.copyOfRange(data, 4, 9);
+				
+				InetAddress ip = InetAddress.getByAddress(ipBytes);
+				StringBuilder sb = new StringBuilder(ip.getHostAddress());
+				sb.append(":");
+				for(byte b:portBytes) {
+					sb.append(b);
+				}
+				
+				// Add Peer Cluster
+				ClusterManager.getInstance().getPeerService().addCluster(sb.toString());
+			}
+			
+		} catch (SocketTimeoutException e) {
+			log.debug("[MulticastDiscovery] Receive Timeout");
+			return;
+		}
+		finally {
+			log.info("[MulticastDiscovery] Peer Cluster Discovery Complete");
+		}
+
 	}
 }

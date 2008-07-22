@@ -102,4 +102,20 @@ public interface InternalClusterJobService extends ClusterJobService {
 	 *         otherwise.
 	 */
 	public boolean isActiveJob(String jobId);
+	
+	/**
+	 * Returns the total number of GridJobs executed by
+	 * this ClusterManager.
+	 * 
+	 * @return Finished Job Count
+	 */
+	public int getFinishedJobCount();
+	
+	/**
+	 * Returns the total number of Active GridJobs in
+	 * this ClusterManager.
+	 * 
+	 * @return Active Job Count
+	 */
+	public int getActiveJobCount();
 }

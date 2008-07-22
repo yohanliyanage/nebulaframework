@@ -15,6 +15,11 @@ public enum ConfigurationKeys {
 	CLUSTER_SERVICE("cluster.service"), 
 	
 	/**
+	 * Alternative Transport URLs
+	 */
+	TRANSPORT_URLS("cluster.transports"), 
+	
+	/**
 	 * Colombus Servers (List, splitted by ',')
 	 */
 	COLOMBUS_SERVERS ("colombus.servers");
@@ -36,7 +41,7 @@ public enum ConfigurationKeys {
 	 * 
 	 * @return String value of Configuration Key.
 	 */
-	public String getValue() {
+	public String value() {
 		return value;
 	}
 

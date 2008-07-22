@@ -74,15 +74,9 @@ public class ConfigurationSupport {
 			
 			// TODO Process and Update Props as Needed
 			
-			// Attach Service Port
-			String key = ConfigurationKeys.CLUSTER_SERVICE.getValue();
-			if (props.containsKey(key)) {
-				log.debug("Key Updated");
-				props.put(key, props.getProperty(key) + ":" + Grid.SERVICE_PORT);
-			}
-			else {
-				log.debug("KEY NOT FOUND : " + key);
-				System.exit(0);
+			// If No Transport Information, add dummy value
+			if (!props.containsKey(ConfigurationKeys.TRANSPORT_URLS.value())) {
+				props.put(ConfigurationKeys.TRANSPORT_URLS.value(), "");
 			}
 		}
 		else if (readXMLFile(props, Grid.CLUSTER_XML_CONFIGURATION)) {

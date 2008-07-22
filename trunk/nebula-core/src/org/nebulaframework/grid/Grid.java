@@ -15,12 +15,15 @@ package org.nebulaframework.grid;
 
 import java.util.Properties;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.configuration.ConfigurationSupport;
 import org.nebulaframework.discovery.ClusterDiscoverySupport;
 import org.nebulaframework.discovery.GridNodeDiscoverySupport;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.node.GridNode;
 import org.nebulaframework.util.spring.NebulaApplicationContext;
+import org.springframework.util.StopWatch;
 
 /**
  * The general access point to Nebula Grid. Allows to configure
@@ -30,10 +33,6 @@ import org.nebulaframework.util.spring.NebulaApplicationContext;
  * @version 1.0
  */
 public class Grid {
-	
-	// FIXME 61616 is hard coded in Cluster + Node Spring XML
-	/** Cluster Service Port (JMS Broker) */
-	public static final int SERVICE_PORT = 61616;
 	
 	/** Cluster Configuration Properties File */
 	public static final String CLUSTER_PROPERTY_CONFIGURATION = "nebula-cluster.properties";
@@ -57,6 +56,7 @@ public class Grid {
 	public static final String GRIDNODE_LIGHT_CONTEXT = "org/nebulaframework/grid/cluster/node/grid-nonworker-node.xml";
 	
 	
+	private static Log log = LogFactory.getLog(Grid.class);
 	
 	private static NebulaApplicationContext applicationContext = null;
 	private static boolean clusterManager = false;
@@ -85,16 +85,34 @@ public class Grid {
 			throw new IllegalStateException("A Grid Memeber Already Started in VM");
 		}
 		
+		StopWatch sw = new StopWatch();
 		
-		// Detect Configuration
-		Properties config = ConfigurationSupport.detectClusterConfiguration();
-		
-		// Register with any Colombus Servers
-		ClusterDiscoverySupport.registerColombus(config);
-		
-		clusterManager = true;
-		applicationContext = new NebulaApplicationContext(CLUSTER_SPRING_CONTEXT, config);
-		return (ClusterManager) applicationContext.getBean("clusterManager");
+		try {
+			sw.start();
+			log.info("ClusterManager Starting...");
+			
+			// Detect Configuration
+			Properties config = ConfigurationSupport.detectClusterConfiguration();
+			
+			// Register with any Colombus Servers
+			ClusterDiscoverySupport.registerColombus(config);
+			
+			clusterManager = true;
+			
+			log.debug("Starting up Spring Container...");
+			
+			applicationContext = new NebulaApplicationContext(CLUSTER_SPRING_CONTEXT, config);
+			
+			log.debug("Spring Container Started");
+			
+			
+			
+			return (ClusterManager) applicationContext.getBean("clusterManager");
+		} finally {
+			sw.stop();
+			log.info("ClusterManager Started Up. " + sw.getLastTaskTimeMillis() + " ms");
+		}
+		 
 	}
 
 
@@ -115,15 +133,30 @@ public class Grid {
 			throw new IllegalStateException("A Grid Memeber Already Started in VM");
 		}
 		
-		// Detect Configuration
-		Properties config = ConfigurationSupport.detectNodeConfiguration();
+		StopWatch sw = new StopWatch();
 		
-		// Discover Cluster If Needed
-		GridNodeDiscoverySupport.discover(config);
-		
-		applicationContext = new NebulaApplicationContext(GRIDNODE_CONTEXT, config);
-		clusterManager = false;
-		return (GridNode) applicationContext.getBean("localNode");
+		try {
+			sw.start();
+			log.info("GridNode Starting...");
+			
+			// Detect Configuration
+			Properties config = ConfigurationSupport.detectNodeConfiguration();
+			
+			// Discover Cluster If Needed
+			GridNodeDiscoverySupport.discover(config);
+			
+			log.debug("Starting up Spring Container...");
+			
+			applicationContext = new NebulaApplicationContext(GRIDNODE_CONTEXT, config);
+			
+			log.debug("Spring Container Started");
+			
+			clusterManager = false;
+			return (GridNode) applicationContext.getBean("localNode");
+		} finally {
+			sw.stop();
+			log.info("GridNode Started Up. " + sw.getLastTaskTimeMillis() + " ms");
+		}
 	}
 	
 	/**
@@ -144,14 +177,31 @@ public class Grid {
 			throw new IllegalStateException("A Grid Memeber Already Started in VM");
 		}
 		
-		Properties config = ConfigurationSupport.detectNodeConfiguration();
+		StopWatch sw = new StopWatch();
 		
-		// Discover Cluster If Needed
-		GridNodeDiscoverySupport.discover(config);
+		try {
+			sw.start();
+			log.info("GridNode Starting...");
 		
-		clusterManager = false;
-		applicationContext = new NebulaApplicationContext(GRIDNODE_LIGHT_CONTEXT, config);
-		return (GridNode) applicationContext.getBean("localNode");
+			Properties config = ConfigurationSupport.detectNodeConfiguration();
+			
+			// Discover Cluster If Needed
+			GridNodeDiscoverySupport.discover(config);
+			
+			clusterManager = false;
+			
+			log.debug("Starting up Spring Container...");
+			
+			applicationContext = new NebulaApplicationContext(GRIDNODE_LIGHT_CONTEXT, config);
+			
+			log.debug("Spring Container Started");
+			
+			return (GridNode) applicationContext.getBean("localNode");
+		
+		} finally {
+			sw.stop();
+			log.info("GridNode Started Up. " + sw.getLastTaskTimeMillis() + " ms");
+		}
 	}
 
 	/**

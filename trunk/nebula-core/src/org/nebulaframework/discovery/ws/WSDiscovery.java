@@ -101,7 +101,7 @@ public class WSDiscovery {
 				final ColombusManager mgr = (ColombusManager) factory.create();
 
 				// Get Broker Service Host IP
-				String serviceUrl = ClusterManager.getInstance().getBrokerUrl();
+				String serviceUrl = ClusterManager.getInstance().getClusterInfo().getServiceUrl();
 				final String serviceIP = NetUtils.getHostAddress(serviceUrl);
 				
 				// Register in Colombus Service
@@ -152,7 +152,7 @@ public class WSDiscovery {
 	}
 
 
-	
+	// FIXME Implement Peer Cluster Discovery
 	
 	
 }

@@ -11,6 +11,7 @@ import java.net.UnknownHostException;
  */
 public class NetUtils {
 
+	
 	/**
 	 * Returns the Host Name as a String, parsed from
 	 * the given URL.
@@ -86,12 +87,16 @@ public class NetUtils {
 
 	/**
 	 * Returns the port number extracted from the given URL, if available.
-	 * If the URL does not contain port information, an illegal argument
-	 * @param url
-	 * @return
-	 * @throws IllegalArgumentException
+	 * 
+	 * @param url URL to Parse
+	 * 
+	 * @return Port as integer
+	 * 
+	 * @throws IllegalArgumentException if URL is invalid or does not contain port information
 	 */
 	public static int getHostPort(String url) throws IllegalArgumentException {
+		
+		
 		try {
 			String port = url.split("://")[1].split(":")[1];
 			int portNum = Integer.parseInt(port);
@@ -107,5 +112,79 @@ public class NetUtils {
 			throw new IllegalArgumentException("Invalid URL String : " + url);
 		}
 	}
-
+	
+	/**
+	 * Returns the port number extracted from the given URL, if available.
+	 * 
+	 * @param url URL to Parse
+	 * 
+	 * @return port as byte[] of size 5. Extra bytes will be padded with 0 from left.
+	 * 
+	 * @throws IllegalArgumentException if URL is invalid or does not contain port information
+	 */
+	public static byte[] getHostPortAsBytes(String url) throws IllegalArgumentException {
+		
+		String strHostPort = String.format("%05d", NetUtils.getHostPort(url));
+		
+		try {
+			byte[] hostPort = new byte[5];
+			for (int i=0; i<5; i++) {
+				byte b = 0;
+				b = Byte.parseByte(strHostPort.substring(i, i+1));
+				hostPort[i] = b;
+			}
+			
+			return hostPort;
+		} catch (NumberFormatException e) {
+			throw new IllegalArgumentException("Invalid URL " + url);
+		}
+		
+	}
+	
+	/**
+	 * Returns the Host Information (IP Address, Port) as byte[].
+	 * 
+	 * @param url Service URL to Parse
+	 * 
+	 * @return Host Information as byte[]
+	 * 
+	 * @throws IllegalArgumentException If Service URL is invalid
+	 * @throws UnknownHostException If Host cannot be parsed
+	 */
+	public static byte[] getHostInfoAsBytes(String url) throws IllegalArgumentException, UnknownHostException {
+		
+		byte[] hostIp = NetUtils.getHostAddressAsBytes(url);
+		byte[] hostPort = NetUtils.getHostPortAsBytes(url);
+		
+		// 4 + 5
+		byte[] hostInfo = new byte[hostIp.length + hostPort.length];
+		int i = 0;
+		
+		for (byte b : hostIp) {
+			hostInfo[i++] = b;
+		}
+		
+		for (byte b : hostPort) {
+			hostInfo[i++] = b;
+		}
+		
+		return hostInfo;
+	}
+	
+	/**
+	 * Returns the Protocol of given URL.
+	 * 
+	 * @param url URL to Parse
+	 * @return Protocol Name
+	 * @throws IllegalArgumentException If Invalid URL
+	 */
+	public static String getProtocol(String url) throws IllegalArgumentException {
+		
+		
+		try {
+			return url.split("://")[0].toUpperCase();
+		} catch (ArrayIndexOutOfBoundsException e) {
+			throw new IllegalArgumentException("Invalid URL : " + url);
+		}
+	}
 }

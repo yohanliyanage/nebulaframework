@@ -11,6 +11,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,7 +40,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.grid.Grid;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
-import org.nebulaframework.util.net.NetUtils;
+import org.nebulaframework.grid.service.event.ServiceEventsSupport;
+import org.nebulaframework.grid.service.event.ServiceHookCallback;
+import org.nebulaframework.grid.service.event.ServiceEvent;
+import org.nebulaframework.grid.service.message.ServiceMessageType;
 
 // TODO FixDoc
 public class ClusterMainUI extends JFrame {
@@ -100,32 +105,6 @@ public class ClusterMainUI extends JFrame {
 		clusterMenu.setMnemonic(KeyEvent.VK_C);
 		menuBar.add(clusterMenu);
 
-		// Cluster-> Start
-		JMenuItem clusterStartItem = new JMenuItem("Start Cluster", 'S');
-		clusterStartItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5,
-																0));
-		clusterStartItem.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				doStartCluster();
-			}
-		});
-		clusterMenu.add(clusterStartItem);
-		addComponent("menu.cluster.start", clusterStartItem);
-		
-
-		// Cluster-> Shutdown
-		JMenuItem clusterShutdownItem = new JMenuItem("Shutdown", 'u');
-		clusterShutdownItem.setAccelerator(KeyStroke
-				.getKeyStroke(KeyEvent.VK_F6, 0));
-		clusterShutdownItem.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				doShutdownCluster();
-			}
-		});
-		clusterMenu.add(clusterShutdownItem);
-		addComponent("menu.cluster.shutdown",clusterShutdownItem);	// Add to components map
-		
-		clusterMenu.addSeparator();
 		
 		// Discover Submenu
 		JMenu clusterDiscoverMenu = new JMenu("Disover Peers");
@@ -154,14 +133,20 @@ public class ClusterMainUI extends JFrame {
 		clusterDiscoverMenu.add(clusterDiscoverWS);
 		addComponent("menu.cluster.discover.ws",clusterDiscoverWS);	// Add to components map
 		
-		// Exit
-		JMenuItem clusterExitItem = new JMenuItem("Exit", 'x');
-		clusterExitItem.addActionListener(new ActionListener() {
+		clusterMenu.addSeparator();
+
+		// Cluster-> Shutdown
+		JMenuItem clusterShutdownItem = new JMenuItem("Shutdown", 'u');
+		clusterShutdownItem.setAccelerator(KeyStroke
+				.getKeyStroke(KeyEvent.VK_F6, 0));
+		clusterShutdownItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				exitApplication();
+				doShutdownCluster();
 			}
 		});
-		clusterMenu.add(clusterExitItem);
+		clusterMenu.add(clusterShutdownItem);
+		addComponent("menu.cluster.shutdown",clusterShutdownItem);	// Add to components map
+		
 		
 		/* -- Options Menu -- */
 		JMenu optionsMenu = new JMenu("Options");
@@ -248,16 +233,7 @@ public class ClusterMainUI extends JFrame {
 		
 		generalTab.add(southPanel, BorderLayout.SOUTH);
 
-		JButton startButton = new JButton("Start");
 		JButton shutdownButton = new JButton("Shutdown");
-
-		startButton.addActionListener(new ActionListener() {
-
-			public void actionPerformed(ActionEvent e) {
-				doStartCluster();
-			}
-
-		});
 
 		shutdownButton.addActionListener(new ActionListener() {
 
@@ -268,10 +244,8 @@ public class ClusterMainUI extends JFrame {
 		});
 
 		southPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 10, 10));
-		southPanel.add(startButton);
-		addComponent("general.start", startButton);	// Add to components map
 		southPanel.add(shutdownButton);
-		addComponent("general.shutdown", startButton);	// Add to components map
+		addComponent("general.shutdown", shutdownButton);	// Add to components map
 		
 		return generalTab;
 	}
@@ -340,7 +314,7 @@ public class ClusterMainUI extends JFrame {
 		addComponent("general.stats.nodes", nodes);	// Add to components map
 		
 		// Jobs Done Count
-		JLabel jobsDoneLabel = new JLabel("Completed Jobs :");
+		JLabel jobsDoneLabel = new JLabel("Executed Jobs :");
 		gridInfoPanel.add(jobsDoneLabel);
 		JLabel jobsDone = new JLabel("#jobsdone#");
 		gridInfoPanel.add(jobsDone);
@@ -357,6 +331,10 @@ public class ClusterMainUI extends JFrame {
 	}
 
 	protected JPanel createJobTab(final String jobId) {
+		
+		// TODO Implement Friendly Job Names
+		// TODO Implement Show Tab , Hide Tab when jobs happen
+		
 		JPanel jobPanel = new JPanel();
 		jobPanel.setLayout(new BorderLayout(10,10));
 		
@@ -574,9 +552,6 @@ public class ClusterMainUI extends JFrame {
 		
 	}
 
-	protected void doStartCluster() {
-		JOptionPane.showMessageDialog(this, "Cluster Start");
-	}
 
 	protected void doShutdownCluster() {
 
@@ -591,7 +566,7 @@ public class ClusterMainUI extends JFrame {
 		if (response == JOptionPane.NO_OPTION) return;
 		
 		// Shutdown
-		JOptionPane.showMessageDialog(this, "Cluster Shutdown");
+		onShutdown();
 	}
 
 	protected void showAbout() {
@@ -607,12 +582,14 @@ public class ClusterMainUI extends JFrame {
 		window.setLayout(new BorderLayout());
 		window.add(lbl, BorderLayout.CENTER);
 		window.setVisible(true);
-		window.setLocationRelativeTo(this);
+		window.setLocationRelativeTo(this);	// Center on Main UI
+		
+		// Auto Close About after 8 Seconds
 		new Thread(new Runnable() {
 
 			public void run() {
 				try {
-					Thread.sleep(5000);
+					Thread.sleep(8000);
 				} catch (InterruptedException e) {
 					log.warn("Interrupted Exception in About Close Handler", e);
 				}
@@ -650,14 +627,12 @@ public class ClusterMainUI extends JFrame {
 	}
 	
 	public void onShutdown() {
+
+		ClusterManager.getInstance().shutdown(true);
 		// Clean up UI
 		// clear stats
 		// remove tabs related to jobs
-	}
-	
-	protected void exitApplication() {
-		// TODO Implement
-		System.exit(0);
+		
 	}
 
 	private void showClusterInfo() {
@@ -669,11 +644,86 @@ public class ClusterMainUI extends JFrame {
 		
 		// HostInfo
 		JLabel hostInfo = getUIElement("general.stats.hostinfo");
-		hostInfo.setText(NetUtils.getHostName(mgr.getBrokerUrl()) + ":" + NetUtils.getHostPort(mgr.getBrokerUrl()));
+		hostInfo.setText(mgr.getClusterInfo().getHostInfo());
+		
+		// Protocols
+		JLabel protocols = getUIElement("general.stats.protocols");
+		protocols.setText(mgr.getClusterInfo().getProtocolInfo());
+		
+		// Uptime Initial Value
+		JLabel upTime = getUIElement("general.stats.uptime");
+		upTime.setText("");
+		
+		// Peer Clusters
+		final JLabel clusters = getUIElement("general.stats.peerclusters");
+		clusters.setText("0");
+		
+		// Peer Clusters Update Hook
+		createServiceHook(new ServiceHookCallback() {
+			public void onServiceEvent() {
+				SwingUtilities.invokeLater(new Runnable() {
+					public void run() {
+						int peers = ClusterManager.getInstance().getPeerService().getPeerCount();
+						clusters.setText(String.valueOf(peers));
+					}
+				});
+			}
+		}, ServiceMessageType.PEER_CONNECTION, ServiceMessageType.PEER_DISCONNECTION);
+		
+		// Local Nodes
+		final JLabel nodes = getUIElement("general.stats.nodes");
+		nodes.setText("0");
+		
+		// Local Nodes Update Hook
+		createServiceHook(new ServiceHookCallback() {
+			public void onServiceEvent() {
+				SwingUtilities.invokeLater(new Runnable() {
+					public void run() {
+						int count = ClusterManager.getInstance().getClusterRegistrationService().getNodeCount();
+						nodes.setText(String.valueOf(count));
+					}
+				});
+			}
+		}, ServiceMessageType.NODE_REGISTERED, ServiceMessageType.NODE_UNREGISTERED, ServiceMessageType.HEARTBEAT_FAILED);
+		
+		// Completed Jobs
+		final JLabel jobsdone = getUIElement("general.stats.jobsdone");
+		jobsdone.setText("0");
+		
+		// Completed Jobs Update Hook
+		createServiceHook(new ServiceHookCallback() {
+			public void onServiceEvent() {
+				SwingUtilities.invokeLater(new Runnable() {
+					public void run() {
+						int count = ClusterManager.getInstance().getJobService().getFinishedJobCount();
+						jobsdone.setText(String.valueOf(count));
+					}
+				});
+			}
+		}, ServiceMessageType.JOB_END, ServiceMessageType.JOB_CANCEL);
 		
 		
+		// Active Jobs
+		final JLabel activejobs = getUIElement("general.stats.activejobs");
+		activejobs.setText("0");
+		
+		// Active Jobs Update Hook
+		createServiceHook(new ServiceHookCallback() {
+			public void onServiceEvent() {
+				SwingUtilities.invokeLater(new Runnable() {
+					public void run() {
+						int count = ClusterManager.getInstance().getJobService().getActiveJobCount();
+						activejobs.setText(String.valueOf(count));
+					}
+				});
+			}
+		}, ServiceMessageType.JOB_START, ServiceMessageType.JOB_CANCEL, ServiceMessageType.JOB_END);
+		
+		// Start Up time Thread
 		Thread t = new Thread(new Runnable() {
 			public void run() {
+				
+				long start = System.currentTimeMillis();
 				
 				while (true) {
 					try {
@@ -681,11 +731,37 @@ public class ClusterMainUI extends JFrame {
 					} catch (InterruptedException e) {
 						log.warn("Interrupted Exception in Up Time Thread",e);
 					}
+					
+					long diff = System.currentTimeMillis() - start;
+
+					
+					// Days
+					long days = diff / (1000 * 60 * 60 * 24);
+					diff = diff % (1000 * 60 * 60 * 24);
+					
+					long hours = diff / (1000 * 60 * 60);
+					diff = diff %  (1000 * 60 * 60);
+					
+					long mins = diff / (1000 * 60);
+					diff = diff % (1000 * 60);
+					
+					long secs = diff / 1000;
+					
+					StringBuilder builder = new StringBuilder();
+					if (days>0) {
+						builder.append(days + " d : ");
+					}
+					builder.append(String.format("%02d h : ", hours));
+					builder.append(String.format("%02d m : ", mins));
+					builder.append(String.format("%02d s", secs));
+					
+					final String uptime = builder.toString();
+					
 					SwingUtilities.invokeLater(new Runnable() {
 
 						public void run() {
 							JLabel upTime = getUIElement("general.stats.uptime");
-							// FIXME Format TIme and Show
+							upTime.setText(uptime);
 						}
 						
 					});
@@ -698,6 +774,23 @@ public class ClusterMainUI extends JFrame {
 	}
 
 	
+	// TODO FixDoc
+	private void createServiceHook(ServiceHookCallback serviceHookCallback, ServiceMessageType... types) {
+		
+		// No Event
+		if (types.length==0) return;
+		
+		ServiceEvent event = new ServiceEvent();
+		
+		for (ServiceMessageType type : types) {
+			event.addType(type);
+		}
+		
+		//Register Hook
+		ServiceEventsSupport.getInstance().addServiceHook(event, serviceHookCallback);
+	}
+
+
 	/**
 	 * Adds a Component to the components map of this object.
 	 * 
@@ -715,10 +808,17 @@ public class ClusterMainUI extends JFrame {
 	}
 
 	public static ClusterMainUI create() {
-		ClusterMainUI ui = new ClusterMainUI();
+		final ClusterMainUI ui = new ClusterMainUI();
 		ui.setLocationRelativeTo(null);
 		ui.setVisible(true);
-		ui.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);		
+		ui.addWindowListener(new WindowAdapter() {
+
+			@Override
+			public void windowClosing(WindowEvent e) {
+				ui.onShutdown();
+			}
+			
+		});
 		return ui;
 	}
 

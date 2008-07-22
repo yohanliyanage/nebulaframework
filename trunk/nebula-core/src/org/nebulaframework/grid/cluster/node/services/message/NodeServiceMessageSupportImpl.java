@@ -37,11 +37,10 @@ import org.nebulaframework.grid.service.message.ServiceMessage;
  * @see ServiceMessagesSupport
  * @see ServiceMessage
  */
-public class ServiceMessageSupportImpl implements ServiceMessagesSupport {
+public class NodeServiceMessageSupportImpl implements ServiceMessagesSupport {
 
-	private static Log log = LogFactory.getLog(ServiceMessageSupportImpl.class);
+	private static Log log = LogFactory.getLog(NodeServiceMessageSupportImpl.class);
 
-	private GridNode node; // Owner Node
 	private ServiceMessage message; // Last Message
 
 
@@ -49,12 +48,9 @@ public class ServiceMessageSupportImpl implements ServiceMessagesSupport {
 	 * Constructs a {@code ServiceMessageSupportImpl} instance for given
 	 * {@code GridNode}.
 	 * 
-	 * @param node
-	 *            Owner {@code GridNode}
 	 */
-	public ServiceMessageSupportImpl(GridNode node) {
+	public NodeServiceMessageSupportImpl() {
 		super();
-		this.node = node;
 	}
 
 	/**
@@ -79,6 +75,8 @@ public class ServiceMessageSupportImpl implements ServiceMessagesSupport {
 
 		this.message = message;
 
+		GridNode node = GridNode.getInstance();
+		
 		// If Job Message
 		if (message.isJobMessage()) {
 			// Notify Job Service

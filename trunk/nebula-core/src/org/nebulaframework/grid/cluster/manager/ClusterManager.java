@@ -31,6 +31,7 @@ import org.nebulaframework.grid.cluster.manager.services.jobs.InternalClusterJob
 import org.nebulaframework.grid.cluster.manager.services.jobs.remote.InternalRemoteClusterJobService;
 import org.nebulaframework.grid.cluster.manager.services.jobs.remote.RemoteClusterJobServiceImpl;
 import org.nebulaframework.grid.cluster.manager.services.messaging.ServiceMessageSender;
+import org.nebulaframework.grid.cluster.manager.services.peers.PeerClusterService;
 import org.nebulaframework.grid.cluster.manager.services.registration.ClusterRegistrationService;
 import org.nebulaframework.grid.cluster.manager.services.registration.InternalClusterRegistrationService;
 import org.nebulaframework.grid.cluster.node.GridNode;
@@ -77,7 +78,7 @@ public class ClusterManager implements InitializingBean {
 	private static ClusterManager instance = new ClusterManager();
 	
 	private UUID clusterId;
-	private String brokerUrl;
+	private ClusterInfo clusterInfo;
 	
 	private ConnectionFactory connectionFactory;
 	private BrokerService brokerService;
@@ -87,6 +88,7 @@ public class ClusterManager implements InitializingBean {
 	private InternalClusterJobService jobService;
 	private InternalRemoteClusterJobService remoteJobService;
 	private InternalClusterHeartBeatService heartBeatService;
+	private PeerClusterService peerService;
 	
 	/**
 	 * <b>Private Constructor</b> which instantiates ClusterManager, 
@@ -121,35 +123,8 @@ public class ClusterManager implements InitializingBean {
 		return clusterId;
 	}
 
-	/**
-	 * Returns the JMS Broker URL used by this cluster.
-	 * <p>
-	 * This Broker URL is used by nodes with in this cluster to communicate with 
-	 * the ClusterManager, and to access its services.
-	 * 
-	 * @return {@code String} Broker URL
-	 */
-	public String getBrokerUrl() {
-		return brokerUrl;
-	}
 
-	/**
-	 * Sets the Broker URL used by Cluster. This Broker URL should point to a JMS Broker, 
-	 * which is to be used by the {@code ClusterManager} to communicate with its nodes.
-	 * <p>
-	 * In default implementation, this URL refers to an embedded JMS Broker managed by the 
-	 * Spring container.
-	 * <p>
-	 * <b>Note : </b>This is a <b>required</b> dependency.
-	 * <p>
-	 * <i>Spring Injected</i>
-	 * 
-	 * @param brokerUrl Broker URL
-	 */
-	@Required
-	public void setBrokerUrl(String brokerUrl) {
-		this.brokerUrl = brokerUrl;
-	}
+
 
 	/**
 	 * Returns the {@code ServiceMessageSender} used by this Cluster. 
@@ -278,6 +253,32 @@ public class ClusterManager implements InitializingBean {
 		this.heartBeatService = heartBeatService;
 	}
 
+	
+	/**
+	 * Returns the {@code PeerClusterService} of this cluster,
+	 * which keeps track of the peer ClusterManagers.
+	 * 
+	 * @return PeerClusterService
+	 */
+	public PeerClusterService getPeerService() {
+		return peerService;
+	}
+
+	/**
+	 * Sets the {@code PeerClusterService} of this cluster,
+	 * which keeps track of the peer ClusterManagers.
+	 * <p>
+	 * <b>Note : </b>This is a <b>required</b> dependency.
+	 * <p>
+	 * <i>Spring Injected</i>
+	 * 
+	 * @param peerService {@code PeerClusterService} of this Cluster
+	 */
+	@Required
+	public void setPeerService(PeerClusterService peerService) {
+		this.peerService = peerService;
+	}
+
 
 	/**
 	 * Sets the JMS {@code ConnectionFactory} used by the {@code ClusterManager} to 
@@ -333,6 +334,30 @@ public class ClusterManager implements InitializingBean {
 
 
 	/**
+	 * Returns the {@link ClusterInfo} object which holds information
+	 * regarding this Cluster.
+	 * 
+	 * @return ClusterInfo
+	 */
+	public ClusterInfo getClusterInfo() {
+		return clusterInfo;
+	}
+
+
+	/**
+	 * Sets the {@link ClusterInfo} instance which holds information
+	 * regarding this cluster.
+	 * <p>
+	 * <i>Spring Injected</i>
+	 * 
+	 * @param clusterInfo ClusterInfo
+	 */
+	public void setClusterInfo(ClusterInfo clusterInfo) {
+		this.clusterInfo = clusterInfo;
+	}
+
+
+	/**
 	 * This method ensures that all dependencies of the {@code ClusterManager} is set. 
 	 * Also, this method starts {@code ClassLoadingService} for the Cluster.
 	 * <p>
@@ -348,7 +373,7 @@ public class ClusterManager implements InitializingBean {
 		
 		// Assertions, to ensure that the class was properly initialized,
 		// if used outside the container.
-		Assert.notNull(brokerUrl);
+		Assert.notNull(clusterInfo);
 		Assert.notNull(connectionFactory);
 		Assert.notNull(jobService);
 		Assert.notNull(clusterRegistrationService);
@@ -359,6 +384,9 @@ public class ClusterManager implements InitializingBean {
 		// Start Remote Cluster Job Service
 		remoteJobService = new RemoteClusterJobServiceImpl(this);
 		
+		// Configure Transports
+		configTransports();
+		
 		// Start Multicast Discovery Service
 		MulticastDiscovery.startService();
 		
@@ -366,6 +394,28 @@ public class ClusterManager implements InitializingBean {
 		WSDiscovery.registerCluster();
 	}
 	
+	/**
+	 * Configures Transports for Broker Service.
+	 */
+	private void configTransports() {
+		if (brokerService!=null) {
+			
+			// Do in seperate Thread
+			new Thread(new Runnable() {
+				public void run() {
+					for(String transport : clusterInfo.getTransportUrls()) {
+						try {
+							brokerService.addConnector(transport);
+						} catch (Exception e) {
+							log.warn("Transport Configuration Failed :" + transport,e);
+						}
+					}
+				}
+			}).start();
+		}
+	}
+
+
 	/**
 	 * Shutdowns the {@code ClusterManager}, but does not force the 
 	 * shutdown (Soft Shutdown). If attempt to shutdown gracefully fails 
@@ -407,7 +457,19 @@ public class ClusterManager implements InitializingBean {
 			// If fails, log but ignore
 		}
 		
-		ServiceMessage message = new ServiceMessage(this.clusterId.toString(), 
+		// Send Default Peer Disconnection Messages
+		ServiceMessage message = null;
+		message = new ServiceMessage(this.clusterInfo.getServiceUrl(), ServiceMessageType.PEER_DISCONNECTION);
+		serviceMessageSender.sendServiceMessage(message);
+		
+		// Send Alternative Transport Peer Disconnection Messages (if applicable)
+		for (String transport : clusterInfo.getTransportUrls()) {
+			message = new ServiceMessage(transport, ServiceMessageType.PEER_DISCONNECTION);
+			serviceMessageSender.sendServiceMessage(message);
+		}
+		
+		// Send Shutdown Message
+		message = new ServiceMessage(this.clusterId.toString(), 
 		                                            ServiceMessageType.CLUSTER_SHUTDOWN);
 		
 		serviceMessageSender.sendServiceMessage(message);
@@ -420,6 +482,8 @@ public class ClusterManager implements InitializingBean {
 		} catch(InterruptedException ex) {
 			log.error(ex);
 		}
+		
+		log.info("Shutdown Complete. Terminating VM");
 		System.exit(0);
 	}
 }
