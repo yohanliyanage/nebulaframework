@@ -11,10 +11,13 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -29,21 +32,36 @@ import javax.swing.JTextArea;
 import javax.swing.JWindow;
 import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.UIManager;
+import javax.swing.SwingUtilities;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.nebulaframework.grid.Grid;
+import org.nebulaframework.grid.cluster.manager.ClusterManager;
+import org.nebulaframework.util.net.NetUtils;
 
 // TODO FixDoc
 public class ClusterMainUI extends JFrame {
 
+	private static Log log = LogFactory.getLog(ClusterMainUI.class);
+	
 	private static final int WIDTH = 600;
 	private static final int HEIGHT = 500;
 
 	private static final long serialVersionUID = 8992643609753054554L;
+	private static Map<String, JComponent> components = new HashMap<String, JComponent>();
 
-	public ClusterMainUI() throws HeadlessException {
+	public ClusterMainUI() throws HeadlessException, IllegalStateException {
 		super();
+		
+		if (!Grid.isClusterManager()) {
+			throw new IllegalStateException("ClusterManager is not running");
+		}
 		setupUI();
+		showClusterInfo();
 	}
 
+	
 	private void setupUI() {
 
 		setTitle("Nebula Grid - Cluster Manager");
@@ -65,13 +83,14 @@ public class ClusterMainUI extends JFrame {
 		centerPanel.setLayout(new BorderLayout());
 		JTabbedPane tabs = new JTabbedPane();
 		centerPanel.add(tabs);
-
+		addComponent("tabs",tabs);	// Add to components map
+		
 		// General Tab
 		tabs.addTab("General", setupGeneralTab());
 
-
 		tabs.addTab("Job XYZ",createJobTab("XYZ"));
 	}
+
 
 	private JMenuBar setupMenu() {
 		JMenuBar menuBar = new JMenuBar();
@@ -91,6 +110,8 @@ public class ClusterMainUI extends JFrame {
 			}
 		});
 		clusterMenu.add(clusterStartItem);
+		addComponent("menu.cluster.start", clusterStartItem);
+		
 
 		// Cluster-> Shutdown
 		JMenuItem clusterShutdownItem = new JMenuItem("Shutdown", 'u');
@@ -102,6 +123,7 @@ public class ClusterMainUI extends JFrame {
 			}
 		});
 		clusterMenu.add(clusterShutdownItem);
+		addComponent("menu.cluster.shutdown",clusterShutdownItem);	// Add to components map
 		
 		clusterMenu.addSeparator();
 		
@@ -119,6 +141,7 @@ public class ClusterMainUI extends JFrame {
 			}
 		});
 		clusterDiscoverMenu.add(clusterDiscoverMulticast);
+		addComponent("menu.cluster.discover.multicast", clusterDiscoverMulticast);	// Add to components map
 		
 		// Discover -> WS
 		JMenuItem clusterDiscoverWS = new JMenuItem("Colombus Web Service");
@@ -129,6 +152,7 @@ public class ClusterMainUI extends JFrame {
 			}
 		});
 		clusterDiscoverMenu.add(clusterDiscoverWS);
+		addComponent("menu.cluster.discover.ws",clusterDiscoverWS);	// Add to components map
 		
 		// Exit
 		JMenuItem clusterExitItem = new JMenuItem("Exit", 'x');
@@ -152,6 +176,8 @@ public class ClusterMainUI extends JFrame {
 			}
 		});
 		optionsMenu.add(optionsConfigItem);
+		optionsConfigItem.setEnabled(false);	// TODO Create Configuration Options
+		
 		
 		/* -- Help Menu -- */
 		JMenu helpMenu = new JMenu("Help");
@@ -212,7 +238,8 @@ public class ClusterMainUI extends JFrame {
 				ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
 				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED),
 						BorderLayout.CENTER);
-
+		addComponent("general.log", logTextArea);	// Add to component map
+		
 		centerPanel.setLayout(new BorderLayout(10, 10));
 		centerPanel.add(statsPanel, BorderLayout.NORTH);
 		centerPanel.add(logPanel, BorderLayout.CENTER);
@@ -242,8 +269,9 @@ public class ClusterMainUI extends JFrame {
 
 		southPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 10, 10));
 		southPanel.add(startButton);
+		addComponent("general.start", startButton);	// Add to components map
 		southPanel.add(shutdownButton);
-		
+		addComponent("general.shutdown", startButton);	// Add to components map
 		
 		return generalTab;
 	}
@@ -272,25 +300,29 @@ public class ClusterMainUI extends JFrame {
 		clusterInfoPanel.add(clusterIDLabel);
 		JLabel clusterID = new JLabel("#clusterId#");
 		clusterInfoPanel.add(clusterID);
-
+		addComponent("general.stats.clusterid", clusterID);	// Add to components map
+		
 		// Host Information (ex. localhost:61616)
 		JLabel hostInfoLabel = new JLabel("Host Information :");
 		clusterInfoPanel.add(hostInfoLabel);
 		JLabel hostInfo = new JLabel("#hostInfo#");
 		clusterInfoPanel.add(hostInfo);
-
+		addComponent("general.stats.hostinfo", hostInfo);	// Add to components map
+		
 		// Protocol Information
 		JLabel protocolsLabel = new JLabel("Protocols :");
 		clusterInfoPanel.add(protocolsLabel);
 		JLabel protocols = new JLabel("#protocols#");
 		clusterInfoPanel.add(protocols);
-
+		addComponent("general.stats.protocols", protocols);	// Add to components map
+		
 		// Cluster Up Time
 		JLabel upTimeLabel = new JLabel("Cluster Up Time :");
 		clusterInfoPanel.add(upTimeLabel);
 		JLabel upTime = new JLabel("#upTime#");
 		clusterInfoPanel.add(upTime);
-
+		addComponent("general.stats.uptime", upTime);	// Add to components map
+		
 		/* -- Grid Information -- */
 
 		// Peer Cluster Count
@@ -298,25 +330,29 @@ public class ClusterMainUI extends JFrame {
 		gridInfoPanel.add(peerClustersLabel);
 		JLabel peerClusters = new JLabel("#peerClusters#");
 		gridInfoPanel.add(peerClusters);
-
+		addComponent("general.stats.peerclusters", peerClusters);	// Add to components map
+		
 		// Node Count
 		JLabel nodesLabel = new JLabel("Nodes in Cluster :");
 		gridInfoPanel.add(nodesLabel);
 		JLabel nodes = new JLabel("#nodes#");
 		gridInfoPanel.add(nodes);
-
+		addComponent("general.stats.nodes", nodes);	// Add to components map
+		
 		// Jobs Done Count
 		JLabel jobsDoneLabel = new JLabel("Completed Jobs :");
 		gridInfoPanel.add(jobsDoneLabel);
 		JLabel jobsDone = new JLabel("#jobsdone#");
 		gridInfoPanel.add(jobsDone);
-
+		addComponent("general.stats.jobsdone", jobsDone);	// Add to components map
+		
 		// Active Jobs
 		JLabel activeJobsLabel = new JLabel("Active Jobs :");
 		gridInfoPanel.add(activeJobsLabel);
 		JLabel activeJobs = new JLabel("#activeJobs#");
 		gridInfoPanel.add(activeJobs);
-
+		addComponent("general.stats.activejobs", activeJobs);	// Add to components map
+		
 		return statPanel;
 	}
 
@@ -332,7 +368,8 @@ public class ClusterMainUI extends JFrame {
 		JProgressBar progressBar = new JProgressBar();
 		progressBar.setStringPainted(true);
 		progressPanel.add(progressBar, BorderLayout.CENTER);
-
+		addComponent("jobs."+jobId+".progress", progressBar);	// Add to components map
+		
 		JPanel buttonsPanel = new JPanel();
 		jobPanel.add(buttonsPanel, BorderLayout.SOUTH);
 		buttonsPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
@@ -345,6 +382,7 @@ public class ClusterMainUI extends JFrame {
 			}
 		});
 		buttonsPanel.add(terminateButton);
+		addComponent("jobs."+jobId+".terminate", terminateButton);	// Add to components map
 		
 		JPanel centerPanel = new JPanel();
 		centerPanel.setLayout(new GridBagLayout());
@@ -373,6 +411,7 @@ public class ClusterMainUI extends JFrame {
 		jobInfoPanel.add(new JLabel("Name :"),c1);
 		JLabel jobNameLabel = new JLabel("#name#");
 		jobInfoPanel.add(jobNameLabel,c1);
+		addComponent("jobs."+jobId+".job.name", jobNameLabel);	// Add to components map
 		
 		// Gap
 		jobInfoPanel.add(new JLabel(),c1);
@@ -381,7 +420,7 @@ public class ClusterMainUI extends JFrame {
 		jobInfoPanel.add(new JLabel("Type :"),c1);
 		JLabel jobType = new JLabel("#type#");
 		jobInfoPanel.add(jobType,c1);
-		
+		addComponent("jobs."+jobId+".job.type", jobType);	// Add to components map
 		
 		// JobId
 		c1.gridy = 1;
@@ -389,6 +428,7 @@ public class ClusterMainUI extends JFrame {
 		c1.gridwidth = GridBagConstraints.REMAINDER;
 		JLabel jobIdLabel = new JLabel(jobId);
 		jobInfoPanel.add(jobIdLabel,c1);
+		addComponent("jobs."+jobId+".job.id", jobIdLabel);	// Add to components map
 		
 		// Job Class Name
 		c1.gridy = 2;
@@ -397,7 +437,7 @@ public class ClusterMainUI extends JFrame {
 		c1.gridwidth = GridBagConstraints.REMAINDER;
 		JLabel jobClassLabel = new JLabel("#jobclass#");
 		jobInfoPanel.add(jobClassLabel,c1);
-		
+		addComponent("jobs."+jobId+".job.class", jobClassLabel);	// Add to components map
 		
 		// JobId
 		c1.gridy = 3;
@@ -406,7 +446,7 @@ public class ClusterMainUI extends JFrame {
 		c1.gridwidth =  GridBagConstraints.REMAINDER;
 		JLabel jobTaskClassLabel = new JLabel("#taskclass#");
 		jobInfoPanel.add(jobTaskClassLabel,c1);
-		
+		addComponent("jobs."+jobId+".job.taskclass", jobTaskClassLabel);	// Add to components map
 		
 		
 		
@@ -428,6 +468,7 @@ public class ClusterMainUI extends JFrame {
 		executionInfoPanel.add(new JLabel("Job Status :"),c3);
 		JLabel statusLabel = new JLabel("#status#");
 		executionInfoPanel.add(statusLabel,c3);
+		addComponent("jobs."+jobId+".execution.status", statusLabel);	// Add to components map
 		
 		executionInfoPanel.add(new JLabel(),c3); // Space Holder
 		
@@ -435,6 +476,7 @@ public class ClusterMainUI extends JFrame {
 		executionInfoPanel.add(new JLabel("Done :"),c3);
 		JLabel percentLabel = new JLabel("#percentage#");
 		executionInfoPanel.add(percentLabel,c3);
+		addComponent("jobs."+jobId+".execution.percentage", percentLabel);	// Add to components map
 		
 		c3.gridy = 1;
 		
@@ -442,6 +484,7 @@ public class ClusterMainUI extends JFrame {
 		executionInfoPanel.add(new JLabel("Start Time :"),c3);
 		JLabel startTimeLabel = new JLabel("#starttime#");
 		executionInfoPanel.add(startTimeLabel,c3);
+		addComponent("jobs."+jobId+".execution.starttime", startTimeLabel);	// Add to components map
 		
 		executionInfoPanel.add(new JLabel(),c3); // Space Holder
 		
@@ -449,6 +492,7 @@ public class ClusterMainUI extends JFrame {
 		executionInfoPanel.add(new JLabel("Elapsed Time :"),c3);
 		JLabel elapsedTimeLabel = new JLabel("#elapsedtime#");
 		executionInfoPanel.add(elapsedTimeLabel,c3);
+		addComponent("jobs."+jobId+".execution.elapsedtime", elapsedTimeLabel);	// Add to components map
 		
 		c3.gridy = 2;
 		
@@ -456,6 +500,7 @@ public class ClusterMainUI extends JFrame {
 		executionInfoPanel.add(new JLabel("Tasks Deployed :"),c3);
 		JLabel tasksDeployedLabel = new JLabel("#taskcount#");
 		executionInfoPanel.add(tasksDeployedLabel,c3);
+		addComponent("jobs."+jobId+".execution.tasks", tasksDeployedLabel);	// Add to components map
 		
 		executionInfoPanel.add(new JLabel(),c3); // Space Holder
 		
@@ -463,6 +508,7 @@ public class ClusterMainUI extends JFrame {
 		executionInfoPanel.add(new JLabel("Results Collected :"),c3);
 		JLabel resultsCollectedLabel = new JLabel("#resultcount#");
 		executionInfoPanel.add(resultsCollectedLabel,c3);
+		addComponent("jobs."+jobId+".execution.results", resultsCollectedLabel);	// Add to components map
 		
 		c3.gridy = 3;
 		
@@ -470,6 +516,7 @@ public class ClusterMainUI extends JFrame {
 		executionInfoPanel.add(new JLabel("Remaining Tasks :"),c3);
 		JLabel remainingTasksLabel = new JLabel("#remaningcount#");
 		executionInfoPanel.add(remainingTasksLabel,c3);
+		addComponent("jobs."+jobId+".execution.remaining", remainingTasksLabel);	// Add to components map
 		
 		executionInfoPanel.add(new JLabel(),c3); // Space Holder
 		
@@ -477,7 +524,7 @@ public class ClusterMainUI extends JFrame {
 		executionInfoPanel.add(new JLabel("Failed Tasks :"),c3);
 		JLabel failedTasksLabel = new JLabel("#failedcount#");
 		executionInfoPanel.add(failedTasksLabel,c3);
-		
+		addComponent("jobs."+jobId+".execution.failed", failedTasksLabel);	// Add to components map
 		
 		/* -- Submitter Information -- */
 		
@@ -498,6 +545,7 @@ public class ClusterMainUI extends JFrame {
 		ownerInfoPanel.add(new JLabel("Host Name :"),c2);
 		JLabel hostNameLabel = new JLabel("#hostname#");
 		ownerInfoPanel.add(hostNameLabel, c2);
+		addComponent("jobs."+jobId+".owner.hostname", hostNameLabel);	// Add to components map
 		
 		// Gap
 		ownerInfoPanel.add(new JLabel(), c2);
@@ -506,7 +554,7 @@ public class ClusterMainUI extends JFrame {
 		ownerInfoPanel.add(new JLabel("Host IP :"), c2);
 		JLabel hostIPLabel = new JLabel("#ipaddress#");
 		ownerInfoPanel.add(hostIPLabel,c2);
-		
+		addComponent("jobs."+jobId+".owner.hostip", hostIPLabel);	// Add to components map
 		
 		// Owner UUID
 		c2.gridy = 1;
@@ -516,7 +564,7 @@ public class ClusterMainUI extends JFrame {
 		c2.gridx = 1;
 		c2.gridwidth = 4;
 		ownerInfoPanel.add(ownerIdLabel,c2);
-		
+		addComponent("jobs."+jobId+".owner.id", ownerIdLabel);	// Add to components map
 		
 		return jobPanel;
 	}
@@ -566,7 +614,7 @@ public class ClusterMainUI extends JFrame {
 				try {
 					Thread.sleep(5000);
 				} catch (InterruptedException e) {
-					// Ignore
+					log.warn("Interrupted Exception in About Close Handler", e);
 				}
 				
 				hideAbout(window);
@@ -611,22 +659,67 @@ public class ClusterMainUI extends JFrame {
 		// TODO Implement
 		System.exit(0);
 	}
+
+	private void showClusterInfo() {
+		ClusterManager mgr = ClusterManager.getInstance();
+
+		// ClusterID
+		JLabel clusterId = getUIElement("general.stats.clusterid");
+		clusterId.setText(mgr.getClusterId().toString());
+		
+		// HostInfo
+		JLabel hostInfo = getUIElement("general.stats.hostinfo");
+		hostInfo.setText(NetUtils.getHostName(mgr.getBrokerUrl()) + ":" + NetUtils.getHostPort(mgr.getBrokerUrl()));
+		
+		
+		Thread t = new Thread(new Runnable() {
+			public void run() {
+				
+				while (true) {
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						log.warn("Interrupted Exception in Up Time Thread",e);
+					}
+					SwingUtilities.invokeLater(new Runnable() {
+
+						public void run() {
+							JLabel upTime = getUIElement("general.stats.uptime");
+							// FIXME Format TIme and Show
+						}
+						
+					});
+				}
+				
+			}
+		});
+		t.setDaemon(true);
+		t.start();
+	}
+
 	
-	// TODO Remove. Test Only
-	public static void main(String[] args) {
+	/**
+	 * Adds a Component to the components map of this object.
+	 * 
+	 * @param identifier Component Identifier
+	 * @param component Component
+	 */
+	protected void addComponent(String identifier, JComponent component) {
+		components.put(identifier, component);
+	}
 
-		try {
-			//UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	@SuppressWarnings("unchecked")
+	protected <T extends JComponent> T getUIElement(String identifier) throws IllegalArgumentException, ClassCastException {
+		if (! components.containsKey(identifier)) throw new IllegalArgumentException("Invalid Identifier");
+		return (T) components.get(identifier);
+	}
 
+	public static ClusterMainUI create() {
 		ClusterMainUI ui = new ClusterMainUI();
 		ui.setLocationRelativeTo(null);
 		ui.setVisible(true);
-		ui.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
+		ui.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);		
+		return ui;
 	}
 
 

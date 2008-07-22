@@ -176,6 +176,7 @@ public class Grid {
 	 */
 	public static boolean isClusterManager() {
 		return clusterManager;
+		//return (isInitialized())&&(! clusterManager);
 	}
 	
 	/**
@@ -187,6 +188,7 @@ public class Grid {
 	 */
 	public static boolean isNode() {
 		return ! clusterManager;
+		//return (isInitialized())&&(! clusterManager);
 	}
 	
 	/**
