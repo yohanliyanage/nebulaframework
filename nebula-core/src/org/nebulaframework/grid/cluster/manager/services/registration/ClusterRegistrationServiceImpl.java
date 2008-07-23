@@ -26,7 +26,9 @@ import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.node.delegate.GridNodeDelegate;
 import org.nebulaframework.grid.cluster.registration.Registration;
 import org.nebulaframework.grid.cluster.registration.RegistrationImpl;
+import org.nebulaframework.grid.service.event.ServiceEvent;
 import org.nebulaframework.grid.service.event.ServiceEventsSupport;
+import org.nebulaframework.grid.service.event.ServiceHookCallback;
 import org.nebulaframework.grid.service.message.ServiceMessage;
 import org.nebulaframework.grid.service.message.ServiceMessageType;
 import org.springframework.beans.factory.annotation.Required;
@@ -87,7 +89,7 @@ public class ClusterRegistrationServiceImpl implements
 	/**
 	 * {@inheritDoc}
 	 */
-	public Registration registerNode(UUID nodeId) {
+	public Registration registerNode(final UUID nodeId) {
 
 		// Set the Registration Data
 		RegistrationImpl reg = new RegistrationImpl();
@@ -107,10 +109,35 @@ public class ClusterRegistrationServiceImpl implements
 		// Notify Service Event
 		ServiceMessage message = new ServiceMessage(nodeId.toString(),ServiceMessageType.NODE_REGISTERED);
 		ServiceEventsSupport.getInstance().onServiceMessage(message);
+
+		// Create HeartBeat Failure Hook
+		ServiceEvent event = new ServiceEvent();
+		event.setMessage(nodeId.toString());
+		event.addType(ServiceMessageType.HEARTBEAT_FAILED);
+		
+		ServiceHookCallback callback = new ServiceHookCallback() {
+			public void onServiceEvent() {
+				synchronized (this) {
+					
+					log.fatal("HEART BEAT FAILURE. REMOVING NODE");
+					
+					clusterNodes.remove(nodeId.toString());
+					
+					// Notify Service Event
+					ServiceMessage message = new ServiceMessage(nodeId.toString(),ServiceMessageType.NODE_UNREGISTERED);
+					ServiceEventsSupport.getInstance().onServiceMessage(message);
+
+					log.fatal("Cluster Nodes : " + clusterNodes.size());
+					
+				}		
+			}
+		};
+		ServiceEventsSupport.getInstance().addServiceHook(event, callback);
 		
 		// Start HeartBeat Tracking
 		cluster.getHeartBeatService().addNode(nodeId);
 		
+
 		// Return Registration Data to Node
 		return reg;
 	}
@@ -152,7 +179,6 @@ public class ClusterRegistrationServiceImpl implements
 	/**
 	 * {@inheritDoc}
 	 */
-	@Override
 	public int getNodeCount() {
 		return clusterNodes.size();
 	}

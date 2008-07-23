@@ -21,7 +21,6 @@ public class PeerClusterServiceImpl implements PeerClusterService{
 	
 	private Map<String, NetworkConnector> peers = new HashMap<String,NetworkConnector>();
 	
-	@Override
 	public void addCluster(String url) {
 		
 		if (peers.containsKey(url)) return;
@@ -69,7 +68,6 @@ public class PeerClusterServiceImpl implements PeerClusterService{
 	}
 
 
-	@Override
 	public void removeCluster(String url) {
 		
 		NetworkConnector con = peers.get(url);
@@ -90,7 +88,6 @@ public class PeerClusterServiceImpl implements PeerClusterService{
 		log.info("[PeerService] Disconnected from Peer Cluster on " + url);
 	}
 
-	@Override
 	public int getPeerCount() {
 		return peers.size();
 	}

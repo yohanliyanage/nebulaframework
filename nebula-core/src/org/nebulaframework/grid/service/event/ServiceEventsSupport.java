@@ -14,6 +14,7 @@
 package org.nebulaframework.grid.service.event;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.nebulaframework.grid.service.message.ServiceMessage;
@@ -38,7 +39,8 @@ public class ServiceEventsSupport {
 	/** Singleton Instance */
 	private static final ServiceEventsSupport instance = new ServiceEventsSupport();
 	
-	private List<ServiceHookElement> hooks = new ArrayList<ServiceHookElement>();
+	private List<ServiceHookElement> hooks = Collections.synchronizedList(new ArrayList<ServiceHookElement>());
+		
 	
 	/**
 	 * Private constructor prohibits external instantiation
@@ -98,12 +100,14 @@ public class ServiceEventsSupport {
 	 */
 	private void notifyHooks(final ServiceMessage message) {
 		
+		final ServiceHookElement[] elements = hooks.toArray(new ServiceHookElement[hooks.size()]);
+		
 		// Run on a new Thread 
 		new Thread(new Runnable() {
 			public void run() {
-				for (ServiceHookElement hook : hooks) {
+				for (ServiceHookElement hook : elements) {
 					if (hook.getEvent().isEvent(message)) {
-						hook.getCallback().onServiceEvent();
+							hook.getCallback().onServiceEvent();
 					}
 				}
 			}

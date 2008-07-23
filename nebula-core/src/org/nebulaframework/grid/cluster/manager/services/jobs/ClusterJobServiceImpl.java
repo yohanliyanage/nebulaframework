@@ -615,18 +615,12 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		this.unboundedService = unboundedService;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
+	// TODO FixDoc
 	public int getFinishedJobCount() {
 		return finished;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
+	// TODO FixDoc
 	public int getActiveJobCount() {
 		return jobs.size();
 	}
