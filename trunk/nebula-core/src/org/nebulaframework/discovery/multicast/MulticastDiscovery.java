@@ -43,7 +43,7 @@ public class MulticastDiscovery {
 	public static final String GREET_MSG = "ALOHA";
 	
 	/** Multicast Discovery Timout */
-	public static final long TIMEOUT = 5000L;
+	public static final long TIMEOUT = 10000L;
 
 	private String cluster = null;
 	
@@ -60,6 +60,7 @@ public class MulticastDiscovery {
 			throw new AssertionError(e);
 		}
 	}
+	
 	
 	/** 
 	 * Private Constructor. No External Instantiation.
