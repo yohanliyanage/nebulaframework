@@ -1,5 +1,7 @@
 package org.nebulaframework.ui.swing.ClusterManager;
 
+import javax.swing.JOptionPane;
+import javax.swing.JWindow;
 import javax.swing.UIManager;
 
 import org.nebulaframework.grid.Grid;
@@ -21,9 +23,23 @@ public class ClusterManagerStarter {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
-		Grid.startClusterManager();
-		ClusterMainUI.create();
+		
+		JWindow splash = ClusterMainUI.showSplash();
+	
+		try {
+			Grid.startClusterManager();
+		} catch (Exception e) {
+			splash.setVisible(false);
+			e.printStackTrace();
+			JOptionPane.showMessageDialog(null, "Unable to start ClusterManager due to Exception." +
+					"\nSee StackTrace for details", "Nebula Cluster", JOptionPane.ERROR_MESSAGE);
+			System.exit(0);
+		}
+		
+		ClusterMainUI ui = ClusterMainUI.create();
+		ui.setVisible(true);
+		splash.setVisible(false);
+		splash.dispose();
 	}
 
 

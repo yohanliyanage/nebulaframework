@@ -217,7 +217,7 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		event.setMessage(nodeId.toString());
 		
 		ServiceHookCallback callback = new ServiceHookCallback() {
-			public void onServiceEvent() {
+			public void onServiceEvent(ServiceEvent event) {
 				try {
 					cancelJob(jobId);
 				} catch (IllegalArgumentException e) {
@@ -235,6 +235,7 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	 * @param profile GridJobProfile
 	 */
 	private void startSplitAggregateJob(GridJobProfile profile) {
+		
 		// Start Splitter & Aggregator for GridJob
 		splitterService.startSplitter(profile);
 		aggregatorService.startAggregator(profile);
@@ -406,6 +407,8 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	 */
 	protected void notifyJobStart(String jobId) {
 
+		log.info("[JobService] Starting GridJob " +jobId);
+		
 		// Create ServiceMessage for Job Start Notification
 		ServiceMessage message = new ServiceMessage(jobId,
 				ServiceMessageType.JOB_START);
@@ -436,6 +439,9 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		// Send ServiceMessage to GridNodes
 		cluster.getServiceMessageSender().sendServiceMessage(message);
 		log.debug("[ClusterJobService] Notified Job End {" + jobId + "}");
+		
+		log.info("[JobService] Finished GridJob " +jobId);
+		
 	}
 
 	/**
@@ -458,6 +464,8 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		cluster.getServiceMessageSender().sendServiceMessage(message);
 		log.debug("[ClusterJobService] Notified Job Cancel {" + jobId
 						+ "}");
+		
+		log.info("[JobService] Cancelled GridJob " +jobId);
 
 	}
 

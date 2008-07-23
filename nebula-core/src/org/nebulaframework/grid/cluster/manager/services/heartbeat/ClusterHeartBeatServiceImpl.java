@@ -100,7 +100,7 @@ public class ClusterHeartBeatServiceImpl implements ClusterHeartBeatService, Int
 		event.setMessage(nodeId.toString());
 		
 		ServiceHookCallback callback = new ServiceHookCallback() {
-			public void onServiceEvent() {
+			public void onServiceEvent(ServiceEvent event) {
 				removeNode(nodeId);
 			}
 		};

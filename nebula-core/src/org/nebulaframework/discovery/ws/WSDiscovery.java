@@ -114,7 +114,7 @@ public class WSDiscovery {
 				
 				ServiceHookCallback callback = new ServiceHookCallback() {
 
-					public void onServiceEvent() {
+					public void onServiceEvent(ServiceEvent event) {
 						mgr.unregisterCluster(serviceIP);
 					}
 					

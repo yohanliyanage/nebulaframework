@@ -19,6 +19,7 @@ import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.grid.cluster.node.GridNode;
 import org.nebulaframework.grid.service.event.ServiceEventsSupport;
 import org.nebulaframework.grid.service.message.ServiceMessage;
+import org.nebulaframework.grid.service.message.ServiceMessageType;
 
 /**
  * Implementation of {@code ServiceMessagesSupport}. Handles
@@ -86,6 +87,11 @@ public class NodeServiceMessageSupportImpl implements ServiceMessagesSupport {
 			else {
 				log.debug("[ServiceMessage]Job Message ignored as no JobExecutionService is registered");
 			}
+		}
+		
+		// Ignore HeartBeat Messages
+		if (message.getType()==ServiceMessageType.HEARTBEAT_FAILED) {
+			return;
 		}
 		
 		// Notify Service Event

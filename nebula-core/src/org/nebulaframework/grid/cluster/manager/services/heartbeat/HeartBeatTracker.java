@@ -75,6 +75,7 @@ class HeartBeatTracker implements Runnable {
 							.toString(), ServiceMessageType.HEARTBEAT_FAILED);
 					ClusterManager.getInstance().getServiceMessageSender()
 							.sendServiceMessage(message);
+					log.warn("[Heartbeat] Heartbeat Failed on " + nodeId.toString());
 				}
 			}
 			

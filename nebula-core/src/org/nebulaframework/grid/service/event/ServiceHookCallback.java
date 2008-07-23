@@ -29,6 +29,8 @@ public interface ServiceHookCallback {
 	 * This method will be invoked by the {@code ServiceEventsSupport}
 	 * when the {@code ServiceEvent} triggers. This should be overridden
 	 * to provide code which is to be executed.
+	 * 
+	 * @param event ServiceEvent object
 	 */
-	public void onServiceEvent();
+	public void onServiceEvent(ServiceEvent event);
 }
