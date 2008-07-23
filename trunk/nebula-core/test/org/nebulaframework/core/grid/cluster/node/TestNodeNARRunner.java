@@ -53,13 +53,15 @@ public class TestNodeNARRunner {
 			log.info("GridNode Started Up. [" + sw.getLastTaskTimeMillis() + " ms]");
 			
 			// Submit Job
-			log.debug("Submitting Job");
+			log.debug("Reading NAR");
 			
 			sw.start();
 			
 			GridArchive archive;
 			archive = GridArchive.fromFile(new File("simpletestjob.nar"));
-
+			
+			log.debug("Submitting NAR");
+			
 			GridJobFuture future = (GridJobFuture) node.getJobSubmissionService().submitArchive(archive).values().toArray()[0];
 			
 			try {
@@ -81,7 +83,7 @@ public class TestNodeNARRunner {
 			
 		} 
 		catch (GridArchiveException e) {
-			
+			log.fatal("GridArchiveException",e);
 		}
 		catch (GridExecutionException e) {
 			log.fatal("Execution Failed",e);

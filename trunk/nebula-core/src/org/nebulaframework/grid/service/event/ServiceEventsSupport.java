@@ -107,7 +107,7 @@ public class ServiceEventsSupport {
 			public void run() {
 				for (ServiceHookElement hook : elements) {
 					if (hook.getEvent().isEvent(message)) {
-							hook.getCallback().onServiceEvent();
+							hook.getCallback().onServiceEvent(hook.getEvent());
 					}
 				}
 			}

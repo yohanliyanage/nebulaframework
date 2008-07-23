@@ -1,7 +1,9 @@
 package org.nebulaframework.ui.swing.ClusterManager;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
@@ -30,7 +32,7 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
-import javax.swing.JTextArea;
+import javax.swing.JTextPane;
 import javax.swing.JWindow;
 import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
@@ -40,10 +42,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.grid.Grid;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
+import org.nebulaframework.grid.service.event.ServiceEvent;
 import org.nebulaframework.grid.service.event.ServiceEventsSupport;
 import org.nebulaframework.grid.service.event.ServiceHookCallback;
-import org.nebulaframework.grid.service.event.ServiceEvent;
 import org.nebulaframework.grid.service.message.ServiceMessageType;
+import org.nebulaframework.util.log4j.JLabelAppender;
+import org.nebulaframework.util.log4j.JTextAreaAppender;
 
 // TODO FixDoc
 public class ClusterMainUI extends JFrame {
@@ -217,13 +221,21 @@ public class ClusterMainUI extends JFrame {
 		JPanel logPanel = new JPanel();
 		logPanel.setLayout(new BorderLayout());
 		logPanel.setBorder(BorderFactory.createTitledBorder("Log Output"));
-		JTextArea logTextArea = new JTextArea();
-		logTextArea.setEditable(false);
-		logPanel.add(new JScrollPane(logTextArea,
+		JTextPane logTextPane = new JTextPane();
+		logTextPane.setEditable(false);
+		logTextPane.setFont(Font.getFont("sansserif"));
+		logTextPane.setBackground(Color.BLACK);
+		logTextPane.setForeground(Color.WHITE);
+		logTextPane.setAutoscrolls(true);
+		
+		logPanel.add(new JScrollPane(logTextPane,
 				ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
 				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED),
 						BorderLayout.CENTER);
-		addComponent("general.log", logTextArea);	// Add to component map
+		addComponent("general.log", logTextPane);	// Add to component map
+		
+		// Enable Logging
+		JTextAreaAppender.setTextArea(logTextPane);
 		
 		centerPanel.setLayout(new BorderLayout(10, 10));
 		centerPanel.add(statsPanel, BorderLayout.NORTH);
@@ -660,7 +672,7 @@ public class ClusterMainUI extends JFrame {
 		
 		// Peer Clusters Update Hook
 		createServiceHook(new ServiceHookCallback() {
-			public void onServiceEvent() {
+			public void onServiceEvent(ServiceEvent event) {
 				SwingUtilities.invokeLater(new Runnable() {
 					public void run() {
 						int peers = ClusterManager.getInstance().getPeerService().getPeerCount();
@@ -676,7 +688,7 @@ public class ClusterMainUI extends JFrame {
 		
 		// Local Nodes Update Hook
 		createServiceHook(new ServiceHookCallback() {
-			public void onServiceEvent() {
+			public void onServiceEvent(final ServiceEvent event) {
 				SwingUtilities.invokeLater(new Runnable() {
 					public void run() {
 						int count = ClusterManager.getInstance().getClusterRegistrationService().getNodeCount();
@@ -684,7 +696,7 @@ public class ClusterMainUI extends JFrame {
 					}
 				});
 			}
-		}, ServiceMessageType.NODE_REGISTERED, ServiceMessageType.NODE_UNREGISTERED, ServiceMessageType.HEARTBEAT_FAILED);
+		}, ServiceMessageType.NODE_REGISTERED, ServiceMessageType.NODE_UNREGISTERED);
 		
 		// Completed Jobs
 		final JLabel jobsdone = getUIElement("general.stats.jobsdone");
@@ -692,7 +704,7 @@ public class ClusterMainUI extends JFrame {
 		
 		// Completed Jobs Update Hook
 		createServiceHook(new ServiceHookCallback() {
-			public void onServiceEvent() {
+			public void onServiceEvent(ServiceEvent event) {
 				SwingUtilities.invokeLater(new Runnable() {
 					public void run() {
 						int count = ClusterManager.getInstance().getJobService().getFinishedJobCount();
@@ -709,7 +721,7 @@ public class ClusterMainUI extends JFrame {
 		
 		// Active Jobs Update Hook
 		createServiceHook(new ServiceHookCallback() {
-			public void onServiceEvent() {
+			public void onServiceEvent(ServiceEvent event) {
 				SwingUtilities.invokeLater(new Runnable() {
 					public void run() {
 						int count = ClusterManager.getInstance().getJobService().getActiveJobCount();
@@ -807,10 +819,36 @@ public class ClusterMainUI extends JFrame {
 		return (T) components.get(identifier);
 	}
 
+	public static JWindow showSplash() {
+		
+		JWindow splash = new JWindow();
+		splash.setSize(400, 250);
+		splash.setLayout(null);
+		
+		JLabel status = new JLabel("Developed by Yohan Liyanage, 2008");
+		JLabelAppender.setLabel(status);
+		status.setFont(new Font("sansserif", Font.PLAIN, 10));
+		status.setSize(350, 30);
+		status.setLocation(10, 220);
+		splash.add(status);
+		
+		JLabel lbl = new JLabel(new ImageIcon(ClassLoader.getSystemResource("META-INF/resources/nebula-startup.png")));
+		lbl.setSize(400, 250);
+		lbl.setLocation(0, 0);
+		splash.add(lbl);
+		
+
+		
+		splash.setVisible(true);
+		splash.setLocationRelativeTo(null);
+		
+		return splash;
+	}
+	
 	public static ClusterMainUI create() {
 		final ClusterMainUI ui = new ClusterMainUI();
 		ui.setLocationRelativeTo(null);
-		ui.setVisible(true);
+
 		ui.addWindowListener(new WindowAdapter() {
 
 			@Override
@@ -821,6 +859,5 @@ public class ClusterMainUI extends JFrame {
 		});
 		return ui;
 	}
-
 
 }

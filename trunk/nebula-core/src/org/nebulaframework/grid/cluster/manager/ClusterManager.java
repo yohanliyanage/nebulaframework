@@ -447,6 +447,8 @@ public class ClusterManager implements InitializingBean {
 	 */
 	public void shutdown(boolean force) {
 		
+		log.info("Cluster Shutting Down");
+		
 		// TODO Implement Rest
 		if (!force) {
 			// Soft Shutdown

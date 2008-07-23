@@ -116,19 +116,13 @@ public class ClusterRegistrationServiceImpl implements
 		event.addType(ServiceMessageType.HEARTBEAT_FAILED);
 		
 		ServiceHookCallback callback = new ServiceHookCallback() {
-			public void onServiceEvent() {
+			public void onServiceEvent(ServiceEvent event) {
 				synchronized (this) {
-					
-					log.fatal("HEART BEAT FAILURE. REMOVING NODE");
-					
-					clusterNodes.remove(nodeId.toString());
+					clusterNodes.remove(nodeId);
 					
 					// Notify Service Event
 					ServiceMessage message = new ServiceMessage(nodeId.toString(),ServiceMessageType.NODE_UNREGISTERED);
 					ServiceEventsSupport.getInstance().onServiceMessage(message);
-
-					log.fatal("Cluster Nodes : " + clusterNodes.size());
-					
 				}		
 			}
 		};

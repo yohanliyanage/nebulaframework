@@ -228,7 +228,7 @@ public class GridArchive implements Serializable {
 	 */
 	protected static boolean verify(File file) {
 		// FIXME Implement to verify the NAR
-		return true;
+		return file.exists();
 	}
 
 	/**

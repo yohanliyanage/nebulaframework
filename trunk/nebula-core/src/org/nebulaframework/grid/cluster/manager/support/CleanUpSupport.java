@@ -195,8 +195,7 @@ public class CleanUpSupport {
 	 */
 	private static ServiceHookCallback createRemoveQueueCallback(final String queueName, final DefaultMessageListenerContainer container) {
 		ServiceHookCallback callback = new ServiceHookCallback() {
-
-			public void onServiceEvent() {
+			public void onServiceEvent(ServiceEvent event) {
 				if (container != null) container.shutdown();
 				JMSResourceSupport.removeQueue(queueName);
 			}
@@ -216,7 +215,7 @@ public class CleanUpSupport {
 	private static ServiceHookCallback createRemoveTopicCallback(final String topicName) {
 		ServiceHookCallback callback = new ServiceHookCallback() {
 
-			public void onServiceEvent() {
+			public void onServiceEvent(ServiceEvent event) {
 				JMSResourceSupport.removeTopic(topicName);
 			}
 			
@@ -236,7 +235,7 @@ public class CleanUpSupport {
 			final DefaultMessageListenerContainer container) {
 		ServiceHookCallback callback = new ServiceHookCallback() {
 
-			public void onServiceEvent() {
+			public void onServiceEvent(ServiceEvent event) {
 				try {
 					if (container!=null) container.shutdown();
 				} catch (JmsException e) {
