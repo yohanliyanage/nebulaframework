@@ -363,6 +363,9 @@ public class UnboundedJobProcessor implements JobExecutionManager {
 				// Result was invalid, re-enqueue
 				log.debug("[UnboundedJobProcessor] Invalid Result Exception");
 				
+				// Update Profile
+				profile.failedTaskReceived();
+				
 				reEnqueueTask(taskResult.getTaskId());
 				return;
 				

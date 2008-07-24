@@ -18,6 +18,7 @@ import java.util.UUID;
 
 import org.nebulaframework.deployment.classloading.node.exporter.GridNodeClassExporter;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
+import org.nebulaframework.grid.cluster.node.GridNodeProfile;
 
 /**
  * Represents a {@code GridNode} at the {@code ClusterManager}. This class is used by 
@@ -37,6 +38,7 @@ import org.nebulaframework.grid.cluster.manager.ClusterManager;
 public class GridNodeDelegate {
 
 	private UUID nodeId;
+	private GridNodeProfile profile;
 	private GridNodeClassExporter classExporter;
 
 
@@ -45,10 +47,12 @@ public class GridNodeDelegate {
 	 * denoted by {@code nodeId}.
 	 * 
 	 * @param nodeId {@code UUID} Node Identifier
+	 * @param profile Grid Node Profile
 	 */
-	public GridNodeDelegate(UUID nodeId) {
+	public GridNodeDelegate(UUID nodeId, GridNodeProfile profile) {
 		super();
 		this.nodeId = nodeId;
+		this.profile = profile;
 	}
 
 	/**
@@ -81,5 +85,15 @@ public class GridNodeDelegate {
 	public UUID getNodeId() {
 		return nodeId;
 	}
+
+	/**
+	 * Returns the {@link GridNodeProfile} for this delegate.
+	 * 
+	 * @return {@code GridNodeProfile}.
+	 */
+	public GridNodeProfile getProfile() {
+		return profile;
+	}
+	
 
 }

@@ -16,6 +16,7 @@ package org.nebulaframework.grid.cluster.manager.services.registration;
 import java.util.UUID;
 
 import org.nebulaframework.grid.cluster.manager.services.facade.ClusterManagerServicesFacade;
+import org.nebulaframework.grid.cluster.node.GridNodeProfile;
 import org.nebulaframework.grid.cluster.registration.Registration;
 
 /**
@@ -41,10 +42,11 @@ public interface ClusterRegistrationService {
 	 * in {@code ClusterManager}
 	 * 
 	 * @param id {@code UUID} Identifier of Node
+	 * @param nodeProfile Grid Node Profile
 	 * 
 	 * @return {@code Registration} Registration Details
 	 */
-	public Registration registerNode(UUID id);
+	public Registration registerNode(UUID id, GridNodeProfile nodeProfile);
 	
 	/**
 	 * Unregisters a {@code GridNode} with given {@code nodeId} 

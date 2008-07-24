@@ -4,10 +4,13 @@ import javax.swing.JOptionPane;
 import javax.swing.JWindow;
 import javax.swing.UIManager;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.grid.Grid;
 
 public class ClusterManagerStarter {
 
+	private static Log log = LogFactory.getLog(ClusterManagerStarter.class);
 	
 	/**
 	 * Starts execution of a ClusterManager instance on the
@@ -40,6 +43,7 @@ public class ClusterManagerStarter {
 		ui.setVisible(true);
 		splash.setVisible(false);
 		splash.dispose();
+		log.info("[UI] Initialized");
 	}
 
 

@@ -18,6 +18,7 @@ import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.grid.service.event.ServiceEvent;
 import org.nebulaframework.grid.service.event.ServiceEventsSupport;
 import org.nebulaframework.grid.service.event.ServiceHookCallback;
+import org.nebulaframework.grid.service.message.ServiceMessage;
 import org.nebulaframework.grid.service.message.ServiceMessageType;
 import org.springframework.jms.JmsException;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
@@ -56,13 +57,7 @@ public class CleanUpSupport {
 	 * @param container Message Listener Container
 	 */
 	public static void removeQueueWhenFinished(String jobId, String queueName, DefaultMessageListenerContainer container) {
-
-		// Create Event & Callback
-		ServiceEvent event = createJobEndEvent(jobId);
-		ServiceHookCallback callback = createRemoveQueueCallback(queueName , container);
-		
-		// Add Hook
-		ServiceEventsSupport.getInstance().addServiceHook(event, callback);
+		ServiceEventsSupport.addServiceHook(createJobEndEvent(jobId), createRemoveQueueCallback(queueName , container));
 	}
 	
 	/**
@@ -72,12 +67,7 @@ public class CleanUpSupport {
 	 * @param topicName Topic to be removed
 	 */
 	public static void removeTopicWhenFinished(String jobId, String topicName) {
-		// Create Event & Callback
-		ServiceEvent event = createJobEndEvent(jobId);
-		ServiceHookCallback callback = createRemoveTopicCallback(topicName);
-		
-		// Add Hook
-		ServiceEventsSupport.getInstance().addServiceHook(event, callback);
+		ServiceEventsSupport.addServiceHook(createJobEndEvent(jobId), createRemoveTopicCallback(topicName));
 	}
 
 	/**
@@ -87,12 +77,7 @@ public class CleanUpSupport {
 	 * @param container Message Listener Container to be shutdown
 	 */
 	public static void shutdownContainerWhenFinished(String jobId, DefaultMessageListenerContainer container) {
-		// Create Event & Callback
-		ServiceEvent event = createJobEndEvent(jobId);
-		ServiceHookCallback callback = createShutdownContainerCallback(container);
-		
-		// Add Hook
-		ServiceEventsSupport.getInstance().addServiceHook(event, callback);
+		ServiceEventsSupport.addServiceHook(createJobEndEvent(jobId), createShutdownContainerCallback(container));
 	}
 	
 	/**
@@ -114,12 +99,7 @@ public class CleanUpSupport {
 	 * @param container Message Listener Container to be shutdown
 	 */
 	public static void removeQueueWhenNodeLeft(String nodeId, String queueName, DefaultMessageListenerContainer container) {
-		// Create Event & Callback
-		ServiceEvent event = createNodeLeftEvent(nodeId);
-		ServiceHookCallback callback = createRemoveQueueCallback(queueName, container);
-		
-		// Add Hook
-		ServiceEventsSupport.getInstance().addServiceHook(event, callback);
+		ServiceEventsSupport.addServiceHook(createNodeLeftEvent(nodeId), createRemoveQueueCallback(queueName, container));
 	}
 	
 	/**
@@ -129,12 +109,7 @@ public class CleanUpSupport {
 	 * @param topicName Topic to be removed
 	 */
 	public static void removeTopicWhenNodeLeft(String nodeId, String topicName) {
-		// Create Event & Callback
-		ServiceEvent event = createNodeLeftEvent(nodeId);
-		ServiceHookCallback callback = createRemoveTopicCallback(topicName);
-		
-		// Add Hook
-		ServiceEventsSupport.getInstance().addServiceHook(event, callback);
+		ServiceEventsSupport.addServiceHook(createNodeLeftEvent(nodeId), createRemoveTopicCallback(topicName));
 	}
 	
 	/**
@@ -145,12 +120,7 @@ public class CleanUpSupport {
 	 * @param container Message Listener Container to be shutdown
 	 */
 	public static void shutdownContainerWhenNodeLeft(String nodeId, DefaultMessageListenerContainer container) {
-		// Create Event & Callback
-		ServiceEvent event = createNodeLeftEvent(nodeId);
-		ServiceHookCallback callback = createShutdownContainerCallback(container);
-		
-		// Add Hook
-		ServiceEventsSupport.getInstance().addServiceHook(event, callback);
+		ServiceEventsSupport.addServiceHook(createNodeLeftEvent(nodeId),createShutdownContainerCallback(container));
 	}
 	
 	/**
@@ -195,7 +165,7 @@ public class CleanUpSupport {
 	 */
 	private static ServiceHookCallback createRemoveQueueCallback(final String queueName, final DefaultMessageListenerContainer container) {
 		ServiceHookCallback callback = new ServiceHookCallback() {
-			public void onServiceEvent(ServiceEvent event) {
+			public void onServiceEvent(ServiceMessage message) {
 				if (container != null) container.shutdown();
 				JMSResourceSupport.removeQueue(queueName);
 			}
@@ -215,7 +185,7 @@ public class CleanUpSupport {
 	private static ServiceHookCallback createRemoveTopicCallback(final String topicName) {
 		ServiceHookCallback callback = new ServiceHookCallback() {
 
-			public void onServiceEvent(ServiceEvent event) {
+			public void onServiceEvent(ServiceMessage message) {
 				JMSResourceSupport.removeTopic(topicName);
 			}
 			
@@ -235,7 +205,7 @@ public class CleanUpSupport {
 			final DefaultMessageListenerContainer container) {
 		ServiceHookCallback callback = new ServiceHookCallback() {
 
-			public void onServiceEvent(ServiceEvent event) {
+			public void onServiceEvent(ServiceMessage message) {
 				try {
 					if (container!=null) container.shutdown();
 				} catch (JmsException e) {

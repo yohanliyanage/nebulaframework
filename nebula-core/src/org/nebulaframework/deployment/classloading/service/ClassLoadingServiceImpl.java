@@ -15,12 +15,8 @@
 package org.nebulaframework.deployment.classloading.service;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -29,9 +25,12 @@ import org.nebulaframework.deployment.classloading.node.exporter.GridNodeClassEx
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.manager.services.jobs.InternalClusterJobService;
 import org.nebulaframework.grid.cluster.manager.services.registration.InternalClusterRegistrationService;
+import org.nebulaframework.grid.service.event.ServiceEventsSupport;
+import org.nebulaframework.grid.service.event.ServiceHookCallback;
+import org.nebulaframework.grid.service.message.ServiceMessage;
+import org.nebulaframework.grid.service.message.ServiceMessageType;
 import org.nebulaframework.util.hashing.SHA1Generator;
 import org.springframework.util.Assert;
-import org.springframework.util.StopWatch;
 
 /**
  * Implementation of the {@code ClassLoadingService}, which communicates 
@@ -50,10 +49,9 @@ import org.springframework.util.StopWatch;
  * multiple worker nodes may request for the same class repetitively, during
  * execution.
  * <p>
- * However, maintaining a cache which contains class files across multiple jobs
- * results in resource management issues. To overcome this, a special timed 
- * clean up mechanism is also implemented, referred to as {@code ClassCacheGC}, 
- * (Class Cache Garbage Collector). See {@link ClassCacheGC} for information.
+ * Note that the local cache will be cleared once the relevant GridJob has
+ * finished execution. This is to allow hot-deployment support, and also to
+ * ensure proper resource management.
  *  
  * @author Yohan Liyanage
  * @version 1.0
@@ -64,31 +62,11 @@ import org.springframework.util.StopWatch;
  */
 public class ClassLoadingServiceImpl implements ClassLoadingService {
 
-	/**
-	 * Maximum Cache Size, in KB. The cache will be cleaned up
-	 * by the garbage collector after reaching this amount, by
-	 * forcefully removing class definitions from it.
-	 */
-	private static final int MAX_CACHE_SIZE_KB = 512;
-	
-	/**
-	 * CacheGC Initial Delay of Garbage Collection (Seconds)
-	 */
-	private static final int CACHE_GC_INITIAL_DELAY_SECS = 5*60;
-	
-	/**
-	 * CacheGC Sequential Delay of Garbage Collection (Seconds)
-	 */
-	private static final int CACHE_GC_SEQ_DELAY_SECS = 3*60;
-	
-	
 	private static Log log = LogFactory.getLog(ClassLoadingServiceImpl.class);
 	
 	// Cache
 	private Map<String, CacheEntry> cache = new HashMap<String, CacheEntry>();
 	
-	private int cacheSize = 0;							// Current Cache Size (KB)
-	private ClassCacheGC cacheGC = new ClassCacheGC();	// Garbage Collector
 	
 	private InternalClusterJobService jobService;			
 	private InternalClusterRegistrationService regService;	
@@ -166,12 +144,6 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 			if (bytes != null) {
 				synchronized (this) {
 					cache.put(name, new CacheEntry(jobId, name, bytes));
-					cacheSize += bytes.length;
-					
-					// If cache size exceeds limit, force GC
-					if (cacheSize > MAX_CACHE_SIZE_KB * 1024) {
-						cacheGC.forceGarbageCollection();
-					}
 				}
 				return bytes;
 			}
@@ -213,7 +185,7 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 	 * @author Yohan Liyanage
 	 * @version 1.0
 	 */
-	protected static class CacheEntry  {
+	protected class CacheEntry  {
 		
 		private byte[] bytes;	// Class definition bytes
 		private String name;	// Fully qualified class name
@@ -228,7 +200,7 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 		 * 
 		 * @throws IllegalArgumentException if any argument is {@code null}.
 		 */
-		protected CacheEntry(String jobId, String name, byte[] bytes) 
+		protected CacheEntry(final String jobId, final String name, final byte[] bytes) 
 				throws IllegalArgumentException{
 			
 			super();
@@ -241,6 +213,16 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 			this.bytes = bytes;
 			this.name = name;
 			this.jobId = jobId;
+			
+			// Cleanup Hook
+			ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
+
+				public void onServiceEvent(ServiceMessage message) {
+					log.debug("[ClassLoadingService] Removed class from cache : " + name);
+					cache.remove(name);
+				}
+				
+			}, jobId, ServiceMessageType.JOB_END, ServiceMessageType.JOB_CANCEL);
 		}
 
 		/**
@@ -281,95 +263,5 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 		}
 	}
 
-	/**
-	 * Inner class which manages the garbage collection (clean up)
-	 * of the local class cache. This class implements {@code Runnable}
-	 * interface, and it is scheduled for execution at fixed rate using
-	 * a ThreadPoolExecutor, using a single Thread, to ensure performance.
-	 *  
-	 * @author Yohan Liyanage
-	 * @version 1.0
-	 */
-	private class ClassCacheGC implements Runnable {
-
-		// Thread Executor
-		ScheduledThreadPoolExecutor executorService;
-		
-		/**
-		 * Constructors a new {@code ClassCacheGC} Garbage Collector,
-		 * and configures the Thread Executor.
-		 */
-		public ClassCacheGC() {
-			super();
-			log.debug("[Class Cache GC] Created");
-			
-			// Construct Thread Pool Executor with 1 Thread
-			executorService = new ScheduledThreadPoolExecutor(1);
-			executorService.setThreadFactory(new ThreadFactory(){
-
-				// Use a Custom ThreadFactory to make use 
-				// of MIN_PRIORITY threads for GC
-				public Thread newThread(Runnable r) {
-					Thread t = new Thread(r);
-					t.setPriority(Thread.MIN_PRIORITY);
-					return t;
-				}
-			
-			});
-			
-			executorService.scheduleWithFixedDelay(this, CACHE_GC_INITIAL_DELAY_SECS, CACHE_GC_SEQ_DELAY_SECS, TimeUnit.SECONDS);
-		}
-
-		/**
-		 * Forces garbage collection by requesting the garbage collection
-		 * to occur as soon as possible, and also reschedules the 
-		 * future execution schedules.
-		 */
-		protected void forceGarbageCollection() {
-			// Remove Current Schedules
-			executorService.remove(this);
-			
-			// Execute Now
-			executorService.execute(this);
-			
-			// Reschedule Future Executions
-			executorService.scheduleWithFixedDelay(this, CACHE_GC_SEQ_DELAY_SECS, CACHE_GC_SEQ_DELAY_SECS, TimeUnit.SECONDS);
-		
-		}
-		
-		/**
-		 * The garbage collection process. Removes all inactive classes (inactive jobs).
-		 */
-		public void run() {
-			
-			// QoS Timing Statistics
-			StopWatch stopWatch = new StopWatch();
-			stopWatch.start();
-			
-			// # of released bytes
-			int released = 0;
-			
-			synchronized(ClassLoadingServiceImpl.this) { 
-				
-				Iterator<CacheEntry> iterator = cache.values().iterator();
-				
-				while(iterator.hasNext()) {
-
-					CacheEntry entry = iterator.next();
-					
-					// If Job is not Active anymore
-					if (!jobService.isActiveJob(entry.getJobId())) {
-						cacheSize -= entry.getByteSize();
-						released += entry.getByteSize();
-						iterator.remove(); // Remove from cache
-					}
-				}
-			}
-			
-			stopWatch.stop();
-			log.debug("[Class Cache GC] Released " + released + " bytes. "+ stopWatch.getTotalTimeMillis() +" ms");
-		}
-		
-	}
 
 }

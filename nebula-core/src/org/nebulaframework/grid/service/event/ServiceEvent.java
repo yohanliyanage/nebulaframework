@@ -95,8 +95,8 @@ public class ServiceEvent {
 					return true;
 				}
 			}
-
 		}
+		
 		return false;
 	}
 
@@ -111,7 +111,7 @@ public class ServiceEvent {
 		}
 		ServiceEvent elm = (ServiceEvent) obj;
 		
-		return (this.types==elm.types && this.message.equals(elm.getMessage()));
+		return (this.types.equals(elm.types) && this.message.equals(elm.getMessage()));
 	}
 
 	/**

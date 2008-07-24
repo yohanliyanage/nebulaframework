@@ -15,8 +15,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.text.DateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -40,14 +43,24 @@ import javax.swing.SwingUtilities;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nebulaframework.core.job.GridJob;
+import org.nebulaframework.core.job.GridJobState;
+import org.nebulaframework.core.job.GridJobStateListener;
+import org.nebulaframework.core.job.SplitAggregateGridJob;
+import org.nebulaframework.core.job.UnboundedGridJob;
 import org.nebulaframework.grid.Grid;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
-import org.nebulaframework.grid.service.event.ServiceEvent;
+import org.nebulaframework.grid.cluster.manager.services.jobs.GridJobProfile;
+import org.nebulaframework.grid.cluster.manager.services.jobs.InternalClusterJobService;
+import org.nebulaframework.grid.cluster.node.delegate.GridNodeDelegate;
 import org.nebulaframework.grid.service.event.ServiceEventsSupport;
 import org.nebulaframework.grid.service.event.ServiceHookCallback;
+import org.nebulaframework.grid.service.message.ServiceMessage;
 import org.nebulaframework.grid.service.message.ServiceMessageType;
 import org.nebulaframework.util.log4j.JLabelAppender;
-import org.nebulaframework.util.log4j.JTextAreaAppender;
+import org.nebulaframework.util.log4j.JTextPaneAppender;
+import org.nebulaframework.util.profiling.TimeUtils;
+import org.springframework.util.StringUtils;
 
 // TODO FixDoc
 public class ClusterMainUI extends JFrame {
@@ -55,7 +68,7 @@ public class ClusterMainUI extends JFrame {
 	private static Log log = LogFactory.getLog(ClusterMainUI.class);
 	
 	private static final int WIDTH = 600;
-	private static final int HEIGHT = 500;
+	private static final int HEIGHT = 475;
 
 	private static final long serialVersionUID = 8992643609753054554L;
 	private static Map<String, JComponent> components = new HashMap<String, JComponent>();
@@ -92,12 +105,17 @@ public class ClusterMainUI extends JFrame {
 		centerPanel.setLayout(new BorderLayout());
 		JTabbedPane tabs = new JTabbedPane();
 		centerPanel.add(tabs);
-		addComponent("tabs",tabs);	// Add to components map
+		addUIElement("tabs",tabs);	// Add to components map
 		
 		// General Tab
 		tabs.addTab("General", setupGeneralTab());
-
-		tabs.addTab("Job XYZ",createJobTab("XYZ"));
+		
+		// Create Job Start Hook
+		ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
+			public void onServiceEvent(final ServiceMessage message) {
+				createJobTab(message.getMessage());
+			}
+		},ServiceMessageType.JOB_START);
 	}
 
 
@@ -124,7 +142,7 @@ public class ClusterMainUI extends JFrame {
 			}
 		});
 		clusterDiscoverMenu.add(clusterDiscoverMulticast);
-		addComponent("menu.cluster.discover.multicast", clusterDiscoverMulticast);	// Add to components map
+		addUIElement("menu.cluster.discover.multicast", clusterDiscoverMulticast);	// Add to components map
 		
 		// Discover -> WS
 		JMenuItem clusterDiscoverWS = new JMenuItem("Colombus Web Service");
@@ -135,7 +153,7 @@ public class ClusterMainUI extends JFrame {
 			}
 		});
 		clusterDiscoverMenu.add(clusterDiscoverWS);
-		addComponent("menu.cluster.discover.ws",clusterDiscoverWS);	// Add to components map
+		addUIElement("menu.cluster.discover.ws",clusterDiscoverWS);	// Add to components map
 		
 		clusterMenu.addSeparator();
 
@@ -149,7 +167,7 @@ public class ClusterMainUI extends JFrame {
 			}
 		});
 		clusterMenu.add(clusterShutdownItem);
-		addComponent("menu.cluster.shutdown",clusterShutdownItem);	// Add to components map
+		addUIElement("menu.cluster.shutdown",clusterShutdownItem);	// Add to components map
 		
 		
 		/* -- Options Menu -- */
@@ -223,7 +241,6 @@ public class ClusterMainUI extends JFrame {
 		logPanel.setBorder(BorderFactory.createTitledBorder("Log Output"));
 		JTextPane logTextPane = new JTextPane();
 		logTextPane.setEditable(false);
-		logTextPane.setFont(Font.getFont("sansserif"));
 		logTextPane.setBackground(Color.BLACK);
 		logTextPane.setForeground(Color.WHITE);
 		logTextPane.setAutoscrolls(true);
@@ -232,10 +249,10 @@ public class ClusterMainUI extends JFrame {
 				ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
 				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED),
 						BorderLayout.CENTER);
-		addComponent("general.log", logTextPane);	// Add to component map
+		addUIElement("general.log", logTextPane);	// Add to component map
 		
 		// Enable Logging
-		JTextAreaAppender.setTextArea(logTextPane);
+		JTextPaneAppender.setTextPane(logTextPane);
 		
 		centerPanel.setLayout(new BorderLayout(10, 10));
 		centerPanel.add(statsPanel, BorderLayout.NORTH);
@@ -257,7 +274,7 @@ public class ClusterMainUI extends JFrame {
 
 		southPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 10, 10));
 		southPanel.add(shutdownButton);
-		addComponent("general.shutdown", shutdownButton);	// Add to components map
+		addUIElement("general.shutdown", shutdownButton);	// Add to components map
 		
 		return generalTab;
 	}
@@ -286,28 +303,28 @@ public class ClusterMainUI extends JFrame {
 		clusterInfoPanel.add(clusterIDLabel);
 		JLabel clusterID = new JLabel("#clusterId#");
 		clusterInfoPanel.add(clusterID);
-		addComponent("general.stats.clusterid", clusterID);	// Add to components map
+		addUIElement("general.stats.clusterid", clusterID);	// Add to components map
 		
 		// Host Information (ex. localhost:61616)
 		JLabel hostInfoLabel = new JLabel("Host Information :");
 		clusterInfoPanel.add(hostInfoLabel);
 		JLabel hostInfo = new JLabel("#hostInfo#");
 		clusterInfoPanel.add(hostInfo);
-		addComponent("general.stats.hostinfo", hostInfo);	// Add to components map
+		addUIElement("general.stats.hostinfo", hostInfo);	// Add to components map
 		
 		// Protocol Information
 		JLabel protocolsLabel = new JLabel("Protocols :");
 		clusterInfoPanel.add(protocolsLabel);
 		JLabel protocols = new JLabel("#protocols#");
 		clusterInfoPanel.add(protocols);
-		addComponent("general.stats.protocols", protocols);	// Add to components map
+		addUIElement("general.stats.protocols", protocols);	// Add to components map
 		
 		// Cluster Up Time
 		JLabel upTimeLabel = new JLabel("Cluster Up Time :");
 		clusterInfoPanel.add(upTimeLabel);
 		JLabel upTime = new JLabel("#upTime#");
 		clusterInfoPanel.add(upTime);
-		addComponent("general.stats.uptime", upTime);	// Add to components map
+		addUIElement("general.stats.uptime", upTime);	// Add to components map
 		
 		/* -- Grid Information -- */
 
@@ -316,38 +333,41 @@ public class ClusterMainUI extends JFrame {
 		gridInfoPanel.add(peerClustersLabel);
 		JLabel peerClusters = new JLabel("#peerClusters#");
 		gridInfoPanel.add(peerClusters);
-		addComponent("general.stats.peerclusters", peerClusters);	// Add to components map
+		addUIElement("general.stats.peerclusters", peerClusters);	// Add to components map
 		
 		// Node Count
 		JLabel nodesLabel = new JLabel("Nodes in Cluster :");
 		gridInfoPanel.add(nodesLabel);
 		JLabel nodes = new JLabel("#nodes#");
 		gridInfoPanel.add(nodes);
-		addComponent("general.stats.nodes", nodes);	// Add to components map
+		addUIElement("general.stats.nodes", nodes);	// Add to components map
 		
 		// Jobs Done Count
 		JLabel jobsDoneLabel = new JLabel("Executed Jobs :");
 		gridInfoPanel.add(jobsDoneLabel);
 		JLabel jobsDone = new JLabel("#jobsdone#");
 		gridInfoPanel.add(jobsDone);
-		addComponent("general.stats.jobsdone", jobsDone);	// Add to components map
+		addUIElement("general.stats.jobsdone", jobsDone);	// Add to components map
 		
 		// Active Jobs
 		JLabel activeJobsLabel = new JLabel("Active Jobs :");
 		gridInfoPanel.add(activeJobsLabel);
 		JLabel activeJobs = new JLabel("#activeJobs#");
 		gridInfoPanel.add(activeJobs);
-		addComponent("general.stats.activejobs", activeJobs);	// Add to components map
+		addUIElement("general.stats.activejobs", activeJobs);	// Add to components map
 		
 		return statPanel;
 	}
 
-	protected JPanel createJobTab(final String jobId) {
+	protected void createJobTab(final String jobId) {
 		
-		// TODO Implement Friendly Job Names
-		// TODO Implement Show Tab , Hide Tab when jobs happen
 		
-		JPanel jobPanel = new JPanel();
+		final InternalClusterJobService jobService = ClusterManager.getInstance().getJobService();
+		final GridJobProfile profile = jobService.getProfile(jobId);
+		
+		final long startTime = System.currentTimeMillis();
+		
+		final JPanel jobPanel = new JPanel();
 		jobPanel.setLayout(new BorderLayout(10,10));
 		
 		JPanel progressPanel = new JPanel();
@@ -355,10 +375,10 @@ public class ClusterMainUI extends JFrame {
 		progressPanel.setBorder(BorderFactory.createTitledBorder("Progress"));
 		jobPanel.add(progressPanel, BorderLayout.NORTH);
 		
-		JProgressBar progressBar = new JProgressBar();
+		final JProgressBar progressBar = new JProgressBar();
 		progressBar.setStringPainted(true);
 		progressPanel.add(progressBar, BorderLayout.CENTER);
-		addComponent("jobs."+jobId+".progress", progressBar);	// Add to components map
+		addUIElement("jobs."+jobId+".progress", progressBar);	// Add to components map
 		
 		JPanel buttonsPanel = new JPanel();
 		jobPanel.add(buttonsPanel, BorderLayout.SOUTH);
@@ -368,11 +388,57 @@ public class ClusterMainUI extends JFrame {
 		JButton terminateButton = new JButton("Terminate");
 		terminateButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				doTerminateJob(jobId);
+				new Thread(new Runnable() {
+
+					public void run() {
+
+						String name = getClassName(profile.getJob().getClass().getName());
+						int option = JOptionPane.showConfirmDialog(ClusterMainUI.this, 
+						                                                  "Are you sure to terminate GridJob " 
+						                                           + name + "?",
+						                                           "Nebula - Terminate GridJob",
+						                                           JOptionPane.YES_NO_OPTION);
+						
+						if (option == JOptionPane.NO_OPTION) return;
+						
+						// Attempt Cancel
+						boolean result = profile.getFuture().cancel();
+						
+						if (result) {
+							JOptionPane.showMessageDialog(ClusterMainUI.this, "Grid Job '" + 
+							                              getClassName(profile.getJob().getClass().getName()) +
+							                              "terminated successfully.", "Nebula - Job Terminated", 
+							                              JOptionPane.INFORMATION_MESSAGE);
+						}
+						else {
+							JOptionPane.showMessageDialog(ClusterMainUI.this, "Failed to terminate Grid Job '" + 
+							                              name
+							                              , "Nebula - Job Termination Failed", 
+							                              JOptionPane.WARNING_MESSAGE);
+						}						
+					}
+					
+				}).start();
 			}
 		});
 		buttonsPanel.add(terminateButton);
-		addComponent("jobs."+jobId+".terminate", terminateButton);	// Add to components map
+		addUIElement("jobs."+jobId+".terminate", terminateButton);	// Add to components map
+		
+		// Close Tab Button
+		JButton closeButton = new JButton("Close Tab");
+		closeButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				SwingUtilities.invokeLater(new Runnable() {
+					public void run() {
+						removeJobTab(jobId);
+					}
+				});
+			}
+		});
+		closeButton.setEnabled(false);
+		
+		buttonsPanel.add(closeButton);
+		addUIElement("jobs."+jobId+".closetab", closeButton);	// Add to components map
 		
 		JPanel centerPanel = new JPanel();
 		centerPanel.setLayout(new GridBagLayout());
@@ -399,44 +465,30 @@ public class ClusterMainUI extends JFrame {
 		
 		// Name
 		jobInfoPanel.add(new JLabel("Name :"),c1);
-		JLabel jobNameLabel = new JLabel("#name#");
+		JLabel jobNameLabel = new JLabel();
 		jobInfoPanel.add(jobNameLabel,c1);
-		addComponent("jobs."+jobId+".job.name", jobNameLabel);	// Add to components map
+		jobNameLabel.setText(getClassName(profile.getJob().getClass().getName()));
+		addUIElement("jobs."+jobId+".job.name", jobNameLabel);	// Add to components map
 		
 		// Gap
 		jobInfoPanel.add(new JLabel(),c1);
 		
 		// Type
 		jobInfoPanel.add(new JLabel("Type :"),c1);
-		JLabel jobType = new JLabel("#type#");
+		JLabel jobType = new JLabel();
+		jobType.setText(getJobType(profile.getJob()));
 		jobInfoPanel.add(jobType,c1);
-		addComponent("jobs."+jobId+".job.type", jobType);	// Add to components map
-		
-		// JobId
-		c1.gridy = 1;
-		jobInfoPanel.add(new JLabel("Job Id :"),c1);
-		c1.gridwidth = GridBagConstraints.REMAINDER;
-		JLabel jobIdLabel = new JLabel(jobId);
-		jobInfoPanel.add(jobIdLabel,c1);
-		addComponent("jobs."+jobId+".job.id", jobIdLabel);	// Add to components map
+		addUIElement("jobs."+jobId+".job.type", jobType );	// Add to components map
 		
 		// Job Class Name
-		c1.gridy = 2;
+		c1.gridy = 1;
 		c1.gridwidth = 1;
 		jobInfoPanel.add(new JLabel("GridJob Class :"),c1);
 		c1.gridwidth = GridBagConstraints.REMAINDER;
-		JLabel jobClassLabel = new JLabel("#jobclass#");
+		JLabel jobClassLabel = new JLabel();
+		jobClassLabel.setText(profile.getJob().getClass().getName());
 		jobInfoPanel.add(jobClassLabel,c1);
-		addComponent("jobs."+jobId+".job.class", jobClassLabel);	// Add to components map
-		
-		// JobId
-		c1.gridy = 3;
-		c1.gridwidth = 1;
-		jobInfoPanel.add(new JLabel("GridTask Class :"),c1);
-		c1.gridwidth =  GridBagConstraints.REMAINDER;
-		JLabel jobTaskClassLabel = new JLabel("#taskclass#");
-		jobInfoPanel.add(jobTaskClassLabel,c1);
-		addComponent("jobs."+jobId+".job.taskclass", jobTaskClassLabel);	// Add to components map
+		addUIElement("jobs."+jobId+".job.class", jobClassLabel);	// Add to components map
 		
 		
 		
@@ -456,67 +508,80 @@ public class ClusterMainUI extends JFrame {
 		
 		// Start Time
 		executionInfoPanel.add(new JLabel("Job Status :"),c3);
-		JLabel statusLabel = new JLabel("#status#");
+		final JLabel statusLabel = new JLabel("Initializing");
 		executionInfoPanel.add(statusLabel,c3);
-		addComponent("jobs."+jobId+".execution.status", statusLabel);	// Add to components map
+		addUIElement("jobs."+jobId+".execution.status", statusLabel);	// Add to components map
+		
+		// Status Update Listener
+		profile.getFuture().addGridJobStateListener(new GridJobStateListener() {
+			public void stateChanged(final GridJobState newState) {
+				SwingUtilities.invokeLater(new Runnable() {
+					public void run() {
+						statusLabel.setText(StringUtils.capitalize(newState.toString().toLowerCase()));
+					}
+				});
+			}
+		});
 		
 		executionInfoPanel.add(new JLabel(),c3); // Space Holder
 		
 		// Percent Complete
-		executionInfoPanel.add(new JLabel("Done :"),c3);
-		JLabel percentLabel = new JLabel("#percentage#");
+		executionInfoPanel.add(new JLabel("Completed % :"),c3);
+		final JLabel percentLabel = new JLabel("-N/A-");
 		executionInfoPanel.add(percentLabel,c3);
-		addComponent("jobs."+jobId+".execution.percentage", percentLabel);	// Add to components map
+		addUIElement("jobs."+jobId+".execution.percentage", percentLabel);	// Add to components map
 		
 		c3.gridy = 1;
 		
 		// Start Time
 		executionInfoPanel.add(new JLabel("Start Time :"),c3);
-		JLabel startTimeLabel = new JLabel("#starttime#");
+		JLabel startTimeLabel = new JLabel(DateFormat.getInstance().format(new Date(startTime)));
 		executionInfoPanel.add(startTimeLabel,c3);
-		addComponent("jobs."+jobId+".execution.starttime", startTimeLabel);	// Add to components map
+		addUIElement("jobs."+jobId+".execution.starttime", startTimeLabel);	// Add to components map
 		
 		executionInfoPanel.add(new JLabel(),c3); // Space Holder
 		
 		// Elapsed Time
 		executionInfoPanel.add(new JLabel("Elapsed Time :"),c3);
-		JLabel elapsedTimeLabel = new JLabel("#elapsedtime#");
+		JLabel elapsedTimeLabel = new JLabel("-N/A-");
 		executionInfoPanel.add(elapsedTimeLabel,c3);
-		addComponent("jobs."+jobId+".execution.elapsedtime", elapsedTimeLabel);	// Add to components map
+		addUIElement("jobs."+jobId+".execution.elapsedtime", elapsedTimeLabel);	// Add to components map
 		
 		c3.gridy = 2;
 		
 		// Tasks Deployed (Count)
 		executionInfoPanel.add(new JLabel("Tasks Deployed :"),c3);
-		JLabel tasksDeployedLabel = new JLabel("#taskcount#");
+		JLabel tasksDeployedLabel = new JLabel("-N/A-");
 		executionInfoPanel.add(tasksDeployedLabel,c3);
-		addComponent("jobs."+jobId+".execution.tasks", tasksDeployedLabel);	// Add to components map
+		addUIElement("jobs."+jobId+".execution.tasks", tasksDeployedLabel);	// Add to components map
 		
 		executionInfoPanel.add(new JLabel(),c3); // Space Holder
 		
 		// Results Collected (Count)
 		executionInfoPanel.add(new JLabel("Results Collected :"),c3);
-		JLabel resultsCollectedLabel = new JLabel("#resultcount#");
+		JLabel resultsCollectedLabel = new JLabel("-N/A-");
 		executionInfoPanel.add(resultsCollectedLabel,c3);
-		addComponent("jobs."+jobId+".execution.results", resultsCollectedLabel);	// Add to components map
+		addUIElement("jobs."+jobId+".execution.results", resultsCollectedLabel);	// Add to components map
 		
 		c3.gridy = 3;
 		
 		// Remaining Tasks (Count)
 		executionInfoPanel.add(new JLabel("Remaining Tasks :"),c3);
-		JLabel remainingTasksLabel = new JLabel("#remaningcount#");
+		JLabel remainingTasksLabel = new JLabel("-N/A-");
 		executionInfoPanel.add(remainingTasksLabel,c3);
-		addComponent("jobs."+jobId+".execution.remaining", remainingTasksLabel);	// Add to components map
+		addUIElement("jobs."+jobId+".execution.remaining", remainingTasksLabel);	// Add to components map
 		
 		executionInfoPanel.add(new JLabel(),c3); // Space Holder
 		
 		// Failed Tasks (Count)
 		executionInfoPanel.add(new JLabel("Failed Tasks :"),c3);
-		JLabel failedTasksLabel = new JLabel("#failedcount#");
+		JLabel failedTasksLabel = new JLabel("-N/A-");
 		executionInfoPanel.add(failedTasksLabel,c3);
-		addComponent("jobs."+jobId+".execution.failed", failedTasksLabel);	// Add to components map
+		addUIElement("jobs."+jobId+".execution.failed", failedTasksLabel);	// Add to components map
 		
 		/* -- Submitter Information -- */
+		UUID ownerId = profile.getOwner();
+		GridNodeDelegate owner = ClusterManager.getInstance().getClusterRegistrationService().getGridNodeDelegate(ownerId);
 		
 		JPanel ownerInfoPanel = new JPanel();
 		ownerInfoPanel.setBorder(BorderFactory.createTitledBorder("Owner Information"));
@@ -533,38 +598,219 @@ public class ClusterMainUI extends JFrame {
 
 		// Host Name
 		ownerInfoPanel.add(new JLabel("Host Name :"),c2);
-		JLabel hostNameLabel = new JLabel("#hostname#");
+		JLabel hostNameLabel = new JLabel(owner.getProfile().getName());
 		ownerInfoPanel.add(hostNameLabel, c2);
-		addComponent("jobs."+jobId+".owner.hostname", hostNameLabel);	// Add to components map
+		addUIElement("jobs."+jobId+".owner.hostname", hostNameLabel);	// Add to components map
 		
 		// Gap
 		ownerInfoPanel.add(new JLabel(), c2);
 		
 		// Host IP Address
 		ownerInfoPanel.add(new JLabel("Host IP :"), c2);
-		JLabel hostIPLabel = new JLabel("#ipaddress#");
+		JLabel hostIPLabel = new JLabel(owner.getProfile().getIpAddress());
 		ownerInfoPanel.add(hostIPLabel,c2);
-		addComponent("jobs."+jobId+".owner.hostip", hostIPLabel);	// Add to components map
+		addUIElement("jobs."+jobId+".owner.hostip", hostIPLabel);	// Add to components map
 		
 		// Owner UUID
 		c2.gridy = 1;
 		c2.gridx = 0;
 		ownerInfoPanel.add(new JLabel("Owner ID :"),c2);
-		JLabel ownerIdLabel = new JLabel("#ownerid#");
+		JLabel ownerIdLabel = new JLabel(profile.getOwner().toString());
 		c2.gridx = 1;
 		c2.gridwidth = 4;
 		ownerInfoPanel.add(ownerIdLabel,c2);
-		addComponent("jobs."+jobId+".owner.id", ownerIdLabel);	// Add to components map
+		addUIElement("jobs."+jobId+".owner.id", ownerIdLabel);	// Add to components map
 		
-		return jobPanel;
+
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				// Create Tab
+				addUIElement("jobs." + jobId, jobPanel);
+				JTabbedPane tabs = getUIElement("tabs");
+				tabs.addTab(getClassName(profile.getJob().getClass().getName()), jobPanel);
+				tabs.revalidate();
+			}
+		});
+
+		
+		
+		// Execution Information Updater Thread
+		new Thread(new Runnable() {
+			
+			boolean initialized = false;
+			boolean unbounded = false;
+			
+			public void run() {
+
+				// Unbounded, No Progress Supported
+				if ((!initialized) && profile.getJob() instanceof UnboundedGridJob<?>) {
+					SwingUtilities.invokeLater(new Runnable() {
+						public void run() {
+							progressBar.setIndeterminate(true);
+							progressBar.setStringPainted(false);
+							percentLabel.setText("< Unbounded >");
+							
+							
+						}
+					});
+					initialized = true;
+					unbounded = true;
+				}
+				
+				// Progress Update Supported
+				while(true) {
+					
+					try {
+						// 500ms Interval
+						Thread.sleep(500);
+						
+					} catch (InterruptedException e) {
+						log.warn("Interrupted Progress Updater Thread",e);
+					}
+					
+					final int totalCount = profile.getTotalTasks();
+					final int tasksRem = profile.getTaskCount();
+					final int resCount = profile.getResultCount();
+					final int failCount = profile.getFailedCount();
+					
+					// Task Information
+					JLabel totalTaskLabel = getUIElement("jobs."+jobId+".execution.tasks");
+					totalTaskLabel.setText(String.valueOf(totalCount));
+					
+					// Result Count
+					JLabel resCountLabel = getUIElement("jobs."+jobId+".execution.results");
+					resCountLabel.setText(String.valueOf(resCount));
+					
+					// Remaining Task Count
+					JLabel remLabel = getUIElement("jobs."+jobId+".execution.remaining");
+					remLabel.setText(String.valueOf(tasksRem));
+					
+					// Failed Task Count
+					JLabel failedLabel = getUIElement("jobs."+jobId+".execution.failed");
+					failedLabel.setText(String.valueOf(failCount));
+					
+					// Elapsed Time
+					JLabel elapsedLabel = getUIElement("jobs."+jobId+".execution.elapsedtime");
+					elapsedLabel.setText(TimeUtils.timeDifference(startTime));
+					
+					// If not in Executing Mode
+					if ((!profile.getFuture().isJobFinished())&&profile.getFuture().getState()!=GridJobState.EXECUTING) {
+						SwingUtilities.invokeLater(new Runnable() {
+							public void run() {
+								progressBar.setIndeterminate(true);
+								progressBar.setStringPainted(false);
+								String state = profile.getFuture().getState().toString();
+								percentLabel.setText(StringUtils.capitalize(state.toLowerCase()));
+							}
+						});
+					}
+					else { // Executing Mode : Progress Information
+						
+						if (!unbounded) {
+							
+							final int percentage = (int) (profile.percentage() * 100);
+							
+							//final int failCount = profile.get
+							SwingUtilities.invokeLater(new Runnable() {
+								public void run() {
+									// If ProgressBar is in indeterminate
+									if (progressBar.isIndeterminate()) {
+										progressBar.setIndeterminate(false);
+										progressBar.setStringPainted(true);
+									}
+									
+									// Update Progress Bar / Percent Label
+									progressBar.setValue(percentage);
+									percentLabel.setText(percentage + " %");
+									
+								}
+							});
+						}
+					}
+					
+					// Job Finished, Stop
+					if (profile.getFuture().isJobFinished()) {
+						return;
+					}
+					
+				}
+			}
+		}).start();
+		
+		// Job End Hook to Execute Job End Actions
+		ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
+
+			public void onServiceEvent(ServiceMessage event) {
+				SwingUtilities.invokeLater(new Runnable() {
+					public void run() {
+						
+						JButton close = getUIElement("jobs."+jobId+".closetab");
+						JButton terminate = getUIElement("jobs."+jobId+".terminate");
+						terminate.setEnabled(false);
+						close.setEnabled(true);
+						
+						JProgressBar progress = getUIElement("jobs."+jobId+".progress");
+						JLabel percentage = getUIElement("jobs."+jobId+".execution.percentage");
+						
+						if (progress.isIndeterminate()) {
+							progress.setIndeterminate(false);
+							progress.setStringPainted(false);
+							percentage.setText("< Canceled >");
+						}
+					}
+				});
+			}
+			
+		}, jobId, ServiceMessageType.JOB_CANCEL, ServiceMessageType.JOB_END, ServiceMessageType.CLUSTER_SHUTDOWN);
+	}
+
+	private String getJobType(GridJob<?, ?> job) {
+		if (job instanceof SplitAggregateGridJob<?, ?>) {
+			return "Split-Aggregate";
+		}
+		else if (job instanceof UnboundedGridJob<?>) {
+			return "Unbounded";
+		}
+		else {
+			return "Unknown";
+		}
+	}
+
+
+	private String getClassName(String clsName) {
+		String[] tokens = clsName.split("\\.");
+		return tokens[tokens.length-1];
+	}
+
+
+	protected void removeJobTab(String jobId) {
+		
+		// Detach Tab
+		JTabbedPane tabs = getUIElement("tabs");
+		tabs.remove(getUIElement("jobs." + jobId));
+		tabs.revalidate();
+		
+		// Remove UI Elements
+		removeUIElement("jobs."+jobId+".progress");
+		removeUIElement("jobs."+jobId+".terminate");
+		removeUIElement("jobs."+jobId+".closetab");
+		removeUIElement("jobs."+jobId+".job.name");
+		removeUIElement("jobs."+jobId+".job.type");
+		removeUIElement("jobs."+jobId+".job.class");
+		removeUIElement("jobs."+jobId+".execution.status");
+		removeUIElement("jobs."+jobId+".execution.percentage");
+		removeUIElement("jobs."+jobId+".execution.starttime");
+		removeUIElement("jobs."+jobId+".execution.elapsedtime");
+		removeUIElement("jobs."+jobId+".execution.tasks");
+		removeUIElement("jobs."+jobId+".execution.results");
+		removeUIElement("jobs."+jobId+".execution.remaining");
+		removeUIElement("jobs."+jobId+".execution.failed");
+		removeUIElement("jobs."+jobId+".owner.hostname");
+		removeUIElement("jobs."+jobId+".owner.hostip");
+		removeUIElement("jobs."+jobId+".owner.id");
+		removeUIElement("jobs." + jobId);
 	}
 	
-	protected void doTerminateJob(String jobId) {
-		// TODO Auto-generated method stub
-		
-	}
-
-
 	protected void doShutdownCluster() {
 
 		// Consider different messages when there are active jobs
@@ -671,8 +917,8 @@ public class ClusterMainUI extends JFrame {
 		clusters.setText("0");
 		
 		// Peer Clusters Update Hook
-		createServiceHook(new ServiceHookCallback() {
-			public void onServiceEvent(ServiceEvent event) {
+		ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
+			public void onServiceEvent(ServiceMessage message) {
 				SwingUtilities.invokeLater(new Runnable() {
 					public void run() {
 						int peers = ClusterManager.getInstance().getPeerService().getPeerCount();
@@ -686,9 +932,10 @@ public class ClusterMainUI extends JFrame {
 		final JLabel nodes = getUIElement("general.stats.nodes");
 		nodes.setText("0");
 		
+		
 		// Local Nodes Update Hook
-		createServiceHook(new ServiceHookCallback() {
-			public void onServiceEvent(final ServiceEvent event) {
+		ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
+			public void onServiceEvent(ServiceMessage message) {
 				SwingUtilities.invokeLater(new Runnable() {
 					public void run() {
 						int count = ClusterManager.getInstance().getClusterRegistrationService().getNodeCount();
@@ -703,8 +950,8 @@ public class ClusterMainUI extends JFrame {
 		jobsdone.setText("0");
 		
 		// Completed Jobs Update Hook
-		createServiceHook(new ServiceHookCallback() {
-			public void onServiceEvent(ServiceEvent event) {
+		ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
+			public void onServiceEvent(ServiceMessage message) {
 				SwingUtilities.invokeLater(new Runnable() {
 					public void run() {
 						int count = ClusterManager.getInstance().getJobService().getFinishedJobCount();
@@ -720,8 +967,8 @@ public class ClusterMainUI extends JFrame {
 		activejobs.setText("0");
 		
 		// Active Jobs Update Hook
-		createServiceHook(new ServiceHookCallback() {
-			public void onServiceEvent(ServiceEvent event) {
+		ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
+			public void onServiceEvent(ServiceMessage message) {
 				SwingUtilities.invokeLater(new Runnable() {
 					public void run() {
 						int count = ClusterManager.getInstance().getJobService().getActiveJobCount();
@@ -744,30 +991,8 @@ public class ClusterMainUI extends JFrame {
 						log.warn("Interrupted Exception in Up Time Thread",e);
 					}
 					
-					long diff = System.currentTimeMillis() - start;
-
 					
-					// Days
-					long days = diff / (1000 * 60 * 60 * 24);
-					diff = diff % (1000 * 60 * 60 * 24);
-					
-					long hours = diff / (1000 * 60 * 60);
-					diff = diff %  (1000 * 60 * 60);
-					
-					long mins = diff / (1000 * 60);
-					diff = diff % (1000 * 60);
-					
-					long secs = diff / 1000;
-					
-					StringBuilder builder = new StringBuilder();
-					if (days>0) {
-						builder.append(days + " d : ");
-					}
-					builder.append(String.format("%02d h : ", hours));
-					builder.append(String.format("%02d m : ", mins));
-					builder.append(String.format("%02d s", secs));
-					
-					final String uptime = builder.toString();
+					final String uptime = TimeUtils.timeDifference(start);
 					
 					SwingUtilities.invokeLater(new Runnable() {
 
@@ -785,23 +1010,6 @@ public class ClusterMainUI extends JFrame {
 		t.start();
 	}
 
-	
-	// TODO FixDoc
-	private void createServiceHook(ServiceHookCallback serviceHookCallback, ServiceMessageType... types) {
-		
-		// No Event
-		if (types.length==0) return;
-		
-		ServiceEvent event = new ServiceEvent();
-		
-		for (ServiceMessageType type : types) {
-			event.addType(type);
-		}
-		
-		//Register Hook
-		ServiceEventsSupport.getInstance().addServiceHook(event, serviceHookCallback);
-	}
-
 
 	/**
 	 * Adds a Component to the components map of this object.
@@ -809,10 +1017,20 @@ public class ClusterMainUI extends JFrame {
 	 * @param identifier Component Identifier
 	 * @param component Component
 	 */
-	protected void addComponent(String identifier, JComponent component) {
+	protected void addUIElement(String identifier, JComponent component) {
 		components.put(identifier, component);
 	}
 
+	/**
+	 * Removes a Component from the components map of this object.
+	 * 
+	 * @param identifier Component Identifier
+	 */
+	protected void removeUIElement(String identifier) {
+		components.remove(identifier);
+	}
+
+	
 	@SuppressWarnings("unchecked")
 	protected <T extends JComponent> T getUIElement(String identifier) throws IllegalArgumentException, ClassCastException {
 		if (! components.containsKey(identifier)) throw new IllegalArgumentException("Invalid Identifier");
@@ -837,9 +1055,8 @@ public class ClusterMainUI extends JFrame {
 		lbl.setLocation(0, 0);
 		splash.add(lbl);
 		
-
-		
 		splash.setVisible(true);
+		splash.setAlwaysOnTop(true);
 		splash.setLocationRelativeTo(null);
 		
 		return splash;
@@ -857,6 +1074,7 @@ public class ClusterMainUI extends JFrame {
 			}
 			
 		});
+		
 		return ui;
 	}
 
