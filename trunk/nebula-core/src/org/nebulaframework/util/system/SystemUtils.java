@@ -73,7 +73,7 @@ public class SystemUtils {
 		map.put("java.vendor", System.getProperty("java.vendor"));
 		if (ipAddress!=null) {
 			map.put("net.ip", ipAddress.getHostAddress());
-			map.put("net.name", ipAddress.getHostAddress());
+			map.put("net.name", ipAddress.getHostName());
 		}
 		else {
 			map.put("net.ip", "");

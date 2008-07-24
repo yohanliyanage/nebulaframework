@@ -13,6 +13,8 @@
  */
 package org.nebulaframework.grid.service.event;
 
+import org.nebulaframework.grid.service.message.ServiceMessage;
+
 /**
  * Represents a {@code Callback} which will be invoked by
  * {@code ServiceEventsSupport}, for a given {@code ServiceEvent}.
@@ -30,7 +32,7 @@ public interface ServiceHookCallback {
 	 * when the {@code ServiceEvent} triggers. This should be overridden
 	 * to provide code which is to be executed.
 	 * 
-	 * @param event ServiceEvent object
+	 * @param message ServiceMessage for Event
 	 */
-	public void onServiceEvent(ServiceEvent event);
+	public void onServiceEvent(ServiceMessage message);
 }

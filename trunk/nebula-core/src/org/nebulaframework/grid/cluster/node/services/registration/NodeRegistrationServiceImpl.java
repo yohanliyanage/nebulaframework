@@ -89,7 +89,7 @@ public class NodeRegistrationServiceImpl implements NodeRegistrationService {
 		}
 		
 		// Do registration
-		this.registration = clusterRegistrationService.registerNode(node.getId());
+		this.registration = clusterRegistrationService.registerNode(node.getId(), node.getProfile());
 
 		// Log
 		log.debug("Node " + node.getId() + " registered in Cluster "

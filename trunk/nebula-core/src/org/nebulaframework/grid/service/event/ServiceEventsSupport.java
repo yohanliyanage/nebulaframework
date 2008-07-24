@@ -16,8 +16,13 @@ package org.nebulaframework.grid.service.event;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.grid.service.message.ServiceMessage;
+import org.nebulaframework.grid.service.message.ServiceMessageType;
 
 /**
  * {@link ServiceEventsSupport} allows the framework components to
@@ -36,9 +41,13 @@ import org.nebulaframework.grid.service.message.ServiceMessage;
  */
 public class ServiceEventsSupport {
 
+	
 	/** Singleton Instance */
 	private static final ServiceEventsSupport instance = new ServiceEventsSupport();
 	
+	private static Log log = LogFactory.getLog(ServiceEventsSupport.class);
+	
+	private ExecutorService executorService = Executors.newCachedThreadPool();
 	private List<ServiceHookElement> hooks = Collections.synchronizedList(new ArrayList<ServiceHookElement>());
 		
 	
@@ -67,9 +76,34 @@ public class ServiceEventsSupport {
 	 * @param event Service Event
 	 * @param callback ServiceHookCallback
 	 */
-	public void addServiceHook(ServiceEvent event, ServiceHookCallback callback) {
-		this.hooks.add(new ServiceHookElement(event,callback));
+	public static void addServiceHook(ServiceEvent event, ServiceHookCallback callback) {
+		getInstance().hooks.add(new ServiceHookElement(event,callback));
 	}
+	
+	// TODO FixDoc
+	public static void addServiceHook(ServiceHookCallback serviceHookCallback, ServiceMessageType... types) throws IllegalArgumentException {
+		addServiceHook(serviceHookCallback, null, types);
+	}
+	
+	// TODO FixDoc
+	public static void addServiceHook(ServiceHookCallback serviceHookCallback, String message, ServiceMessageType... types) throws IllegalArgumentException {
+		
+		// No Event
+		if ((types.length==0)&&(message==null)) {
+			throw new IllegalArgumentException("Both message and event type is null.");
+		}
+		
+		ServiceEvent event = new ServiceEvent();
+		event.setMessage(message);
+		
+		for (ServiceMessageType type : types) {
+			event.addType(type);
+		}
+		
+		//Register Hook
+		addServiceHook(event, serviceHookCallback);
+	}
+	
 	
 	/**
 	 * Removes ServiceHook from the {@link ServiceEventsSupport}, for the given
@@ -102,14 +136,23 @@ public class ServiceEventsSupport {
 		
 		final ServiceHookElement[] elements = hooks.toArray(new ServiceHookElement[hooks.size()]);
 		
-		// Run on a new Thread 
 		new Thread(new Runnable() {
 			public void run() {
-				for (ServiceHookElement hook : elements) {
-					if (hook.getEvent().isEvent(message)) {
-							hook.getCallback().onServiceEvent(hook.getEvent());
+					for (final ServiceHookElement hook : elements ) {
+						if (hook.getEvent().isEvent(message)) {
+							
+							// Execute on Thread Pool
+							executorService.execute(new Runnable(){
+								public void run() {
+									try {
+										hook.getCallback().onServiceEvent(message);
+									} catch (RuntimeException e) {
+										log.error("[Events] Exception in ServiceHookCallback - " + e.getMessage());
+									}
+								}
+							});
+						}
 					}
-				}
 			}
 		}).start();
 	}

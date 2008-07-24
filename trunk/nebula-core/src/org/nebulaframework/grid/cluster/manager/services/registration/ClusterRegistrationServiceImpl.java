@@ -23,10 +23,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.deployment.classloading.node.exporter.GridNodeClassExporterSupport;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
+import org.nebulaframework.grid.cluster.node.GridNodeProfile;
 import org.nebulaframework.grid.cluster.node.delegate.GridNodeDelegate;
 import org.nebulaframework.grid.cluster.registration.Registration;
 import org.nebulaframework.grid.cluster.registration.RegistrationImpl;
-import org.nebulaframework.grid.service.event.ServiceEvent;
 import org.nebulaframework.grid.service.event.ServiceEventsSupport;
 import org.nebulaframework.grid.service.event.ServiceHookCallback;
 import org.nebulaframework.grid.service.message.ServiceMessage;
@@ -89,7 +89,7 @@ public class ClusterRegistrationServiceImpl implements
 	/**
 	 * {@inheritDoc}
 	 */
-	public Registration registerNode(final UUID nodeId) {
+	public Registration registerNode(final UUID nodeId, GridNodeProfile profile) {
 
 		// Set the Registration Data
 		RegistrationImpl reg = new RegistrationImpl();
@@ -97,7 +97,7 @@ public class ClusterRegistrationServiceImpl implements
 		reg.setNodeId(nodeId);
 		reg.setClusterId(this.cluster.getClusterId());
 
-		GridNodeDelegate delegate = new GridNodeDelegate(nodeId);
+		GridNodeDelegate delegate = new GridNodeDelegate(nodeId, profile);
 		delegate.setClassExporter(GridNodeClassExporterSupport
 				.createServiceProxy(nodeId, connectionFactory));
 		synchronized (this) {
@@ -111,12 +111,8 @@ public class ClusterRegistrationServiceImpl implements
 		ServiceEventsSupport.getInstance().onServiceMessage(message);
 
 		// Create HeartBeat Failure Hook
-		ServiceEvent event = new ServiceEvent();
-		event.setMessage(nodeId.toString());
-		event.addType(ServiceMessageType.HEARTBEAT_FAILED);
-		
-		ServiceHookCallback callback = new ServiceHookCallback() {
-			public void onServiceEvent(ServiceEvent event) {
+		ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
+			public void onServiceEvent(ServiceMessage msg) {
 				synchronized (this) {
 					clusterNodes.remove(nodeId);
 					
@@ -125,13 +121,11 @@ public class ClusterRegistrationServiceImpl implements
 					ServiceEventsSupport.getInstance().onServiceMessage(message);
 				}		
 			}
-		};
-		ServiceEventsSupport.getInstance().addServiceHook(event, callback);
+		}, nodeId.toString(), ServiceMessageType.HEARTBEAT_FAILED);
 		
 		// Start HeartBeat Tracking
 		cluster.getHeartBeatService().addNode(nodeId);
 		
-
 		// Return Registration Data to Node
 		return reg;
 	}

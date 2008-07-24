@@ -26,6 +26,7 @@ import java.util.concurrent.Executors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJob;
+import org.nebulaframework.core.job.GridJobState;
 import org.nebulaframework.core.job.ResultCallback;
 import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.core.job.future.GridJobFutureServerImpl;
@@ -69,6 +70,12 @@ public class GridJobProfile {
 	private Map<Integer, GridTaskResult> resultMap = Collections
 			.synchronizedMap(new HashMap<Integer, GridTaskResult>());
 
+	// Failed Task Count
+	private int failedCount = 0;
+	
+	// Total # of Tasks (for percentage calculation)
+	private int totalTasks = -1;
+	
 	/**
 	 * Returns JobId of the Job
 	 * 
@@ -208,6 +215,22 @@ public class GridJobProfile {
 	}
 
 	/**
+	 * Increments the number of failed  tasks received.
+	 */
+	public synchronized void failedTaskReceived() {
+		failedCount++;
+	}
+	
+	/**
+	 * Returns the number of tasks failed.
+	 * 
+	 * @return Failed Task Count
+	 */
+	public int getFailedCount() {
+		return failedCount;
+	}
+
+	/**
 	 * Adds a {@code GridTask} to the outstanding Tasks collection.
 	 * 
 	 * @param taskId taskId
@@ -246,7 +269,7 @@ public class GridJobProfile {
 	 * 
 	 * @return outstanding task count
 	 */
-	public synchronized int getTaskCount() {
+	public int getTaskCount() {
 		return this.taskMap.size();
 	}
 
@@ -255,8 +278,33 @@ public class GridJobProfile {
 	 * 
 	 * @return number of results collected
 	 */
-	public synchronized int getResultCount() {
+	public int getResultCount() {
 		return this.resultMap.size();
+	}
+
+	
+	/**
+	 * Returns the total task count.
+	 * 
+	 * @return Total Task Count
+	 */
+	public int getTotalTasks() {
+		
+		// If Total Task count not set before
+		if (totalTasks < 0) {
+			
+			// Job is not deployed completely, return current value
+			if ((!future.isJobFinished()) && (future.getState()!=GridJobState.EXECUTING)) {
+				return taskMap.size() + resultMap.size();
+			}
+			
+			// Job enqueued, cache result for faster access
+			synchronized (this) {
+				totalTasks = taskMap.size() + resultMap.size();
+			}
+		}
+		
+		return totalTasks;
 	}
 
 	/**
@@ -356,6 +404,30 @@ public class GridJobProfile {
 		}
 		this.stopped = true;
 		return this.executionManager.cancel();
+	}
+	
+	/**
+	 * Returns a percentage value (double 0-1.0) which indicates the
+	 * completion percentage of this GridJob, if the GridJob is in
+	 * {@code EXECUTING} state. For a finished GridJob, this returns 1.0.
+	 * In all other states, this method will throw {@link IllegalStateException}.
+	 * 
+	 * @return Percentage Complete
+	 * @throws IllegalStateException if state is not finished state or EXECUTING.
+	 */
+	public double percentage() throws IllegalStateException {
+		
+		if (future.isJobFinished()) {
+			return 1.0;
+		}
+		
+		if (future.getState()!=GridJobState.EXECUTING) {
+			throw new IllegalStateException("Job is not in Executing State");
+		}
+
+		// Deduct 0.01 to avoid reaching 100% before aggregation
+		return  ((double) getResultCount()) / getTotalTasks() - 0.01;
+		
 	}
 
 }

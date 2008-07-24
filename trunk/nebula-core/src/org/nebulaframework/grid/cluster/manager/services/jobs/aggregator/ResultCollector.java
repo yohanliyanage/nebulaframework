@@ -103,6 +103,9 @@ public class ResultCollector implements JobExecutionManager, GridJobStateListene
 			
 			log.warn("[ResultCollector] Result Failed, ReEnqueueing - " + result.getException());
 			
+			// Update Profile
+			profile.failedTaskReceived();
+			
 			//Request re-enqueue of Task
 			jobService.getSplitterService().reEnqueueTask(profile.getJobId(),
 					result.getTaskId(),

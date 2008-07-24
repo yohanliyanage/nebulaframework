@@ -16,6 +16,8 @@ package org.nebulaframework.core.job.future;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.jms.ConnectionFactory;
 
@@ -67,6 +69,8 @@ public class GridJobFutureServerImpl implements InternalGridJobFuture, GridJobFu
 	
 	private InternalClusterJobService jobService;	// Job Service of CM
 
+	ExecutorService executorService = Executors.newCachedThreadPool();
+	
 	// Server-side Listeners (in ClusterManager's VM)
 	private List<GridJobStateListener> serverListeners = new ArrayList<GridJobStateListener>();
 	
@@ -93,7 +97,13 @@ public class GridJobFutureServerImpl implements InternalGridJobFuture, GridJobFu
 	 * {@inheritDoc}
 	 */
 	public boolean cancel() {
-		return jobService.cancelJob(jobId);
+		boolean result =  jobService.cancelJob(jobId);
+		
+		if (result) {
+			this.setState(GridJobState.CANCELED);
+		}
+		
+		return result;
 	}
 
 	/**
@@ -135,15 +145,19 @@ public class GridJobFutureServerImpl implements InternalGridJobFuture, GridJobFu
 	 */
 	public void setState(GridJobState state) {
 		synchronized (mutex) {
+			
 			this.state = state;
+			
+			// Notify Listeners
+			notifyListeners(state);
+			
 			if (isJobFinished()) {
 				// Notify waiting threads (getResult)
 				mutex.notifyAll();
 			}
 		}
 		
-		// Notify Listeners
-		notifyListeners(state);
+
 	}
 
 	/**
@@ -166,8 +180,17 @@ public class GridJobFutureServerImpl implements InternalGridJobFuture, GridJobFu
 		new Thread(new Runnable() {
 			public void run() {
 				// Invoke state changed on each listener
-				for (GridJobStateListener listener : serverListeners) {
-					listener.stateChanged(state);
+				for (final GridJobStateListener listener : serverListeners) {
+					executorService.execute(new Runnable() {
+
+						public void run() {
+							try {
+								listener.stateChanged(state);
+							} catch (RuntimeException e) {
+								log.error("[StateListener] Exception on GridJobStateListener - " + e.getMessage());
+							}
+						}
+					});
 				}
 			}
 		}).start();

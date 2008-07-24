@@ -34,7 +34,6 @@ import org.nebulaframework.grid.cluster.manager.services.jobs.aggregator.Aggrega
 import org.nebulaframework.grid.cluster.manager.services.jobs.remote.RemoteClusterJobService;
 import org.nebulaframework.grid.cluster.manager.services.jobs.splitter.SplitterService;
 import org.nebulaframework.grid.cluster.manager.services.jobs.unbounded.UnboundedJobService;
-import org.nebulaframework.grid.service.event.ServiceEvent;
 import org.nebulaframework.grid.service.event.ServiceEventsSupport;
 import org.nebulaframework.grid.service.event.ServiceHookCallback;
 import org.nebulaframework.grid.service.message.ServiceMessage;
@@ -211,22 +210,15 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	 */
 	private void stopIfNodeFails(UUID nodeId, final String jobId) {
 		
-		ServiceEvent event = new ServiceEvent();
-		event.addType(ServiceMessageType.HEARTBEAT_FAILED);
-		event.addType(ServiceMessageType.NODE_UNREGISTERED);
-		event.setMessage(nodeId.toString());
-		
-		ServiceHookCallback callback = new ServiceHookCallback() {
-			public void onServiceEvent(ServiceEvent event) {
+		ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
+			public void onServiceEvent(ServiceMessage message) {
 				try {
 					cancelJob(jobId);
 				} catch (IllegalArgumentException e) {
 					// Job Already Stopped
 				}
 			}
-		};
-		
-		ServiceEventsSupport.getInstance().addServiceHook(event, callback);
+		},nodeId.toString(), ServiceMessageType.HEARTBEAT_FAILED, ServiceMessageType.NODE_UNREGISTERED);
 	}
 
 	/**

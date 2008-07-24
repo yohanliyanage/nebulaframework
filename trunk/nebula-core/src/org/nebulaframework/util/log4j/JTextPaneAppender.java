@@ -1,6 +1,7 @@
 package org.nebulaframework.util.log4j;
 
 import java.awt.Color;
+import java.awt.Font;
 
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
@@ -16,7 +17,7 @@ import org.apache.log4j.spi.LoggingEvent;
 // TODO FixDoc
 // Ref : http://textareaappender.zcage.com/ Copyright 2006-2007 Eric Elfner
 
-public class JTextAreaAppender extends WriterAppender {
+public class JTextPaneAppender extends WriterAppender {
 
 	public static final Color TRACE = Color.BLUE;
 	public static final Color DEBUG = Color.GREEN;
@@ -27,8 +28,8 @@ public class JTextAreaAppender extends WriterAppender {
 	
 	private static JTextPane textPane = null;
 	
-	public static void setTextArea(JTextPane textPane) {
-		JTextAreaAppender.textPane = textPane;
+	public static void setTextPane(JTextPane textPane) {
+		JTextPaneAppender.textPane = textPane;
 		
 		initialize();
 	}
@@ -37,8 +38,10 @@ public class JTextAreaAppender extends WriterAppender {
 	private static void initialize() {
 		if (textPane==null) return;
 		
+		textPane.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+		
 		Style def = textPane.addStyle("default", null);
-		StyleConstants.setFontFamily(def, "sansserif");
+		StyleConstants.setFontFamily(def, Font.MONOSPACED);
 		
 		Style trace = textPane.addStyle("trace", def);
 		StyleConstants.setForeground(trace, TRACE);

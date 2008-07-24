@@ -13,9 +13,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.nebulaframework.grid.Grid;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
-import org.nebulaframework.grid.service.event.ServiceEvent;
 import org.nebulaframework.grid.service.event.ServiceEventsSupport;
 import org.nebulaframework.grid.service.event.ServiceHookCallback;
+import org.nebulaframework.grid.service.message.ServiceMessage;
 import org.nebulaframework.grid.service.message.ServiceMessageType;
 import org.nebulaframework.util.net.NetUtils;
 import org.springframework.util.Assert;
@@ -108,19 +108,16 @@ public class WSDiscovery {
 				mgr.registerCluster(serviceIP);
 
 				// Register for Cluster Shutdown Event to Unregister Cluster
-				ServiceEvent event = new ServiceEvent();
-				event.addType(ServiceMessageType.CLUSTER_SHUTDOWN);
-				event.setMessage(ClusterManager.getInstance().getClusterId().toString());
-				
-				ServiceHookCallback callback = new ServiceHookCallback() {
+				ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
 
-					public void onServiceEvent(ServiceEvent event) {
+					@Override
+					public void onServiceEvent(ServiceMessage event) {
 						mgr.unregisterCluster(serviceIP);
 					}
 					
-				};
+				}, ClusterManager.getInstance().getClusterId().toString()
+				, ServiceMessageType.CLUSTER_SHUTDOWN);
 				
-				ServiceEventsSupport.getInstance().addServiceHook(event, callback);
 				log.info("[WSDiscovery] Registered on Colombus Server " + url.getHost());
 				
 			} catch (UnknownHostException e) {

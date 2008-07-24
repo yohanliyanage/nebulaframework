@@ -9,9 +9,9 @@ import javax.jms.ConnectionFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.grid.cluster.node.GridNode;
-import org.nebulaframework.grid.service.event.ServiceEvent;
 import org.nebulaframework.grid.service.event.ServiceEventsSupport;
 import org.nebulaframework.grid.service.event.ServiceHookCallback;
+import org.nebulaframework.grid.service.message.ServiceMessage;
 import org.nebulaframework.grid.service.message.ServiceMessageType;
 import org.nebulaframework.util.jms.JMSNamingSupport;
 import org.nebulaframework.util.jms.JMSRemotingSupport;
@@ -92,20 +92,11 @@ public class ClusterHeartBeatServiceImpl implements ClusterHeartBeatService, Int
 		tracker.start();
 		
 		//Add ServiceHook to auto remove node when disconnected
-		
-		ServiceEvent event = new ServiceEvent();
-		event.addType(ServiceMessageType.NODE_UNREGISTERED);
-		event.addType(ServiceMessageType.HEARTBEAT_FAILED);
-		
-		event.setMessage(nodeId.toString());
-		
-		ServiceHookCallback callback = new ServiceHookCallback() {
-			public void onServiceEvent(ServiceEvent event) {
+		ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
+			public void onServiceEvent(ServiceMessage message) {
 				removeNode(nodeId);
 			}
-		};
-		
-		ServiceEventsSupport.getInstance().addServiceHook(event, callback);
+		},nodeId.toString(),ServiceMessageType.NODE_UNREGISTERED, ServiceMessageType.HEARTBEAT_FAILED );
 	}
 
 	/**
