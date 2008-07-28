@@ -111,7 +111,7 @@ public class GridNode implements InitializingBean{
 	 * 
 	 * @throws IllegalStateException if this method is invoked after initialization
 	 */
-	public static GridNode createNode(GridNodeProfile profile) throws IllegalStateException {
+	public static synchronized GridNode createNode(GridNodeProfile profile) throws IllegalStateException {
 		
 		// If previous instance found, throw exception
 		if (instance!=null) throw new IllegalStateException("GridNode already created");

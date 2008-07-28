@@ -12,24 +12,23 @@
  * limitations under the License.
  */
 
-package org.nebulaframework.grid.cluster.manager.services.jobs.splitter;
+package org.nebulaframework.grid.cluster.manager.services.jobs.splitaggregate;
 
 import java.util.List;
 
-import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
 import javax.jms.Message;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nebulaframework.core.job.SplitAggregateGridJob;
 import org.nebulaframework.core.job.GridJobState;
+import org.nebulaframework.core.job.SplitAggregateGridJob;
 import org.nebulaframework.core.job.exceptions.SplitException;
 import org.nebulaframework.core.task.GridTask;
+import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.manager.services.jobs.GridJobProfile;
 import org.nebulaframework.grid.cluster.manager.services.jobs.InternalClusterJobService;
 import org.nebulaframework.util.jms.JMSNamingSupport;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.core.MessagePostProcessor;
 
@@ -55,29 +54,13 @@ public class SplitterServiceImpl implements SplitterService {
 	private InternalClusterJobService jobServiceImpl;
 	
 	/**
-	 * Constructor for {@code SplitterServiceImpl}. This constructs a SplitterServiceImpl
-	 * for given JobService Implementation.
+	 * Constructor for {@code SplitterServiceImpl}.
 	 * 
-	 * @param jobServiceImpl {@code ClusterJobServiceImpl) owner
 	 */
-	public SplitterServiceImpl(InternalClusterJobService jobServiceImpl) {
+	public SplitterServiceImpl() {
 		super();
-		this.jobServiceImpl = jobServiceImpl;
-	}
-
-	/**
-	 * Sets the JMS {@code ConnectionFactory} for the Cluster. This will be used to
-	 * instantiate the {@code JmsTemplate} used by the class.
-	 * <p>
-	 * <b>Note : </b>This is a <b>required</b> dependency.
-	 * <p>
-	 * <i>Spring Injected</i>
-	 * 
-	 * @param connectionFactory JMS {@code ConnectionFactory}
-	 */
-	@Required
-	public void setConnectionFactory(ConnectionFactory connectionFactory) {
-		this.jmsTemplate = new JmsTemplate(connectionFactory);
+		ClusterManager manager = ClusterManager.getInstance();
+		this.jobServiceImpl = manager.getJobService();
 	}
 	
 	/**
@@ -86,7 +69,11 @@ public class SplitterServiceImpl implements SplitterService {
 	 * <p>This method simply delegates to {@code #doStartSplitter(GridJobProfile)} method,
 	 * invoked on a separate {@code Thread}.
 	 */
-	public void startSplitter(final GridJobProfile profile) {
+	public synchronized void startSplitter(final GridJobProfile profile) {
+		
+		if (this.jmsTemplate==null) {
+			this.jmsTemplate = new JmsTemplate(ClusterManager.getInstance().getConnectionFactory());
+		}
 		
 		// Start splitting on a separate Thread
 		new Thread(new Runnable() {
@@ -155,6 +142,8 @@ public class SplitterServiceImpl implements SplitterService {
 	 */
 	private void enqueueTask(final String jobId, final int taskId, GridTask<?> task) {
 
+
+		
 		// Send GridTask as a JMS Object Message to TaskQueue
 		jmsTemplate.convertAndSend(JMSNamingSupport.getTaskQueueName(jobId),
 				task, new MessagePostProcessor() {

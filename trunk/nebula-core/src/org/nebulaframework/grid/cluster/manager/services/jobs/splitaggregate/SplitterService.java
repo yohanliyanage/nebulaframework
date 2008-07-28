@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package org.nebulaframework.grid.cluster.manager.services.jobs.splitter;
+package org.nebulaframework.grid.cluster.manager.services.jobs.splitaggregate;
 
 import java.io.Serializable;
 

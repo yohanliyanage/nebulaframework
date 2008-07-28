@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package org.nebulaframework.grid.cluster.manager.services.jobs.aggregator;
+package org.nebulaframework.grid.cluster.manager.services.jobs.splitaggregate;
 
 import org.nebulaframework.grid.cluster.manager.services.jobs.ClusterJobService;
 import org.nebulaframework.grid.cluster.manager.services.jobs.GridJobProfile;
@@ -37,7 +37,7 @@ public interface AggregatorService {
 	 * 
 	 * @param profile {@code GridJobProfile} of {@code GridJob}
 	 */
-	public void startAggregator(GridJobProfile profile);
+	public void startAggregator(GridJobProfile profile, SplitAggregateJobManager manager);
 	
 	/**
 	 * Aggregates results for given {@code GridJob}, denoted by

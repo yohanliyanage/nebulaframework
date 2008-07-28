@@ -56,7 +56,7 @@ public class GridJobProfile {
 	private GridJobFutureServerImpl future; // GridJobFuture for the Job
 	private GridArchive archive; // If exists, the GridArchive of Job
 
-	private JobExecutionManager executionManager; 
+	private JobCancellationCallback cancelCallback; 
 	private boolean stopped;
 
 	private ResultCallback callbackProxy; // Intermediate Results Callback
@@ -382,13 +382,12 @@ public class GridJobProfile {
 	}
 
 	/**
-	 * Sets the {@code JobExecutionManager} of this {@code GridJob}.
+	 * Sets the {@code JobCancellationCallback} of this {@code GridJob}.
 	 * 
-	 * @param executionManager
-	 *            Execution Manager
+	 * @param cancelCallback JobCancellationCallback
 	 */
-	public void setExecutionManager(JobExecutionManager executionManager) {
-		this.executionManager = executionManager;
+	public void setCancelCallback(JobCancellationCallback cancelCallback) {
+		this.cancelCallback = cancelCallback;
 	}
 
 	/**
@@ -398,12 +397,12 @@ public class GridJobProfile {
 	 *         failure ({@code false}).
 	 */
 	public boolean cancel() {
-		if (this.executionManager == null) {
-			log.warn("Cannot Stop Job as No Execution Manager exsits");
+		if (this.cancelCallback == null) {
+			log.warn("Cannot Stop Job as No Job CancellationCallback exsits");
 			return false;
 		}
 		this.stopped = true;
-		return this.executionManager.cancel();
+		return this.cancelCallback.cancel();
 	}
 	
 	/**
@@ -429,5 +428,7 @@ public class GridJobProfile {
 		return  ((double) getResultCount()) / getTotalTasks() - 0.01;
 		
 	}
+
+
 
 }

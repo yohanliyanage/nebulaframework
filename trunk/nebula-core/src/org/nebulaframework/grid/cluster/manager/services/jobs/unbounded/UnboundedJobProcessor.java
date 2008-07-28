@@ -31,7 +31,7 @@ import org.nebulaframework.core.task.GridTaskResult;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.manager.services.jobs.GridJobProfile;
 import org.nebulaframework.grid.cluster.manager.services.jobs.InternalClusterJobService;
-import org.nebulaframework.grid.cluster.manager.services.jobs.JobExecutionManager;
+import org.nebulaframework.grid.cluster.manager.services.jobs.JobCancellationCallback;
 import org.nebulaframework.grid.cluster.manager.support.CleanUpSupport;
 import org.nebulaframework.util.jms.JMSNamingSupport;
 import org.springframework.jms.core.JmsTemplate;
@@ -55,7 +55,7 @@ import org.springframework.util.Assert;
  * 
  * @see UnboundedGridJob
  */
-public class UnboundedJobProcessor implements JobExecutionManager {
+public class UnboundedJobProcessor implements JobCancellationCallback {
 
 	private static Log log = LogFactory.getLog(UnboundedJobProcessor.class);
 

@@ -62,6 +62,7 @@ import org.nebulaframework.util.log4j.JTextPaneAppender;
 import org.nebulaframework.util.profiling.TimeUtils;
 import org.springframework.util.StringUtils;
 
+// TODO Implement System Tray Support
 // TODO FixDoc
 public class ClusterMainUI extends JFrame {
 

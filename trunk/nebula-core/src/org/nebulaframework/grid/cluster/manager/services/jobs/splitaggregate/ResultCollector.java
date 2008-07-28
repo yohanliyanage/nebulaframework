@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package org.nebulaframework.grid.cluster.manager.services.jobs.aggregator;
+package org.nebulaframework.grid.cluster.manager.services.jobs.splitaggregate;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -20,9 +20,7 @@ import org.nebulaframework.core.job.GridJobState;
 import org.nebulaframework.core.job.GridJobStateListener;
 import org.nebulaframework.core.task.GridTaskResult;
 import org.nebulaframework.grid.cluster.manager.services.jobs.GridJobProfile;
-import org.nebulaframework.grid.cluster.manager.services.jobs.InternalClusterJobService;
-import org.nebulaframework.grid.cluster.manager.services.jobs.JobExecutionManager;
-import org.nebulaframework.grid.cluster.manager.services.jobs.splitter.SplitterService;
+import org.nebulaframework.grid.cluster.manager.services.jobs.JobCancellationCallback;
 import org.nebulaframework.grid.cluster.manager.support.CleanUpSupport;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 
@@ -37,29 +35,29 @@ import org.springframework.jms.listener.DefaultMessageListenerContainer;
  * @author Yohan Liyanage
  * @version 1.0
  */
-public class ResultCollector implements JobExecutionManager, GridJobStateListener {
+public class ResultCollector implements GridJobStateListener, JobCancellationCallback {
 
 	private static Log log = LogFactory.getLog(ResultCollector.class);
 
 	private boolean aggregated = false;
 	
 	private GridJobProfile profile;
-	private InternalClusterJobService jobService;
+	private SplitAggregateJobManager jobManager;
 	private DefaultMessageListenerContainer container;
 
 	/**
 	 * Constructs a {@code ResultCollector} instance for given {@code GridJob}.
 	 * 
 	 * @param profile {@code GridJobProfile} for {@code GridJob}
-	 * @param jobService {@code ClusterJobServiceImpl} JobService Implementation
+	 * @param jobManager {@code SplitAggreateJobManager} Job Manager
 	 * @param container Spring {@code DefaultMessageListenerContainer} for {@code ResultsQueue}
 	 */
 	public ResultCollector(GridJobProfile profile,
-			InternalClusterJobService jobService,
+			SplitAggregateJobManager jobManager,
 			DefaultMessageListenerContainer container) {
 		super();
 		this.profile = profile;
-		this.jobService = jobService;
+		this.jobManager = jobManager;
 		this.container = container;
 		
 		// Register as a GridJobState Listener
@@ -107,7 +105,7 @@ public class ResultCollector implements JobExecutionManager, GridJobStateListene
 			profile.failedTaskReceived();
 			
 			//Request re-enqueue of Task
-			jobService.getSplitterService().reEnqueueTask(profile.getJobId(),
+			jobManager.getSplitter().reEnqueueTask(profile.getJobId(),
 					result.getTaskId(),
 					profile.getTask(result.getTaskId()));
 		}
@@ -121,7 +119,7 @@ public class ResultCollector implements JobExecutionManager, GridJobStateListene
 	private synchronized void doAggregate() {
 		if (!aggregated) {
 			aggregated = true;
-			jobService.getAggregatorService().aggregateResults(profile);
+			jobManager.getAggregator().aggregateResults(profile);
 			this.destroy(); // Destroy the Result Collector
 		}
 	}

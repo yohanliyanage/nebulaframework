@@ -13,6 +13,8 @@
  */
 package org.nebulaframework.grid.cluster.manager.services.jobs;
 
+import org.nebulaframework.core.job.GridJob;
+
 /**
  * JobExecutionManager defines the common API for {@code GridJob}
  * executors. All {@code GridJob} executors are required to
@@ -25,10 +27,24 @@ package org.nebulaframework.grid.cluster.manager.services.jobs;
 public interface JobExecutionManager {
 	
 	/**
-	 * Cancels this {@code JobExecutionManager}, as the
-	 * {@code GridJob} is canceled.
+	 * This method should return the GridJob interface which
+	 * determines the GridJob Type Supported by this
+	 * {@code JobExecutionManager}.
 	 * 
-	 * @return if canceled, {@code true}, if failed, {@code false}.
+	 * @return Class of GridJob
 	 */
-	public boolean cancel();
+	@SuppressWarnings("unchecked")
+	public Class<? extends GridJob> getInterface();
+	
+	/**
+	 * Attempts to start the GridJob denoted by the specified
+	 * {@code GridJobProfile} using this {@code JobExecutionManager}.
+	 * If Success, it returns true.
+	 * 
+	 * @param profile {@code GridJobProfile} for Job
+	 * @return boolean value indicating success / failure
+	 */
+	public boolean startExecution(GridJobProfile profile);
+	
+
 }
