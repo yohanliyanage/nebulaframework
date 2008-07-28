@@ -491,7 +491,12 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	 * @return {@code GridJobProfile} for the specified {@code GridJob}.
 	 */
 	public synchronized GridJobProfile getProfile(String jobId) {
-		return jobs.get(jobId);
+		if (jobs.containsKey(jobId)) {
+			return jobs.get(jobId);
+		}
+		else {
+			throw new IllegalArgumentException("GridJob does not exist " + jobId);
+		}
 	}
 
 	/**

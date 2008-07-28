@@ -46,5 +46,9 @@ public interface JobExecutionManager {
 	 */
 	public boolean startExecution(GridJobProfile profile);
 	
+	public boolean cancel(String jobId);
+	
+	// TODO FixDoc
+	public void reEnqueueTask(String jobId, int taskId);
 
 }

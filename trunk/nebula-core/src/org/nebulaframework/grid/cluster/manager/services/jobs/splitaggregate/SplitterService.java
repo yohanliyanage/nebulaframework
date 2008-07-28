@@ -14,9 +14,6 @@
 
 package org.nebulaframework.grid.cluster.manager.services.jobs.splitaggregate;
 
-import java.io.Serializable;
-
-import org.nebulaframework.core.task.GridTask;
 import org.nebulaframework.grid.cluster.manager.services.jobs.ClusterJobService;
 import org.nebulaframework.grid.cluster.manager.services.jobs.GridJobProfile;
 
@@ -47,7 +44,6 @@ public interface SplitterService {
 	 * 
 	 * @param jobId JobId of GridJob
 	 * @param taskId TaskId of Task to be re-enqueued
-	 * @param task {@code GridTask} to be re-enqueued
 	 */
-	public void reEnqueueTask(final String jobId, final int taskId, GridTask<? extends Serializable> task);
+	public void reEnqueueTask(final String jobId, final int taskId);
 }

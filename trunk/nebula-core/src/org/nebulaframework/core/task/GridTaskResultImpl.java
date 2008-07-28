@@ -38,13 +38,14 @@ public class GridTaskResultImpl implements GridTaskResult {
 
 	private static final long serialVersionUID = 4411158166154492107L;
 	
-	private Serializable result; // Result of execution
-	private Exception exception; // Exceptions, if any
-	private String jobId; // Parent Job Id
-	private int taskId; // TaskId of task
-	private UUID workerId; // Node ID of Worker
-	private boolean complete; // Status flag, true if result available
-
+	private Serializable result; 	// Result of execution
+	private Exception exception; 	// Exceptions, if any
+	private String jobId; 			// Parent Job Id
+	private int taskId; 			// TaskId of task
+	private UUID workerId; 			// Node ID of Worker
+	private boolean complete; 		// Status flag, true if result available
+	private long executionTime; 	// Time taken to execute
+	
 	/**
 	 * Constructs a {@link GridTaskResultImpl} instance for the given JobId,
 	 * TaskId and WorkerId.
@@ -140,6 +141,23 @@ public class GridTaskResultImpl implements GridTaskResult {
 	 */	
 	public boolean isComplete() {
 		return this.complete;
+	}
+	
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public long getExecutionTime() {
+		return executionTime;
+	}
+
+	/**
+	 * Sets the execution time for this GridTask.
+	 * 
+	 * @param executionTime long time in milliseconds
+	 */
+	public void setExecutionTime(long executionTime) {
+		this.executionTime = executionTime;
 	}
 
 	/**

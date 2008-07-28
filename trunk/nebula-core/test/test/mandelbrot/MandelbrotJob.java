@@ -18,7 +18,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.nebulaframework.core.job.SplitAggregateGridJob;
+import org.nebulaframework.core.job.splitaggregate.SplitAggregateGridJob;
 
 public class MandelbrotJob implements SplitAggregateGridJob<MandelbrotResult, Serializable> {
 

@@ -22,8 +22,8 @@ import javax.jms.Message;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJobState;
-import org.nebulaframework.core.job.SplitAggregateGridJob;
 import org.nebulaframework.core.job.exceptions.SplitException;
+import org.nebulaframework.core.job.splitaggregate.SplitAggregateGridJob;
 import org.nebulaframework.core.task.GridTask;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.manager.services.jobs.GridJobProfile;
@@ -59,8 +59,7 @@ public class SplitterServiceImpl implements SplitterService {
 	 */
 	public SplitterServiceImpl() {
 		super();
-		ClusterManager manager = ClusterManager.getInstance();
-		this.jobServiceImpl = manager.getJobService();
+
 	}
 	
 	/**
@@ -71,6 +70,9 @@ public class SplitterServiceImpl implements SplitterService {
 	 */
 	public synchronized void startSplitter(final GridJobProfile profile) {
 		
+		if (this.jobServiceImpl==null) {
+			this.jobServiceImpl = ClusterManager.getInstance().getJobService();
+		}
 		if (this.jmsTemplate==null) {
 			this.jmsTemplate = new JmsTemplate(ClusterManager.getInstance().getConnectionFactory());
 		}
@@ -110,26 +112,28 @@ public class SplitterServiceImpl implements SplitterService {
 				if (profile.isStopped()) return;
 				GridTask<?> task = (GridTask<?>) taskList.get(i);
 				profile.addTask(i, task);					// Put copy to TaskMap in Profile
-				enqueueTask(profile.getJobId(), i, task); 	// Put to Task Queue
+				enqueueTask(profile, i, task); 	// Put to Task Queue
 			}	
 			
 		} catch (Exception e) {
 			// Exception during Split
 			log.warn("Exception while Splitting Job " + profile.getJobId(), e);
 			
+			// Notify Workers
+			jobServiceImpl.notifyJobCancel(profile.getJobId());
+			
 			// Update Future State to 'Failed'
 			profile.getFuture().setException(new SplitException(e));
 			profile.getFuture().setState(GridJobState.FAILED);
 			
-			// Notify Workers
-			jobServiceImpl.notifyJobCancel(profile.getJobId());
-			
 			return;
 		}
 
+		// Start Task Tracker
+		profile.getTaskTracker().start();
+		
 		// Update Future State to 'Executing'
 		profile.getFuture().setState(GridJobState.EXECUTING);
-		
 		log.debug("[Splitter] Tasks enqueued. Waiting Execution");
 	}
 
@@ -140,9 +144,9 @@ public class SplitterServiceImpl implements SplitterService {
 	 * @param taskId int TaskId (Sequence Number of Task)
 	 * @param task {@code GridTask} task
 	 */
-	private void enqueueTask(final String jobId, final int taskId, GridTask<?> task) {
+	private void enqueueTask(final GridJobProfile profile, final int taskId, GridTask<?> task) {
 
-
+		final String jobId = profile.getJobId();
 		
 		// Send GridTask as a JMS Object Message to TaskQueue
 		jmsTemplate.convertAndSend(JMSNamingSupport.getTaskQueueName(jobId),
@@ -158,6 +162,8 @@ public class SplitterServiceImpl implements SplitterService {
 						return message;
 					}
 				});
+		
+		profile.getTaskTracker().taskEnqueued(taskId);
 	}
 
 	/**
@@ -165,10 +171,14 @@ public class SplitterServiceImpl implements SplitterService {
 	 * <p>
 	 * Simply delegates to {@link #enqueueTask(String, int, GridTask) method.
 	 */
-	public void reEnqueueTask(final String jobId, final int taskId, GridTask<?> task) {
-		enqueueTask(jobId, taskId, task);
+	public void reEnqueueTask(final String jobId, final int taskId) {
+		GridTask<?> task = jobServiceImpl.getProfile(jobId).getTask(taskId);
+		if (task!=null) {
+			enqueueTask(jobServiceImpl.getProfile(jobId), taskId, task);
+		}
+		else {
+			log.debug("[Splitter] Unable to Re-enqueue Task " + jobId + "|" + taskId);
+		}
 	}
-	
-	
 
 }

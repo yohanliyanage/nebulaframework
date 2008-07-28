@@ -24,8 +24,8 @@ import javax.jms.ConnectionFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJobState;
-import org.nebulaframework.core.job.SplitAggregateGridJob;
 import org.nebulaframework.core.job.exceptions.AggregateException;
+import org.nebulaframework.core.job.splitaggregate.SplitAggregateGridJob;
 import org.nebulaframework.core.task.GridTaskResult;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.manager.services.jobs.ClusterJobService;
@@ -118,7 +118,8 @@ public class AggregatorServiceImpl implements AggregatorService {
 		
 		//Create results collector and set it as Execution Manager
 		ResultCollector collector = new ResultCollector(profile, manager, container);
-		profile.setCancelCallback(collector);
+		profile.setExecutionManager(manager);
+		manager.addResultCollector(profile.getJobId(), collector);
 		
 		// Initialize Adapter and Container
 		adapter.setDelegate(collector);

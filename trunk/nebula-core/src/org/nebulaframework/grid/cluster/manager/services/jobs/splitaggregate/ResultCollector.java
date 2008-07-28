@@ -20,7 +20,6 @@ import org.nebulaframework.core.job.GridJobState;
 import org.nebulaframework.core.job.GridJobStateListener;
 import org.nebulaframework.core.task.GridTaskResult;
 import org.nebulaframework.grid.cluster.manager.services.jobs.GridJobProfile;
-import org.nebulaframework.grid.cluster.manager.services.jobs.JobCancellationCallback;
 import org.nebulaframework.grid.cluster.manager.support.CleanUpSupport;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 
@@ -35,7 +34,7 @@ import org.springframework.jms.listener.DefaultMessageListenerContainer;
  * @author Yohan Liyanage
  * @version 1.0
  */
-public class ResultCollector implements GridJobStateListener, JobCancellationCallback {
+public class ResultCollector implements GridJobStateListener {
 
 	private static Log log = LogFactory.getLog(ResultCollector.class);
 
@@ -86,11 +85,12 @@ public class ResultCollector implements GridJobStateListener, JobCancellationCal
 			// Put result to ResultMap, and remove Task from TaskMap
 			taskCount = profile.addResultAndRemoveTask(result.getTaskId(), result);
 			
+			// Update Task Tracker
+			profile.getTaskTracker().resultReceived(result.getTaskId(), result.getExecutionTime());
 			
 			// Check if Job has finished
 			finished = (taskCount == 0)&&(profile.getFuture().getState()== GridJobState.EXECUTING);
 
-			
 			// If Job Finished
 			if (finished) { 
 				// Aggregate result
@@ -106,8 +106,7 @@ public class ResultCollector implements GridJobStateListener, JobCancellationCal
 			
 			//Request re-enqueue of Task
 			jobManager.getSplitter().reEnqueueTask(profile.getJobId(),
-					result.getTaskId(),
-					profile.getTask(result.getTaskId()));
+					result.getTaskId());
 		}
 	}
 

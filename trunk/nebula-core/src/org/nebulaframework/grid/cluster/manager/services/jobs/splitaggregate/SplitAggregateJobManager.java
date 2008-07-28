@@ -1,17 +1,30 @@
 package org.nebulaframework.grid.cluster.manager.services.jobs.splitaggregate;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJob;
-import org.nebulaframework.core.job.SplitAggregateGridJob;
+import org.nebulaframework.core.job.splitaggregate.SplitAggregateGridJob;
 import org.nebulaframework.grid.cluster.manager.services.jobs.GridJobProfile;
 import org.nebulaframework.grid.cluster.manager.services.jobs.JobExecutionManager;
+import org.nebulaframework.grid.cluster.manager.services.jobs.tracking.GridJobTaskTracker;
+import org.nebulaframework.grid.service.event.ServiceEventsSupport;
+import org.nebulaframework.grid.service.event.ServiceHookCallback;
+import org.nebulaframework.grid.service.message.ServiceMessage;
+import org.nebulaframework.grid.service.message.ServiceMessageType;
 import org.springframework.beans.factory.annotation.Required;
 
 // TODO FixDoc
 public class SplitAggregateJobManager implements JobExecutionManager {
-
+	
+	private static final Log log = LogFactory.getLog(SplitAggregateJobManager.class);
+	
 	private SplitterService splitter;
 	private AggregatorService aggregator;
 	
+	private Map<String, ResultCollector> collectors = new HashMap<String, ResultCollector>();
 
 
 	/**
@@ -43,6 +56,8 @@ public class SplitAggregateJobManager implements JobExecutionManager {
 			// Start Splitter & Aggregator for GridJob
 			splitter.startSplitter(profile);
 			aggregator.startAggregator(profile, this);
+			profile.setTaskTracker(GridJobTaskTracker.startTracker(profile, this));
+			
 			
 			return true;
 		}
@@ -120,6 +135,60 @@ public class SplitAggregateJobManager implements JobExecutionManager {
 		return aggregator;
 	}
 	
+	// TODO FixDoc
+	public void addResultCollector(final String jobId, ResultCollector collector) 
+		throws IllegalArgumentException {
+		
+		if (!this.collectors.containsKey(jobId)) {
+			
+			// Add Collector
+			collectors.put(jobId, collector);
+			
+			// Create Removal Hook
+			ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
+
+				@Override
+				public void onServiceEvent(ServiceMessage message) {
+					collectors.remove(jobId);
+				}
+				
+			}, jobId, ServiceMessageType.JOB_CANCEL, ServiceMessageType.JOB_END);
+		}
+		else {
+			throw new IllegalArgumentException("[Split-Aggregate] Result Collector Registered for Job " 
+			                                   + jobId);
+		}
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public boolean cancel(String jobId) {
+		if (collectors.containsKey(jobId)){
+			return collectors.get(jobId).cancel();
+		}
+		else {
+			log.warn("[SplitAggregateJobService] Unable to Cancel Job " 
+			         + jobId + " : No Processor Reference");
+			return false;
+		}
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void reEnqueueTask(String jobId, int taskId) {
+		try {
+			log.debug("[SplitAggregateJobService] Re-enqueing  Task"
+			          + jobId + "|" + taskId);
+			splitter.reEnqueueTask(jobId, taskId);
+		} catch (RuntimeException e) {
+			log.debug("[SplitAggregateJobService] Unable to Re-enqueue Task " 
+	         + jobId + "|" + taskId, e);
+		}
+	}
 	
 
 }

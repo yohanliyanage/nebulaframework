@@ -11,13 +11,16 @@
  * See the License for the specific language governing permissions and 
  * limitations under the License.
  */
-package org.nebulaframework.core.job;
+package org.nebulaframework.core.job.unbounded;
 
 import java.io.Serializable;
 
+import org.nebulaframework.core.job.GridJob;
+import org.nebulaframework.core.job.ResultCallback;
 import org.nebulaframework.core.job.annotations.UnboundedProcessingSettings;
 import org.nebulaframework.core.job.exceptions.InvalidResultException;
 import org.nebulaframework.core.job.future.GridJobFuture;
+import org.nebulaframework.core.job.splitaggregate.SplitAggregateGridJob;
 import org.nebulaframework.core.task.GridTask;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 

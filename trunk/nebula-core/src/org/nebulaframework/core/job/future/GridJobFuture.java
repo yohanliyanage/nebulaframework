@@ -19,7 +19,7 @@ import java.util.concurrent.Future;
 import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.GridJobState;
 import org.nebulaframework.core.job.ResultCallback;
-import org.nebulaframework.core.job.UnboundedGridJob;
+import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
 import org.nebulaframework.grid.GridExecutionException;
 import org.nebulaframework.grid.GridTimeoutException;
 

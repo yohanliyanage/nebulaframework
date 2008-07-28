@@ -79,4 +79,12 @@ public interface GridTaskResult extends Serializable {
 	 */
 	public boolean isComplete();
 	
+	/**
+	 * Returns the time taken to execute this GridTask,
+	 * in milliseconds.
+	 * 
+	 * @return Execution time, as a {@code long}
+	 */
+	public long getExecutionTime();
+	
 }

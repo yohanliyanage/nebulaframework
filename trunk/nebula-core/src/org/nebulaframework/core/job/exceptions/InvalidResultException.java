@@ -13,7 +13,7 @@
  */
 package org.nebulaframework.core.job.exceptions;
 
-import org.nebulaframework.core.job.UnboundedGridJob;
+import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
 
 /**
  * Thrown when a result of an {@code UnboundedGridJob}'s {@code GridTask} 
