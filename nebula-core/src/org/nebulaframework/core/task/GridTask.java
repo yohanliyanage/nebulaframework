@@ -15,8 +15,8 @@ package org.nebulaframework.core.task;
 
 import java.io.Serializable;
 
-import org.nebulaframework.core.job.SplitAggregateGridJob;
-import org.nebulaframework.core.job.UnboundedGridJob;
+import org.nebulaframework.core.job.splitaggregate.SplitAggregateGridJob;
+import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
 import org.nebulaframework.grid.GridExecutionException;
 
 /**

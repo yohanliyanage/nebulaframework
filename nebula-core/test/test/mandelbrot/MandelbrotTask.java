@@ -21,7 +21,7 @@ public class MandelbrotTask implements GridTask<MandelbrotResult> {
 
 	private static final long serialVersionUID = 8435497590730632638L;
 
-	//private static final long MAX_ITERATIONS = 100000L;
+	private static final long MAX_ITERATIONS = 100000L;
 
 	// region for which application is computing Mandelbrot
 	private double x1; // starting x1,y1
@@ -88,7 +88,7 @@ public class MandelbrotTask implements GridTask<MandelbrotResult> {
 	                long n = 0;
 	                x = 0.0;
 	                y = 0.0;
-	                while ( (n < 1000000L) && ( (x*x)+(y*y) < 4.0) ) {
+	                while ( (n < MAX_ITERATIONS) && ( (x*x)+(y*y) < 4.0) ) {
 	                    xx = x * x - y * y + a;
 	                    y = 2 * x * y + b;
 	                    x = xx;

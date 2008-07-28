@@ -24,6 +24,7 @@ import java.util.UUID;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -46,8 +47,8 @@ import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.GridJobState;
 import org.nebulaframework.core.job.GridJobStateListener;
-import org.nebulaframework.core.job.SplitAggregateGridJob;
-import org.nebulaframework.core.job.UnboundedGridJob;
+import org.nebulaframework.core.job.splitaggregate.SplitAggregateGridJob;
+import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
 import org.nebulaframework.grid.Grid;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.manager.services.jobs.GridJobProfile;
@@ -244,13 +245,29 @@ public class ClusterMainUI extends JFrame {
 		logTextPane.setEditable(false);
 		logTextPane.setBackground(Color.BLACK);
 		logTextPane.setForeground(Color.WHITE);
-		logTextPane.setAutoscrolls(true);
 		
 		logPanel.add(new JScrollPane(logTextPane,
 				ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
 				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED),
 						BorderLayout.CENTER);
 		addUIElement("general.log", logTextPane);	// Add to component map
+		
+		JPanel logOptionsPanel = new JPanel();
+		logPanel.add(logOptionsPanel, BorderLayout.SOUTH);
+		logOptionsPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
+		
+		final JCheckBox logScrollCheckbox = new JCheckBox("Auto-Scroll Log");
+		logScrollCheckbox.setSelected(true);
+		logScrollCheckbox.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				JTextPaneAppender.setAutoScroll(logScrollCheckbox.isSelected());
+			}
+			
+		});
+		logOptionsPanel.add(logScrollCheckbox);
+		
 		
 		// Enable Logging
 		JTextPaneAppender.setTextPane(logTextPane);
@@ -263,14 +280,11 @@ public class ClusterMainUI extends JFrame {
 		
 		generalTab.add(southPanel, BorderLayout.SOUTH);
 
-		JButton shutdownButton = new JButton("Shutdown");
-
+		final JButton shutdownButton = new JButton("Shutdown");
 		shutdownButton.addActionListener(new ActionListener() {
-
 			public void actionPerformed(ActionEvent e) {
 				doShutdownCluster();
 			}
-
 		});
 
 		southPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 10, 10));
@@ -658,13 +672,17 @@ public class ClusterMainUI extends JFrame {
 					unbounded = true;
 				}
 				
-				// Progress Update Supported
+				// Update Job Info
 				while(true) {
 					
 					try {
 						// 500ms Interval
 						Thread.sleep(500);
 						
+						// Job Finished, Stop
+						if (profile.getFuture().isJobFinished()) {
+							return;
+						}
 					} catch (InterruptedException e) {
 						log.warn("Interrupted Progress Updater Thread",e);
 					}
@@ -707,6 +725,11 @@ public class ClusterMainUI extends JFrame {
 					}
 					else { // Executing Mode : Progress Information
 						
+						// Job Finished, Stop
+						if (profile.getFuture().isJobFinished()) {
+							return;
+						}
+						
 						if (!unbounded) {
 							
 							final int percentage = (int) (profile.percentage() * 100);
@@ -728,11 +751,7 @@ public class ClusterMainUI extends JFrame {
 							});
 						}
 					}
-					
-					// Job Finished, Stop
-					if (profile.getFuture().isJobFinished()) {
-						return;
-					}
+
 					
 				}
 			}
@@ -758,6 +777,9 @@ public class ClusterMainUI extends JFrame {
 							progress.setStringPainted(false);
 							percentage.setText("< Canceled >");
 						}
+						
+						progress.setEnabled(false);
+						
 					}
 				});
 			}
@@ -823,6 +845,8 @@ public class ClusterMainUI extends JFrame {
 		
 		// User chose 'No'
 		if (response == JOptionPane.NO_OPTION) return;
+		JButton shutdownButton = getUIElement("general.shutdown");
+		shutdownButton.setEnabled(false);
 		
 		// Shutdown
 		onShutdown();

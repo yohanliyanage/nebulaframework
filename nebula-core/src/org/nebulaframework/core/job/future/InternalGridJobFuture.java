@@ -15,8 +15,8 @@ package org.nebulaframework.core.job.future;
 
 import org.nebulaframework.core.job.GridJobStateListener;
 import org.nebulaframework.core.job.ResultCallback;
-import org.nebulaframework.core.job.SplitAggregateGridJob;
-import org.nebulaframework.core.job.UnboundedGridJob;
+import org.nebulaframework.core.job.splitaggregate.SplitAggregateGridJob;
+import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
 import org.nebulaframework.grid.cluster.manager.services.jobs.ClusterJobService;
 
 /**

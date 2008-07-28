@@ -13,12 +13,20 @@
  */
 package org.nebulaframework.grid.cluster.manager.services.jobs.unbounded;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJob;
-import org.nebulaframework.core.job.UnboundedGridJob;
+import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
 import org.nebulaframework.grid.cluster.manager.services.jobs.GridJobProfile;
 import org.nebulaframework.grid.cluster.manager.services.jobs.JobExecutionManager;
+import org.nebulaframework.grid.cluster.manager.services.jobs.tracking.GridJobTaskTracker;
+import org.nebulaframework.grid.service.event.ServiceEventsSupport;
+import org.nebulaframework.grid.service.event.ServiceHookCallback;
+import org.nebulaframework.grid.service.message.ServiceMessage;
+import org.nebulaframework.grid.service.message.ServiceMessageType;
 
 /**
  * Implementation of {@code UnboundedJobService} interface, which
@@ -31,7 +39,8 @@ import org.nebulaframework.grid.cluster.manager.services.jobs.JobExecutionManage
 public class UnboundedJobExecutionManager implements JobExecutionManager {
 
 	private static Log log = LogFactory.getLog(UnboundedJobExecutionManager.class);
-
+	
+	private Map<String, UnboundedJobProcessor> processors = new HashMap<String, UnboundedJobProcessor>();
 
 
 	/**
@@ -62,19 +71,72 @@ public class UnboundedJobExecutionManager implements JobExecutionManager {
 			// Disallow Final Results
 			profile.getFuture().setFinalResultSupported(false);
 			
+			// Start Task Tracker
+			profile.setTaskTracker(GridJobTaskTracker.startTracker(profile, this));
+			
 			new Thread(new Runnable() {
 				public void run() {
-					log.debug("[UnboundedJobService] Starting Processsor");
+					
+					log.info("[UnboundedJobService] Starting Processsor");
+					
+					// Create Processor
 					UnboundedJobProcessor processor = new UnboundedJobProcessor(profile);
-					profile.setCancelCallback(processor);
+					processors.put(profile.getJobId(), processor);
+					
+					
+					// Add Service Hook to Remove Processor When Done
+					ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
+
+						@Override
+						public void onServiceEvent(ServiceMessage message) {
+							// Remove Processor
+							processors.remove(profile.getJobId());
+						}
+						
+					}, profile.getJobId(), ServiceMessageType.JOB_CANCEL, ServiceMessageType.JOB_END);
 					processor.start();
 				}
 			}).start();
+			
+			// Register as Execution Manager
+			profile.setExecutionManager(this);
 			
 			return true;
 		}
 		else {
 			return false;
+		}
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public boolean cancel(String jobId) {
+		if (processors.containsKey(jobId)){
+			return processors.get(jobId).cancel();
+		}
+		else {
+			log.warn("[UnboundedJobService] Unable to Cancel Job " 
+			         + jobId + " : No Processor Reference");
+			return false;
+		}
+	}
+
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void reEnqueueTask(String jobId, int taskId) {
+		if (processors.containsKey(jobId)){
+			log.debug("[UnboundedJobService] Re-enqueing Task" 
+			          + jobId + "|" + taskId);
+			processors.get(jobId).reEnqueueTask(taskId);
+		}
+		else {
+			log.debug("[UnboundedJobService] Unable to Re-enqueue Task " 
+			         + jobId + "|" + taskId +" - No Processor Reference");
 		}
 	}
 

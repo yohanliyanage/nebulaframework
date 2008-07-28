@@ -160,7 +160,10 @@ public class TaskExecutor {
 				// GridNodeClassLoader,
 				final ClassLoader nodeClassLoader = AccessController
 						.doPrivileged(new PrivilegedAction<ClassLoader>() {
+							
 							public ClassLoader run() {
+								
+								// Return Class Loader
 								return new GridNodeClassLoader(jobId,
 										classLoadingService, Thread
 												.currentThread()
@@ -176,7 +179,10 @@ public class TaskExecutor {
 					// chained to GridNodeClassLoader
 					ClassLoader archiveLoader = AccessController
 							.doPrivileged(new PrivilegedAction<ClassLoader>() {
+								
 								public ClassLoader run() {
+									
+									// Archive Class Loader
 									return new GridArchiveClassLoader(archive,
 											nodeClassLoader);
 								}
@@ -330,13 +336,17 @@ public class TaskExecutor {
 		GridTaskResultImpl taskResult = new GridTaskResultImpl(jobId, taskId,
 				node.getId());
 
+		// Execution Start Time
+		long start = System.currentTimeMillis();
+		
 		try {
+			
 			// Execute Task
 			Serializable result = task.execute();
 
 			// Put result into Result Wrapper
 			taskResult.setResult(result);
-
+			
 		} catch (Exception e) {
 
 			log.warn("[TaskExecutor] Exception while executing GridTask", e);
@@ -345,8 +355,13 @@ public class TaskExecutor {
 			taskResult.setException(e);
 
 		} finally {
-
-			log.debug("[TaskExecutor] Sending Result for Task " + taskId);
+			
+			// Set Execution Time
+			long duration = System.currentTimeMillis() - start;
+			taskResult.setExecutionTime(duration);
+			
+			log.debug("[TaskExecutor] Sending Result for Task " + taskId + " | Duration : " + duration);
+			
 			// Send the result to ResultQueue
 			sendResult(taskResult);
 		}

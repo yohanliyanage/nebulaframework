@@ -27,6 +27,7 @@ public class JTextPaneAppender extends WriterAppender {
 	public static final Color FATAL = Color.RED;
 	
 	private static JTextPane textPane = null;
+	private static boolean autoScroll = true;
 	
 	public static void setTextPane(JTextPane textPane) {
 		JTextPaneAppender.textPane = textPane;
@@ -75,15 +76,28 @@ public class JTextPaneAppender extends WriterAppender {
 			public void run() {
 				
 				Document doc = textPane.getDocument();
+				int oldPosition = textPane.getCaretPosition();
+			
 				try {
 					doc.insertString(doc.getLength(), message, textPane.getStyle(style));
 				} catch (BadLocationException e) {
 					e.printStackTrace();
 				}
+				
 				textPane.setDocument(doc);
-				textPane.setCaretPosition(doc.getLength());
+				
+				if (! autoScroll) {
+					textPane.setCaretPosition(oldPosition);
+				}
+				else {
+					textPane.setCaretPosition(doc.getLength());
+				}
 			}
 		});
+	}
+
+	public static void setAutoScroll(boolean autoScroll) {
+		JTextPaneAppender.autoScroll = autoScroll;
 	}
 
 

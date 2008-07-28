@@ -30,8 +30,10 @@ import org.nebulaframework.core.job.GridJobState;
 import org.nebulaframework.core.job.ResultCallback;
 import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.core.job.future.GridJobFutureServerImpl;
+import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
 import org.nebulaframework.core.task.GridTask;
 import org.nebulaframework.core.task.GridTaskResult;
+import org.nebulaframework.grid.cluster.manager.services.jobs.tracking.GridJobTaskTracker;
 
 /**
  * {@code GridJobProfile} is an internal representation of a submitted
@@ -56,7 +58,9 @@ public class GridJobProfile {
 	private GridJobFutureServerImpl future; // GridJobFuture for the Job
 	private GridArchive archive; // If exists, the GridArchive of Job
 
-	private JobCancellationCallback cancelCallback; 
+	private JobExecutionManager executionManager; 
+	private GridJobTaskTracker taskTracker;
+	
 	private boolean stopped;
 
 	private ResultCallback callbackProxy; // Intermediate Results Callback
@@ -293,14 +297,20 @@ public class GridJobProfile {
 		// If Total Task count not set before
 		if (totalTasks < 0) {
 			
-			// Job is not deployed completely, return current value
-			if ((!future.isJobFinished()) && (future.getState()!=GridJobState.EXECUTING)) {
+			if (job instanceof UnboundedGridJob) {
 				return taskMap.size() + resultMap.size();
-			}
-			
-			// Job enqueued, cache result for faster access
-			synchronized (this) {
-				totalTasks = taskMap.size() + resultMap.size();
+			} 
+			else {
+				
+				// Job is not deployed completely, return current value
+				if ((!future.isJobFinished()) && (future.getState()!= GridJobState.EXECUTING)) {
+					return taskMap.size() + resultMap.size();
+				}
+				
+				// Job is enqueued, cache result for faster access
+				synchronized (this) {
+					totalTasks = taskMap.size() + resultMap.size();
+				}
 			}
 		}
 		
@@ -386,8 +396,28 @@ public class GridJobProfile {
 	 * 
 	 * @param cancelCallback JobCancellationCallback
 	 */
-	public void setCancelCallback(JobCancellationCallback cancelCallback) {
-		this.cancelCallback = cancelCallback;
+	public void setExecutionManager(JobExecutionManager cancelCallback) {
+		this.executionManager = cancelCallback;
+	}
+
+	/**
+	 * Sets the {@code GridJobTaskTracker} instance for this
+	 * {@code GridJob}.
+	 * 
+	 * @return GridJobTaskTracker
+	 */
+	public GridJobTaskTracker getTaskTracker() {
+		return taskTracker;
+	}
+
+	/**
+	 * Sets the {@code GridJobTaskTracker} instance for this
+	 * {@code GridJob}.
+	 * 
+	 * @param taskTracker GridJobTaskTracker
+	 */
+	public void setTaskTracker(GridJobTaskTracker taskTracker) {
+		this.taskTracker = taskTracker;
 	}
 
 	/**
@@ -397,12 +427,15 @@ public class GridJobProfile {
 	 *         failure ({@code false}).
 	 */
 	public boolean cancel() {
-		if (this.cancelCallback == null) {
+		if (this.executionManager == null) {
 			log.warn("Cannot Stop Job as No Job CancellationCallback exsits");
 			return false;
 		}
-		this.stopped = true;
-		return this.cancelCallback.cancel();
+		
+		boolean result = this.executionManager.cancel(this.jobId);
+		stopped = result; // If success, we have stopped
+		
+		return result;
 	}
 	
 	/**

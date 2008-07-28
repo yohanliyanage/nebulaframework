@@ -16,6 +16,9 @@ package org.nebulaframework.core.job;
 
 import java.io.Serializable;
 
+import org.nebulaframework.core.job.splitaggregate.SplitAggregateGridJob;
+import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
+
 
 /**
  * {@code GridJob} marker interface denotes  that any sub-interface of this to be

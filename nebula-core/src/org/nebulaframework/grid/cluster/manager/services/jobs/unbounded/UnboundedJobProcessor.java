@@ -23,15 +23,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJobState;
 import org.nebulaframework.core.job.ResultCallback;
-import org.nebulaframework.core.job.UnboundedGridJob;
 import org.nebulaframework.core.job.annotations.UnboundedProcessingSettings;
 import org.nebulaframework.core.job.exceptions.InvalidResultException;
+import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
 import org.nebulaframework.core.task.GridTask;
 import org.nebulaframework.core.task.GridTaskResult;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.manager.services.jobs.GridJobProfile;
 import org.nebulaframework.grid.cluster.manager.services.jobs.InternalClusterJobService;
-import org.nebulaframework.grid.cluster.manager.services.jobs.JobCancellationCallback;
 import org.nebulaframework.grid.cluster.manager.support.CleanUpSupport;
 import org.nebulaframework.util.jms.JMSNamingSupport;
 import org.springframework.jms.core.JmsTemplate;
@@ -55,7 +54,7 @@ import org.springframework.util.Assert;
  * 
  * @see UnboundedGridJob
  */
-public class UnboundedJobProcessor implements JobCancellationCallback {
+public class UnboundedJobProcessor  {
 
 	private static Log log = LogFactory.getLog(UnboundedJobProcessor.class);
 
@@ -212,6 +211,12 @@ public class UnboundedJobProcessor implements JobCancellationCallback {
 
 			public void run() {
 
+				// Start Tracker
+				profile.getTaskTracker().start();
+				
+				// Update State
+				profile.getFuture().setState(GridJobState.EXECUTING);
+				
 				int taskId = 0;
 				while (true) {
 
@@ -309,6 +314,9 @@ public class UnboundedJobProcessor implements JobCancellationCallback {
 		
 		// Send GridTask as a JMS Object Message to TaskQueue
 		jmsTemplate.convertAndSend(queueName, task, postProcessor);
+		
+		// Update Task Tracker
+		profile.getTaskTracker().taskEnqueued(taskId);
 									
 	}
 
@@ -318,7 +326,25 @@ public class UnboundedJobProcessor implements JobCancellationCallback {
 	 * @param taskId {@code GridTask} Id
 	 */
 	public void reEnqueueTask(final int taskId) {
-		enqueueTask(profile.getJobId(), taskId, job.task());
+		
+		log.debug("Re-enqueueing Task : " + taskId);
+		
+		if (!mutuallyExclusiveTasks) {
+			enqueueTask(profile.getJobId(), taskId, job.task());
+		}
+		else {
+			GridTask<?> task = profile.getTask(taskId);
+			
+			// If Task Not in Profile (Completed)
+			if (task==null) {
+				log.debug("[Processor] Unable to re-enqueue, task possibly complete" + 
+				          profile.getJobId() + "|" + taskId);
+				return;
+			}
+			
+			enqueueTask(profile.getJobId(), taskId, task);
+		}
+		
 	}
 
 	/**
@@ -352,6 +378,10 @@ public class UnboundedJobProcessor implements JobCancellationCallback {
 			log.debug("[UnboundedJobProcessor] Received Result : Task "
 					+ taskResult.getTaskId());
 
+			// Update Tracker
+			profile.getTaskTracker().resultReceived(taskResult.getTaskId(), 
+			                                        taskResult.getExecutionTime());
+			
 			// Post Process Result
 			Serializable result;
 			try {
@@ -378,9 +408,10 @@ public class UnboundedJobProcessor implements JobCancellationCallback {
 
 			// Fire intermediate results callback
 			profile.fireCallback(result);
-
+			
 			// Task completed, remove it from TaskMap
-			profile.removeTask(taskResult.getTaskId());
+			// Add Dummy Place-holder for Result List
+			profile.addResultAndRemoveTask(taskResult.getTaskId(), null);
 
 		} else { // Result Not Valid / Exception
 
