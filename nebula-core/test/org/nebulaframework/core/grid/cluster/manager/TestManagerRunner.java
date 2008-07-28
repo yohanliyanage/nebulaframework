@@ -18,28 +18,17 @@ import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.command.ActiveMQQueue;
 import org.apache.activemq.command.ActiveMQTopic;
 import org.apache.activemq.network.NetworkConnector;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.grid.Grid;
-import org.springframework.util.StopWatch;
 
 
 public class TestManagerRunner {
 	
-	private static Log log = LogFactory.getLog(TestManagerRunner.class);
-	
 	public static void main(String[] args) throws Exception {
 		
 
-		log.info("ClusterManager Starting");
-		
-		StopWatch sw = new StopWatch();
-		sw.start();
 		
 		Grid.startClusterManager();
 		
-		sw.stop();
-		log.info("ClusterManager Started Up. [" + sw.getLastTaskTimeMillis() + " ms]");
 		
 		
 		BrokerService broker = (BrokerService) Grid.getApplicationContext().getBean("broker");

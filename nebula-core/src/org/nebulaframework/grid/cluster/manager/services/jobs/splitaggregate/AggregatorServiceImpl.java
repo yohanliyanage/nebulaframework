@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package org.nebulaframework.grid.cluster.manager.services.jobs.aggregator;
+package org.nebulaframework.grid.cluster.manager.services.jobs.splitaggregate;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -27,11 +27,11 @@ import org.nebulaframework.core.job.GridJobState;
 import org.nebulaframework.core.job.SplitAggregateGridJob;
 import org.nebulaframework.core.job.exceptions.AggregateException;
 import org.nebulaframework.core.task.GridTaskResult;
+import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.manager.services.jobs.ClusterJobService;
 import org.nebulaframework.grid.cluster.manager.services.jobs.GridJobProfile;
 import org.nebulaframework.grid.cluster.manager.services.jobs.InternalClusterJobService;
 import org.nebulaframework.util.jms.JMSNamingSupport;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 import org.springframework.jms.listener.adapter.MessageListenerAdapter;
 
@@ -56,48 +56,39 @@ public class AggregatorServiceImpl implements AggregatorService {
 	
 	private ConnectionFactory connectionFactory;
 	private InternalClusterJobService jobService;
-
-	/**
-	 * Constructs an AggregatorServiceImpl instance, for the 
-	 * given {@code ClusterJobServiceImpl}.
-	 * 
-	 * @param jobService {@code ClusterJobServiceImpl} owner service.
-	 */
-	public AggregatorServiceImpl(InternalClusterJobService jobService) {
-		super();
-		this.jobService = jobService;
-	}
+	private boolean initialized = false;
 	
 	/**
-	 * Sets the JMS {@code ConnectionFactory} for the Cluster.
-	 * <p>
-	 * This is used to access the JMS resources of the {@code GridJob}, 
-	 * such as {@code ResultQueues}, etc.
-	 * <p>
-	 * <b>Note : </b>This is a <b>required</b> dependency.
-	 * <p>
-	 * <i>Spring Injected</i>
-	 * 
-	 * @param connectionFactory JMS {@code ConnectionFactory}
+	 * Constructs an AggregatorServiceImpl instance.
 	 */
-	@Required
-	public void setConnectionFactory(ConnectionFactory connectionFactory) {
-		this.connectionFactory = connectionFactory;
+	public AggregatorServiceImpl() {
+		super();
+
 	}
-
-
+	
+	private synchronized void initialize() {
+		if (!initialized) {
+			ClusterManager manager = ClusterManager.getInstance();
+			this.jobService = manager.getJobService();			
+			this.connectionFactory = ClusterManager.getInstance().getConnectionFactory();
+			initialized = true;
+		}
+	}
+	
 	/**
 	 * {@inheritDoc}
 	 * <p>
 	 * This method simply delegates to {@code #doStartAggregator(GridJobProfile)} method,
 	 * invoked on a separate {@code Thread}.
 	 */
-	public void startAggregator(final GridJobProfile profile) {
+	public synchronized void startAggregator(final GridJobProfile profile, final SplitAggregateJobManager manager) {
+		
+		initialize();
 		
 		//Start Aggregator, on a new Thread
 		new Thread(new Runnable() {
 			public void run() {
-				doStartAggregator(profile);
+				doStartAggregator(profile, manager);
 			}
 		}, "Aggregator[ResultCollector]-" + profile.getJobId()).start();
 	}
@@ -112,7 +103,7 @@ public class AggregatorServiceImpl implements AggregatorService {
 	 * 
 	 * @param profile {@code GridJobProfile} jobProfile
 	 */
-	protected void doStartAggregator(GridJobProfile profile) {
+	protected void doStartAggregator(GridJobProfile profile, SplitAggregateJobManager manager) {
 		
 		// Create Message Listener Adapter and Result Collector for Job
 		MessageListenerAdapter adapter = new MessageListenerAdapter();
@@ -126,8 +117,8 @@ public class AggregatorServiceImpl implements AggregatorService {
 		container.setMessageListener(adapter);
 		
 		//Create results collector and set it as Execution Manager
-		ResultCollector collector = new ResultCollector(profile, jobService, container);
-		profile.setExecutionManager(collector);
+		ResultCollector collector = new ResultCollector(profile, manager, container);
+		profile.setCancelCallback(collector);
 		
 		// Initialize Adapter and Container
 		adapter.setDelegate(collector);

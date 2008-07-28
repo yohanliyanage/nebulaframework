@@ -14,6 +14,7 @@
 
 package org.nebulaframework.grid.cluster.manager.services.jobs;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -22,18 +23,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.ResultCallback;
-import org.nebulaframework.core.job.SplitAggregateGridJob;
-import org.nebulaframework.core.job.UnboundedGridJob;
 import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.core.job.deploy.GridJobInfo;
 import org.nebulaframework.core.job.exceptions.GridJobPermissionDeniedException;
 import org.nebulaframework.core.job.exceptions.GridJobRejectionException;
 import org.nebulaframework.core.job.future.GridJobFutureServerImpl;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
-import org.nebulaframework.grid.cluster.manager.services.jobs.aggregator.AggregatorService;
 import org.nebulaframework.grid.cluster.manager.services.jobs.remote.RemoteClusterJobService;
-import org.nebulaframework.grid.cluster.manager.services.jobs.splitter.SplitterService;
-import org.nebulaframework.grid.cluster.manager.services.jobs.unbounded.UnboundedJobService;
+import org.nebulaframework.grid.cluster.manager.services.jobs.splitaggregate.AggregatorService;
+import org.nebulaframework.grid.cluster.manager.services.jobs.splitaggregate.SplitterService;
 import org.nebulaframework.grid.service.event.ServiceEventsSupport;
 import org.nebulaframework.grid.service.event.ServiceHookCallback;
 import org.nebulaframework.grid.service.message.ServiceMessage;
@@ -68,12 +66,27 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	private ClusterManager cluster;
 	private JobServiceJmsSupport jmsSupport;
 
+	@SuppressWarnings("unchecked")
+	private Map<Class<? extends GridJob>, JobExecutionManager> executors = 
+			new HashMap<Class<? extends GridJob>, JobExecutionManager>();
 	
-	private SplitterService splitterService;
-	private AggregatorService aggregatorService;
-	private UnboundedJobService unboundedService;
 	
 	private RemoteClusterJobService remoteJobServiceProxy;
+
+	
+	/**
+	 * Registers a {@link JobExecutionManager} with this JobExecutionService,
+	 * which is capable of handling {@code GridJob}s of type {@code clazz}.
+	 * 
+	 * @param clazz Type of GridJob Class
+	 * @param manager JobExecutionManager
+	 */
+
+	public void setExecutors(JobExecutionManager[] managers) {
+		for (JobExecutionManager manager : managers) {
+			executors.put(manager.getInterface(), manager);
+		}
+	}
 
 	
 	// Holds GridJobProfiles of all active GridJobs, against its JobId
@@ -169,26 +182,10 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		}
 
 		
-		
-		if (job instanceof SplitAggregateGridJob<?, ?>) {
-			
-			// Allow Final Results
-			profile.getFuture().setFinalResultSupported(true);
-			
-			// Start Split Aggregate Job
-			startSplitAggregateJob(profile);
-			
-		} else if (job instanceof UnboundedGridJob<?>) {
-			
-			// Disallow Final Results
-			profile.getFuture().setFinalResultSupported(false);
-			
-			// Start Unbounded Job
-			startUnboundedJob(profile);
-
-		} else {
+		if (!startGridJob (profile)) {
 			// Unsupported Type
-			throw new AssertionError("Unsupported GridJob Type");
+			throw new GridJobRejectionException("GridJob Type Not Supported : " + 
+			                                    job.getClass().getName());
 		}
 
 		// Track to see if Job Submitter Node Fails
@@ -199,6 +196,41 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 
 		
 		return jobId;
+	}
+
+	// TODO FixDoc
+	private boolean startGridJob(GridJobProfile profile) {
+		
+		GridJob<?,?> job = profile.getJob();
+		
+		// Get all implemented interfaces of GridJob
+		Class<?>[] ifaces = job.getClass().getInterfaces();
+		
+		for (Class<?> clazz : ifaces) {
+			
+			// If we have a executor for the interface
+			if (executors.containsKey(clazz)) {
+				
+				// Attempt to Start GridJob
+				boolean started = startExecution(executors.get(clazz), profile);
+				
+				// If Success
+				if (started) {
+					return true;
+				}
+			}
+		}
+		
+		log.error("[JobService Unable to Find JobManager for Job Type " + job.getClass().getName());
+		
+		// No JobExecutionManager for Job
+		return false;
+	}
+
+	// TODO FixDoc
+	private boolean startExecution(JobExecutionManager jobExecutionManager,
+			GridJobProfile profile) {
+		return jobExecutionManager.startExecution(profile);
 	}
 
 	/**
@@ -221,27 +253,6 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		},nodeId.toString(), ServiceMessageType.HEARTBEAT_FAILED, ServiceMessageType.NODE_UNREGISTERED);
 	}
 
-	/**
-	 * Starts given {@code SplitAggregateJob} on the Grid.
-	 * 
-	 * @param profile GridJobProfile
-	 */
-	private void startSplitAggregateJob(GridJobProfile profile) {
-		
-		// Start Splitter & Aggregator for GridJob
-		splitterService.startSplitter(profile);
-		aggregatorService.startAggregator(profile);
-
-	}
-
-	/**
-	 * Starts given {@code UnboundedGridJob} on the Grid.
-	 * 
-	 * @param profile GridJobProfile
-	 */
-	private void startUnboundedJob(GridJobProfile profile) {
-		unboundedService.startJobProcessing(profile);
-	}
 
 	/**
 	 * Verifies the {@code GridArchive} by comparing its provided SHA1 Hash
@@ -532,88 +543,7 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		this.remoteJobServiceProxy = remoteJobServiceProxy;
 	}
 
-	/**
-	 * Returns the {@code SplitterService} used by the
-	 * {@code ClusterJobServiceImpl}.
-	 * <p>
-	 * {@code SplitterService} is responsible for splitting a given
-	 * {@code GridJob} into {@code GridTask}s which are to be executed
-	 * remotely.
-	 * 
-	 * @return {@code SplitterService} reference.
-	 */
-	public SplitterService getSplitterService() {
-		return splitterService;
-	}
 
-	/**
-	 * Sets the {@code SplitterService} used by the
-	 * {@code ClusterJobServiceImpl}.
-	 * <p>
-	 * {@code SplitterService} is responsible for splitting a given
-	 * {@code GridJob} into {@code GridTask}s which are to be executed
-	 * remotely.
-	 * <p>
-	 * <b>Note : </b>This is a <b>required</b> dependency.
-	 * <p>
-	 * <i>Spring Injected</i>
-	 * 
-	 * @param splitterService
-	 *            SplitterService for the {@code ClusterJobServiceImpl}
-	 */
-	@Required
-	public void setSplitterService(SplitterService splitterService) {
-		this.splitterService = splitterService;
-	}
-
-	/**
-	 * Returns the {@code AggregatorService} used by the
-	 * {@code ClusterJobServiceImpl}.
-	 * <p>
-	 * {@code AggregatorService} is responsible for collecting results returned
-	 * by each {@code GridTask} which was executed on a remote node, and to
-	 * aggregate the results to provide the final result for the {@code GridJob}.
-	 * 
-	 * @return {@code AggregatorService} reference.
-	 */
-	public AggregatorService getAggregatorService() {
-		return aggregatorService;
-	}
-
-	/**
-	 * Returns the {@code AggregatorService} used by the
-	 * {@code ClusterJobServiceImpl}.
-	 * <p>
-	 * {@code AggregatorService} is responsible for collecting results returned
-	 * by each {@code GridTask} which was executed on a remote node, and to
-	 * aggregate the results to provide the final result for the {@code GridJob}.
-	 * <p>
-	 * <b>Note : </b>This is a <b>required</b> dependency.
-	 * <p>
-	 * <i>Spring Injected</i>
-	 * 
-	 * @param aggregatorService
-	 *            {@code AggregatorService} for the service
-	 */
-	@Required
-	public void setAggregatorService(AggregatorService aggregatorService) {
-		this.aggregatorService = aggregatorService;
-	}
-
-	/**
-	 * Sets the {@code UnboundedJobService} used by the Job Service 
-	 * Implementation. {@code UnboundedJobService} is responsible for 
-	 * managing the execution of {@link UnboundedGridJob}s.
-	 * <p>
-	 * <b>Note : </b>This is a <b>required</b> dependency.
-	 * <p>
-	 * <i>Spring Injected</i>
-	 * @param unboundedService UnboudedJobService
-	 */
-	@Required
-	public void setUnboundedService(UnboundedJobService unboundedService) {
-		this.unboundedService = unboundedService;
-	}
 
 	// TODO FixDoc
 	public int getFinishedJobCount() {

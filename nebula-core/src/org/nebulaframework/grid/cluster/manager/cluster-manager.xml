@@ -104,24 +104,24 @@
 				</property>
 			</bean>
 		</property>
-		<property name="splitterService">
-			<!-- Splitter Service -->
-			<bean class="org.nebulaframework.grid.cluster.manager.services.jobs.splitter.SplitterServiceImpl">
-				<constructor-arg ref="clusterJobService" />
-				<property name="connectionFactory" ref="jmsConnectionFactory" />
-			</bean>
+		<!-- Job Execution Managers -->
+		<property name="executors">
+			<list value-type="org.nebulaframework.grid.cluster.manager.services.jobs.JobExecutionManager">
+				<!--  Split Aggregate Job Manager -->
+				<bean class="org.nebulaframework.grid.cluster.manager.services.jobs.splitaggregate.SplitAggregateJobManager">
+					<property name="splitter">
+						<!-- Splitter Service -->
+						<bean class="org.nebulaframework.grid.cluster.manager.services.jobs.splitaggregate.SplitterServiceImpl" />
+					</property>
+					<property name="aggregator">
+						<!-- Aggregator Service -->
+						<bean class="org.nebulaframework.grid.cluster.manager.services.jobs.splitaggregate.AggregatorServiceImpl" />
+					</property>		
+				</bean>
+				<!--  Unbounded Job Manager -->
+				<bean class="org.nebulaframework.grid.cluster.manager.services.jobs.unbounded.UnboundedJobExecutionManager" />
+			</list>
 		</property>
-		<property name="aggregatorService">
-			<!-- Aggregator Service -->
-			<bean class="org.nebulaframework.grid.cluster.manager.services.jobs.aggregator.AggregatorServiceImpl">
-				<constructor-arg ref="clusterJobService" />
-				<property name="connectionFactory" ref="jmsConnectionFactory" />
-			</bean>
-		</property>		
-		<property name="unboundedService">
-			<!--  Unbounded Job Service -->
-			<bean class="org.nebulaframework.grid.cluster.manager.services.jobs.unbounded.UnboundedJobServiceImpl" />
-		</property>		
 	</bean>
 	
 	<!-- Cluster Registration Service -->
