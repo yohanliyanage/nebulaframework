@@ -76,7 +76,7 @@ public class GridArchiveClassLoader extends ClassLoader {
 
 	private ClassLoader parent; // Parent Class Loader
 	private File archiveFile; // Physical File (User Specified / Temp)
-
+	
 	/**
 	 * Constructs a {@code GridArchiveClassLoader} for the {@code .nar} file
 	 * specified by the {@code archiveFile} argument.
@@ -87,9 +87,13 @@ public class GridArchiveClassLoader extends ClassLoader {
 	 * @throws IllegalArgumentException
 	 *             if {@code archiveFile} is {@code null} or is not a valid
 	 *             {@code .nar} file.
+	 * @throws SecurityException if ClassLoader creation is prohibited
+	 * by the current class loader.
+	 * 
 	 */
 	public GridArchiveClassLoader(File archiveFile)
 			throws IllegalArgumentException {
+		
 		super();
 
 		// Look for nulls
@@ -152,6 +156,7 @@ public class GridArchiveClassLoader extends ClassLoader {
 	public GridArchiveClassLoader(File archiveFile, ClassLoader parent)
 			throws IllegalArgumentException {
 		this(archiveFile);
+	
 		this.parent = parent;
 	}
 
@@ -210,40 +215,28 @@ public class GridArchiveClassLoader extends ClassLoader {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Class<?> loadClass(String name) throws ClassNotFoundException {
-
-		// Try to find already loaded class
-		Class<?> cls = findLoadedClass(name);
-		if (cls != null)
-			return cls;
-
-		// If not loaded yet,
+	public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException, SecurityException {
+		
 		try {
-
 			// Delegate to Super Class
-			try {
-				cls = super.loadClass(name);
-				if (cls != null)
-					return cls;
-			} catch (ClassNotFoundException e) {
-				// Ignore : Super class cannot find
-			}
-
-			// If not found by super class, attempt GridArchive loading
-			cls = findClass(name);
-
-			if (cls != null) {
-				log.debug("GridArchiveClassLoader found class " + name);
-				return cls;
-			}
+			// (which will call findClass)
+			return super.loadClass(name, resolve);
+			
 		} catch (ClassNotFoundException e) {
-			// Ignore : GridArchive loading also failed
+			// Ignore : Super class cannot find
+			if (log.isDebugEnabled()) {
+				log.debug("GridArchiveClassLoader unable to load class " + name);
+			}
 		}
 
 		// If not found by super class or by GridArchive loading
+		// Note that we do not rely on java.lang.ClassLoader to invoke 
+		// parent class loader.
+		
 		if (parent != null) {
 			// Delegate to parent ClassLoader
 			return parent.loadClass(name);
+			
 		} else {
 			throw new ClassNotFoundException("Unable to find class " + name);
 		}
