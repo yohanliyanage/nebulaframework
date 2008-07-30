@@ -29,7 +29,6 @@ import org.nebulaframework.grid.service.event.ServiceEventsSupport;
 import org.nebulaframework.grid.service.event.ServiceHookCallback;
 import org.nebulaframework.grid.service.message.ServiceMessage;
 import org.nebulaframework.grid.service.message.ServiceMessageType;
-import org.nebulaframework.util.hashing.SHA1Generator;
 import org.springframework.util.Assert;
 
 /**
@@ -64,9 +63,8 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 
 	private static Log log = LogFactory.getLog(ClassLoadingServiceImpl.class);
 	
-	// Cache
+	// Local Cache
 	private Map<String, CacheEntry> cache = new HashMap<String, CacheEntry>();
-	
 	
 	private InternalClusterJobService jobService;			
 	private InternalClusterRegistrationService regService;	
@@ -109,6 +107,7 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 			// Check in cache, if found, return
 			synchronized (this) {
 				if (this.cache.containsKey(name)) {
+					
 					CacheEntry entry = this.cache.get(name);
 					byte[] bytes = entry.getBytes();
 					
@@ -117,14 +116,7 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 						return bytes;
 						
 					}
-					// If old class, check if class has changed
-					if (SHA1Generator.generateAsString(bytes).equals(getHash(jobId, name))) {
-						// If Class has not changed (hash match)
-						return bytes;
-					}
-					else {
-						log.debug("[ClassLoadingService] Class Updated " + name);
-					}
+					
 				}
 			}
 			
@@ -160,22 +152,6 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 		}
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	public String getHash(String jobId, String name)
-			throws ClassNotFoundException, IllegalArgumentException {
-		
-		// Get the owner node
-		UUID ownerId = jobService.getProfile(jobId).getOwner();
-
-		// Get ClassExporter of owner node
-		GridNodeClassExporter exporter = regService
-				.getGridNodeDelegate(ownerId).getClassExporter();
-
-		// Request class hash
-		return exporter.classHash(name);
-	}
 	
 	/**
 	 * Nested wrapper class for class definitions which are stored

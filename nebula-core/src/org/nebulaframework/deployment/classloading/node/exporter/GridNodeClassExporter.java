@@ -45,13 +45,5 @@ public interface GridNodeClassExporter {
 	 * @throws ClassNotFoundException if class cannot be found
 	 */
 	public byte[] exportClass(String name) throws ClassNotFoundException;
-	
-	/**
-	 * Returns the SHA-1 Hash for the given Class, if it exists.
-	 * 
-	 * @param name  binary name of the class file
-	 * @return SHA-1 Hash
-	 * @throws ClassNotFoundException  if class cannot be found
-	 */
-	public String classHash(String name) throws ClassNotFoundException;
+
 }

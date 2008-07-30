@@ -20,7 +20,6 @@ import java.io.InputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.deployment.classloading.service.ClassLoadingService;
-import org.nebulaframework.util.hashing.SHA1Generator;
 import org.nebulaframework.util.io.IOSupport;
 
 /**
@@ -35,7 +34,8 @@ import org.nebulaframework.util.io.IOSupport;
  * {@link GridNodeClassExporter} service remotely, using a client proxy,
  * and attempts to obtain the class file. 
  * <p>
- * Note that visibility of this class is <b>default</b> (package private) scope
+ * Note that visibility of this class is <b>default</b> (package private) scope.
+ * This class is used by {@link GridNodeClassExporterSupport} class.
  * 
  * @author Yohan Liyanage
  * @version 1.0
@@ -75,18 +75,6 @@ class GridNodeClassExporterImpl implements GridNodeClassExporter {
 			log.warn("Unable to locate class with in Node", ex);
 			throw new ClassNotFoundException("Unable to locate class with in Node", ex);
 		}
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	public String classHash(String name) throws ClassNotFoundException {
-		
-		// Fetch Class
-		byte[] bytes = exportClass(name);
-		
-		// Generate Hash and Return
-		return SHA1Generator.generateAsString(bytes);
 	}
 
 }

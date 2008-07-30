@@ -14,15 +14,10 @@
 
 package org.nebulaframework.deployment.classloading;
 
-import java.lang.ref.SoftReference;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.deployment.classloading.service.ClassLoadingService;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
-import org.nebulaframework.util.hashing.SHA1Generator;
 import org.springframework.util.Assert;
 
 /**
@@ -58,11 +53,17 @@ public class GridNodeClassLoader extends ClassLoader {
 
 	private static Log log = LogFactory.getLog(GridNodeClassLoader.class);
 
-	protected String jobId; // JobId for instance
-	protected ClassLoadingService classLoadingService; // 
+	/**
+	 * JobId for this GridNodeClassLoader instance
+	 */
+	protected String jobId; 
+	
+	/**
+	 * Allows to load class definitions from remote nodes.
+	 */
+	protected ClassLoadingService classLoadingService; 
 
-	// Remote Loaded Classes. Note: Uses SoftReference. May be nulled by GC
-	protected final static Map<String, ClassEntry> loaded = new HashMap<String, ClassEntry>();
+	
 
 	/**
 	 * Constructs a {@code GridNodeClassLoader} for the given {@code GridJob},
@@ -81,12 +82,16 @@ public class GridNodeClassLoader extends ClassLoader {
 	 * @throws IllegalArgumentException
 	 *             if either {@code jobId} or {@code ClassLoadingService} is
 	 *             {@code null}
+	 * @throws SecurityException if class loader creation is prohibited by
+	 * current SecurityManager
 	 */
-	public GridNodeClassLoader(String jobId,
-			ClassLoadingService classLoadingService, final ClassLoader parent)
-			throws IllegalArgumentException {
+	public GridNodeClassLoader(	String jobId,
+								ClassLoadingService classLoadingService, 
+								final ClassLoader parent)
+	
+			throws IllegalArgumentException, SecurityException {
 
-		super(parent);
+		super(parent); // May throw SecurityException
 		
 		Assert.notNull(jobId);
 		Assert.notNull(classLoadingService);
@@ -95,69 +100,7 @@ public class GridNodeClassLoader extends ClassLoader {
 		this.classLoadingService = classLoadingService;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public Class<?> loadClass(String name) throws ClassNotFoundException {
-
-		// Check local cache
-		synchronized (GridNodeClassLoader.class) {
-			if (loaded.containsKey(name)) {
-
-				ClassEntry entry = loaded.get(name);
-
-				log.debug("[GridNodeClassLoader] Found Cache : " + name);
-				
-				// If entry exists (not GCed)
-				if (entry != null) {
-					
-					// Get definition byte[]
-					byte[] definition = entry.getClassDefinition();
-
-					if (entry.getJobId().equals(jobId)) { // If Same Job
-						
-						log.debug("[GridNodeClassLoader] Class OK : " + name);
-						
-						// Define and return class
-						return defineClass(name, definition, 0, definition.length);
-						
-					} else { // Different Jobs
-						
-						// Check if class has changed
-						String hash = classLoadingService.getHash(jobId, name);
-						
-						if (SHA1Generator.generateAsString(definition)
-								.equals(hash)) {
-							
-							// No change
-							log.debug("[GridNodeClassLoader] Class Hash OK : " + name);
-							
-							// Define and return class
-							return defineClass(name, definition, 0, definition.length);
-							
-						} else {
-							
-							log.debug("[GridNodeClassLoader] Class Changed : " + name);
-							// Changed, Remote Load
-							try {
-								Class<?> c = findClass(name);
-								return c;
-							} catch (RuntimeException e) {
-								e.printStackTrace();
-							}
-						}
-					}
-				}
-			}
-		}
-		// Attempt loading using JVM's cache
-		Class<?> cls = findLoadedClass(name);
-
-		// If success, return Class, if not deletegate to superclass
-		// JVM invokes findClass if super class also fails
-		return (cls != null) ? cls : super.loadClass(name);
-	}
+	
 
 	/**
 	 * Attempts to find the class definition for the given class name, by first
@@ -175,22 +118,27 @@ public class GridNodeClassLoader extends ClassLoader {
 	@Override
 	protected Class<?> findClass(String name) throws ClassNotFoundException {
 
-		log.debug("[GridNodeClassLoader] Finding Class : " + name);
-
+		if (log.isDebugEnabled()) {
+			log.debug("[GridNodeClassLoader] Finding Class : " + name);
+		}
+		
 		Class<?> cls = null;
+		
 		// Attempt remote load
 		try {
-			log.debug("[GridNodeClassLoader] Attempt Remote Loading : " + name);
+			
+			if (log.isDebugEnabled()) {
+				log.debug("[GridNodeClassLoader] Attempt Remote Loading : " + name);
+			}
+			
 			// Get bytes for class from remote service
 			byte[] bytes = classLoadingService.findClass(jobId, name);
 			cls = defineClass(name, bytes, 0, bytes.length);
-			log.debug("[GridNodeClassLoader] Remote Loaded : " + name);
-
-			// Put into local cache
-			synchronized (GridNodeClassLoader.class) {
-				loaded.put(name, new ClassEntry(name, jobId, bytes));
+			
+			if (log.isDebugEnabled()) {
+				log.debug("[GridNodeClassLoader] Remote Loaded : " + name);
 			}
-
+			
 			return cls;
 
 		} catch (Exception ex) {
@@ -198,98 +146,6 @@ public class GridNodeClassLoader extends ClassLoader {
 						ex);
 			throw new ClassNotFoundException(
 					"Class not found due to Exception", ex);
-		}
-	}
-
-	/**
-	 * An entry which will be saved in the local loaded classes collection,
-	 * which includes the class definition as byte[] and related meta data.
-	 * <p>
-	 * ClassEntry should be wrapped by the {@link SoftReference} class, so that
-	 * if the JVM is running out of memory, the actual ClassEntry objects in the
-	 * collection will be nulled. In such a scenario, the class will be reloaded
-	 * through Grid Node Class Loading.
-	 * 
-	 * @author Yohan Liyanage
-	 * @version 1.0
-	 */
-	private static class ClassEntry {
-
-		private String className;
-		private String jobId;
-		private byte[] classDefinition;
-
-		/**
-		 * Constructs a new {@link ClassEntry} for given details.
-		 * 
-		 * @param className
-		 *            binary name of class
-		 * @param jobId
-		 *            original job id which the class belong to
-		 * @param classDefinition
-		 *            byte[] definition of class
-		 */
-		public ClassEntry(String className, String jobId, byte[] classDefinition) {
-			this.className = className;
-			this.jobId = jobId;
-			this.classDefinition = classDefinition;
-		}
-
-		/**
-		 * Return the original job id for the class.
-		 * 
-		 * @return JobID
-		 */
-		public String getJobId() {
-			return jobId;
-		}
-
-		/**
-		 * Returns the class definition as a byte[]
-		 * 
-		 * @return byte[] class definition
-		 */
-		public byte[] getClassDefinition() {
-			return classDefinition;
-		}
-
-		/**
-		 * Returns the binary name of the class
-		 * 
-		 * @return String binary name
-		 */
-		public String getClassName() {
-			return className;
-		}
-
-		/**
-		 * {@inheritDoc}
-		 */
-		@Override
-		public boolean equals(Object obj) {
-			if (!(obj instanceof ClassEntry))
-				return false;
-
-			ClassEntry ce = (ClassEntry) obj;
-			return classDefinition.length==ce.getClassDefinition().length
-					&& jobId.equals(ce.getJobId());
-		}
-
-		/**
-		 * {@inheritDoc}
-		 */
-		@Override
-		public int hashCode() {
-			return 31 + this.jobId.hashCode() * this.classDefinition.hashCode()
-					/ 2;
-		}
-
-		/**
-		 * {@inheritDoc}
-		 */
-		@Override
-		public String toString() {
-			return this.className + "[" + this.jobId + "]";
 		}
 	}
 
