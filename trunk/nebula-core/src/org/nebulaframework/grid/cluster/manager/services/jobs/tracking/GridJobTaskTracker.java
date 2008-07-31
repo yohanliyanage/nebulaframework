@@ -118,9 +118,6 @@ public class GridJobTaskTracker {
 		// We have duration information now
 		while (!stopped) {
 			
-			// TODO Fix Log
-			log.trace("[GridJobTaskTracker] Tacker Activated");
-			
 			synchronized (this) {
 				renqueueMarked();
 				potentialToMarked();
@@ -132,9 +129,6 @@ public class GridJobTaskTracker {
 				enqueuedToPotential();
 			}
 			
-			
-			// TODO Fix Log
-			log.trace("[GridJobTaskTracker] Tacker Deactivated | Average : " + averageTaskDuration);
 			
 			try {
 				// Sleep for some duration, determined by average * getMultiple()
@@ -197,10 +191,15 @@ public class GridJobTaskTracker {
 
 
 	public synchronized void taskEnqueued(int taskId) {
+		
+		if (stopped) return;
+		
 		enqueued.add(taskId);
 	}
 	
 	public void resultReceived(final Integer taskId, final long executionTime) {
+		
+		if (stopped) return;
 		
 		executors.execute(new Runnable() {
 

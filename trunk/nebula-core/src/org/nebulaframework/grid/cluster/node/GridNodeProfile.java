@@ -14,6 +14,8 @@
 
 package org.nebulaframework.grid.cluster.node;
 
+import java.util.UUID;
+
 
 /**
  * Holds information regarding a node of Grid.
@@ -23,6 +25,23 @@ package org.nebulaframework.grid.cluster.node;
  */
 public interface GridNodeProfile {
 
+	/**
+	 * Returns the GridNodeID for this
+	 * Node.
+	 * 
+	 * @return UUID NodeId
+	 */
+	public UUID getId();
+	
+	// TODO Uncomment
+//	/**
+//	 * Returns the Cluster ID for this
+//	 * Node.
+//	 * 
+//	 * @return UUID Cluster ID
+//	 */
+//	public UUID getClusterId();
+	
 	/**
 	 * Returns user-friendly name for Node
 	 * 

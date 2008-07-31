@@ -85,9 +85,10 @@ public class GridNode implements InitializingBean{
 	 * 
 	 * @param profile {@link GridNodeProfile} for this Node
 	 */
-	private GridNode(GridNodeProfile profile) {
+	private GridNode(GridNodeProfileImpl profile) {
 		super();
 		this.id = ID.getId();
+		profile.setId(id);
 		this.profile = profile;
 		log.debug("Node " + id + " created");
 	}
@@ -111,7 +112,7 @@ public class GridNode implements InitializingBean{
 	 * 
 	 * @throws IllegalStateException if this method is invoked after initialization
 	 */
-	public static synchronized GridNode createNode(GridNodeProfile profile) throws IllegalStateException {
+	public static synchronized GridNode createNode(GridNodeProfileImpl profile) throws IllegalStateException {
 		
 		// If previous instance found, throw exception
 		if (instance!=null) throw new IllegalStateException("GridNode already created");
@@ -330,6 +331,7 @@ public class GridNode implements InitializingBean{
 		
 		// Start Heart Beat Service
 		new HeartBeatInvoker().start();
+		
 	}
 	
 	public UUID getClusterId() {

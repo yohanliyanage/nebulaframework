@@ -91,6 +91,9 @@ public class Grid {
 			sw.start();
 			log.info("ClusterManager Starting...");
 			
+			// Set Security Manager
+			System.setSecurityManager(new SecurityManager());
+			
 			// Detect Configuration
 			Properties config = ConfigurationSupport.detectClusterConfiguration();
 			
@@ -139,6 +142,9 @@ public class Grid {
 			sw.start();
 			log.info("GridNode Starting...");
 			
+			// Set Security Manager
+			System.setSecurityManager(new SecurityManager());
+			
 			// Detect Configuration
 			Properties config = ConfigurationSupport.detectNodeConfiguration();
 			
@@ -183,6 +189,9 @@ public class Grid {
 			sw.start();
 			log.info("GridNode Starting...");
 		
+			// Set Security Manager
+			System.setSecurityManager(new SecurityManager());
+			
 			Properties config = ConfigurationSupport.detectNodeConfiguration();
 			
 			// Discover Cluster If Needed

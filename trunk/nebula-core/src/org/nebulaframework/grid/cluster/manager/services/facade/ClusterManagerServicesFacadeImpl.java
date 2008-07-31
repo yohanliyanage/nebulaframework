@@ -23,6 +23,7 @@ import org.nebulaframework.core.job.exceptions.GridJobPermissionDeniedException;
 import org.nebulaframework.core.job.exceptions.GridJobRejectionException;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.manager.services.jobs.ClusterJobService;
+import org.nebulaframework.grid.cluster.node.GridNodeProfile;
 
 /**
  * Implementation of {@code ClusterManagerServicesFacade} interface. Allows
@@ -121,9 +122,9 @@ public class ClusterManagerServicesFacadeImpl implements
 	 * 
 	 * @see ClusterJobService#requestJob(String)
 	 */
-	public GridJobInfo requestJob(String jobId)
+	public GridJobInfo requestJob(String jobId, GridNodeProfile nodeProfile)
 			throws GridJobPermissionDeniedException {
-		return this.cluster.getJobService().requestJob(jobId);
+		return this.cluster.getJobService().requestJob(jobId, nodeProfile);
 	}
 
 	/**
@@ -132,8 +133,8 @@ public class ClusterManagerServicesFacadeImpl implements
 	 * Delegates to {@code ClusterManager}'s {@code ClusterJobService} to
 	 * request permission to participate for next available {@code GridJob}.
 	 */
-	public GridJobInfo requestNextJob() throws GridJobPermissionDeniedException {
-		return this.cluster.getJobService().requestNextJob();
+	public GridJobInfo requestNextJob(GridNodeProfile nodeProfile) {
+		return this.cluster.getJobService().requestNextJob(nodeProfile);
 	}
 
 

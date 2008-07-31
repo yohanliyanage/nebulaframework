@@ -15,9 +15,11 @@
 package org.nebulaframework.grid.cluster.manager.services.jobs;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -34,6 +36,7 @@ import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
 import org.nebulaframework.core.task.GridTask;
 import org.nebulaframework.core.task.GridTaskResult;
 import org.nebulaframework.grid.cluster.manager.services.jobs.tracking.GridJobTaskTracker;
+import org.nebulaframework.grid.cluster.node.GridNodeProfile;
 
 /**
  * {@code GridJobProfile} is an internal representation of a submitted
@@ -74,11 +77,58 @@ public class GridJobProfile {
 	private Map<Integer, GridTaskResult> resultMap = Collections
 			.synchronizedMap(new HashMap<Integer, GridTaskResult>());
 
+	// Contains a list of banned nodes (not allowed to participate for this job)
+	private List<UUID> bannedNodes = new ArrayList<UUID>();
+	
 	// Failed Task Count
 	private int failedCount = 0;
 	
 	// Total # of Tasks (for percentage calculation)
 	private int totalTasks = -1;
+	
+
+	/**
+	 * No-args constructor.
+	 */
+	public GridJobProfile() {
+		super();
+	}
+
+	/**
+	 * Processes a request from a GridNode to participate
+	 * for this GridJob.
+	 * 
+	 * @param nodeProfile Node Profile for a GridNode
+	 * 
+	 * @return boolean value indicating permission
+	 */
+	public boolean processRequest(GridNodeProfile nodeProfile) {
+		if (bannedNodes.contains(nodeProfile.getId())) {
+			return false;
+		}
+		return true;
+	}
+	
+	/**
+	 * Adds a banned node ID for this Job.
+	 * 
+	 * @param nodeId Node Id
+	 */
+	public void addBannedNode(UUID nodeId) {
+		if (!bannedNodes.contains(nodeId)) {
+			bannedNodes.add(nodeId);
+		}
+	}
+	
+	/**
+	 * Removes a given node ID from this
+	 * jobs banned node list.
+	 * 
+	 * @param nodeId NodeId to remove from list
+	 */
+	public void removeBannedNode(UUID nodeId) {
+		bannedNodes.remove(nodeId);
+	}
 	
 	/**
 	 * Returns JobId of the Job
@@ -427,16 +477,17 @@ public class GridJobProfile {
 	 *         failure ({@code false}).
 	 */
 	public boolean cancel() {
+		
 		if (this.executionManager == null) {
-			log.warn("Cannot Stop Job as No Job CancellationCallback exsits");
+			log.warn("[GridJobProfile] Cannot Stop Job as No Job Execution Manager exsits");
 			return false;
 		}
 		
-		boolean result = this.executionManager.cancel(this.jobId);
-		stopped = result; // If success, we have stopped
+		stopped = this.executionManager.cancel(this.jobId);
 		
-		return result;
+		return stopped;
 	}
+
 	
 	/**
 	 * Returns a percentage value (double 0-1.0) which indicates the
@@ -458,9 +509,13 @@ public class GridJobProfile {
 		}
 
 		// Deduct 0.01 to avoid reaching 100% before aggregation
-		return  ((double) getResultCount()) / getTotalTasks() - 0.01;
+		double val =  ((double) getResultCount()) / getTotalTasks() - 0.01;
 		
+		return (val>0) ? val : 0;
 	}
+
+
+
 
 
 

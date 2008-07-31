@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package org.nebulaframework.core.grid.cluster.node;
+package test.node;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -24,7 +24,6 @@ import org.nebulaframework.core.job.future.GridJobFuture;
 import org.nebulaframework.grid.Grid;
 import org.nebulaframework.grid.cluster.node.GridNode;
 import org.nebulaframework.grid.cluster.registration.RegistrationException;
-import org.springframework.remoting.RemoteInvocationFailureException;
 import org.springframework.util.StopWatch;
 
 import test.nebulaframework.simpleTest.TestUnboundedJob;
@@ -66,10 +65,9 @@ public class TestUnboudedJobRunner {
 				}
 				
 			});
-			try {
-				log.info("Job Result : " + future.getResult());
-			} catch (RemoteInvocationFailureException e) {
-				e.getCause().printStackTrace();
+
+			while(!future.isJobFinished()) {
+				Thread.sleep(1000);
 			}
 			
 			sw.stop();

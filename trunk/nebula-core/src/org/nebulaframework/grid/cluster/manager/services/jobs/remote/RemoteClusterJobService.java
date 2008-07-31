@@ -16,6 +16,7 @@ package org.nebulaframework.grid.cluster.manager.services.jobs.remote;
 import org.nebulaframework.core.job.deploy.GridJobInfo;
 import org.nebulaframework.core.job.exceptions.GridJobPermissionDeniedException;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
+import org.nebulaframework.grid.cluster.node.GridNodeProfile;
 
 /**
  * {@code RemoteClusterJobService} allows a {@code ClusterManager} to request a
@@ -42,13 +43,14 @@ public interface RemoteClusterJobService {
 	 * denoted by {@code jobId}, for a remote {@code GridNode}.
 	 * 
 	 * @param jobId {@code GridJob} ID
+	 * @param nodeProfile {@code GridNode}'s Profile
 	 * 
 	 * @return If request was upheld, {@code GridJobInfo} for {@code GridJob}.
 	 * 
 	 * @throws GridJobPermissionDeniedException if request was denied
 	 * @throws IllegalArgumentException if jobId is invalid
 	 */
-	GridJobInfo remoteJobRequest(String jobId)
+	GridJobInfo remoteJobRequest(String jobId,  GridNodeProfile nodeProfile)
 			throws GridJobPermissionDeniedException, IllegalArgumentException;
 
 }

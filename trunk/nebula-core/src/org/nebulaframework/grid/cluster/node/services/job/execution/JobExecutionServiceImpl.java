@@ -117,13 +117,13 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 	 */
 	public void onServiceMessage(ServiceMessage message) {
 
-		if (message.getType().equals(ServiceMessageType.JOB_START)) {
+		if (message.getType()==ServiceMessageType.JOB_START) {
 			// New Job
 			newJob(message.getMessage());
-		} else if (message.getType().equals(ServiceMessageType.JOB_END)) {
+		} else if (message.getType()==ServiceMessageType.JOB_END) {
 			// Job Finished
 			endJob(message.getMessage());
-		} else if (message.getType().equals(ServiceMessageType.JOB_CANCEL)) {
+		} else if (message.getType()==ServiceMessageType.JOB_CANCEL) {
 			// Job Terminated
 			terminateJob(message.getMessage());
 		}
@@ -150,7 +150,7 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 		if (idle) {
 			// Request for Job
 			try {
-				GridJobInfo jobInfo = node.getServicesFacade().requestJob(jobId);
+				GridJobInfo jobInfo = node.getServicesFacade().requestJob(jobId, node.getProfile());
 
 				// Start it
 				if (jobInfo.isArchived()) {	// Archived Job
@@ -181,25 +181,19 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 		
 		if (idle) {
 			// Request for Job
-			try {
-				GridJobInfo jobInfo = node.getServicesFacade().requestNextJob();
+			GridJobInfo jobInfo = node.getServicesFacade().requestNextJob(node.getProfile());
 
-				// If no job, do nothing
-				if (jobInfo == null) {
-					log.info("[JobExecution] Idle as no active GridJobs");
-					return;
-				}
-				
-				// Start it
-				if (jobInfo.isArchived()) {	// Archived Job
-					startNewArchivedJob(jobInfo.getJobId(), jobInfo.getArchive());
-				} else {					// Normal Job
-					startNewJob(jobInfo.getJobId());
-				}
-
-			} catch (GridJobPermissionDeniedException e) {
-				// Permission Denied
-				log.warn("[JobExecution] Permission Denied for Request Next Available Job");
+			// If no job, do nothing
+			if (jobInfo == null) {
+				log.info("[JobExecution] Idle as no active GridJobs");
+				return;
+			}
+			
+			// Start it
+			if (jobInfo.isArchived()) {	// Archived Job
+				startNewArchivedJob(jobInfo.getJobId(), jobInfo.getArchive());
+			} else {					// Normal Job
+				startNewJob(jobInfo.getJobId());
 			}
 		} 
 	}

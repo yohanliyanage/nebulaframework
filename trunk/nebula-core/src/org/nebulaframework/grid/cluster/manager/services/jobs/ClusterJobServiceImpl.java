@@ -32,6 +32,7 @@ import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.manager.services.jobs.remote.RemoteClusterJobService;
 import org.nebulaframework.grid.cluster.manager.services.jobs.splitaggregate.AggregatorService;
 import org.nebulaframework.grid.cluster.manager.services.jobs.splitaggregate.SplitterService;
+import org.nebulaframework.grid.cluster.node.GridNodeProfile;
 import org.nebulaframework.grid.service.event.ServiceEventsSupport;
 import org.nebulaframework.grid.service.event.ServiceHookCallback;
 import org.nebulaframework.grid.service.message.ServiceMessage;
@@ -74,21 +75,6 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	private RemoteClusterJobService remoteJobServiceProxy;
 
 	
-	/**
-	 * Registers a {@link JobExecutionManager} with this JobExecutionService,
-	 * which is capable of handling {@code GridJob}s of type {@code clazz}.
-	 * 
-	 * @param clazz Type of GridJob Class
-	 * @param manager JobExecutionManager
-	 */
-
-	public void setExecutors(JobExecutionManager[] managers) {
-		for (JobExecutionManager manager : managers) {
-			executors.put(manager.getInterface(), manager);
-		}
-	}
-
-	
 	// Holds GridJobProfiles of all active GridJobs, against its JobId
 	// A LinkedHashMap is used to ensure insertion order iteration
 	private Map<String, GridJobProfile> jobs = new LinkedHashMap<String, GridJobProfile>();
@@ -105,6 +91,20 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		this.cluster = cluster;
 	}
 
+	/**
+	 * Registers a {@link JobExecutionManager} with this JobExecutionService,
+	 * which is capable of handling {@code GridJob}s of type {@code clazz}.
+	 * 
+	 * @param clazz Type of GridJob Class
+	 * @param manager JobExecutionManager
+	 */
+
+	public void setExecutors(JobExecutionManager[] managers) {
+		for (JobExecutionManager manager : managers) {
+			executors.put(manager.getInterface(), manager);
+		}
+	}
+	
 	/**
 	 * Implementation of {@link ClusterJobService#submitJob(UUID, GridJob).
 	 * <p>
@@ -274,12 +274,12 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	 * {@inheritDoc}
 	 */
 	// FIXME currently allows all nodes to participate
-	public GridJobInfo requestJob(String jobId)
+	public GridJobInfo requestJob(String jobId, GridNodeProfile nodeProfile)
 			throws GridJobPermissionDeniedException, IllegalArgumentException {
 
 		if (isRemoteClusterJob(jobId)) {
 			log.debug("[ClusterJobService] Remote Job Request {" + jobId + "}");
-			return remoteJobServiceProxy.remoteJobRequest(jobId);
+			return remoteJobServiceProxy.remoteJobRequest(jobId, nodeProfile);
 		}
 
 		log.debug("[ClusterJobService] Local Job Request {" + jobId + "}");
@@ -295,6 +295,10 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 				throw new NullPointerException("Job Not Found");
 			}
 
+			if (!profile.processRequest(nodeProfile)) {
+				throw new GridJobPermissionDeniedException("Permission Denied");
+			}
+			
 			// Return GridJobInfo for Profile
 			return createInfo(profile);
 
@@ -329,20 +333,24 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	/**
 	 * {@inheritDoc}
 	 */
-	public GridJobInfo requestNextJob() throws GridJobPermissionDeniedException {
+	public GridJobInfo requestNextJob(GridNodeProfile nodeProfile)  {
 
-		try {
-			// Find the next available Job
-			GridJobProfile profile = findNextJob();
-
-			// If job is available, return profile, or else null
-			return (profile != null) ? createInfo(profile) : null;
-		} catch (Exception e) {
-			throw new GridJobPermissionDeniedException(
-					"Permission denied due to exception", e);
+		GridJobProfile profile = null;
+			
+		// For each job, try to get permission
+		for(GridJobProfile p : jobs.values()) {
+			
+			// If Allowed to Participate
+			if (p.processRequest(nodeProfile)) {
+				profile = p;
+				break;
+			}
 		}
+		
+		// If job is available, return profile, or else null
+		return (profile != null) ? createInfo(profile) : null;
 	}
-
+	
 	/**
 	 * Creates and returns the {@code GridJobInfo} instance for a
 	 * {@code GridJob}, denoted by the {@code GridJobProfile}.
@@ -366,19 +374,6 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		return info;
 	}
 
-	/**
-	 * Finds and returns the {@code GridJobProfile} for next available Job.
-	 * <p>
-	 * The current implementation returns the oldest active {@code GridJob},
-	 * using the backing data structure implementation - {@link LinkedHashMap},
-	 * which ensures insertion order iteration of elements.
-	 * 
-	 * @return next {@code GridJob}'s {@code GridJobProfile}, or {@code null}
-	 *         if no {@code GridJob} exists.
-	 */
-	protected GridJobProfile findNextJob() {
-		return (jobs.size() > 0) ? jobs.values().iterator().next() : null;
-	}
 
 	/**
 	 * Cancels execution of the given {@code GridJob} on the Grid.
@@ -401,6 +396,7 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		notifyJobCancel(jobId);
 		return profile.cancel();
 	}
+	
 	
 	/**
 	 * Notifies that a Job has started to all nodes in this cluster.
@@ -559,6 +555,8 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	public int getActiveJobCount() {
 		return jobs.size();
 	}
+
+
 
 	
 }

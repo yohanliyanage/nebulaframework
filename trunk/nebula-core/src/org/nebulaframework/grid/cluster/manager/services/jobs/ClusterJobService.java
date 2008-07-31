@@ -23,6 +23,7 @@ import org.nebulaframework.core.job.deploy.GridJobInfo;
 import org.nebulaframework.core.job.exceptions.GridJobPermissionDeniedException;
 import org.nebulaframework.core.job.exceptions.GridJobRejectionException;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
+import org.nebulaframework.grid.cluster.node.GridNodeProfile;
 import org.nebulaframework.grid.cluster.node.services.job.submission.JobSubmissionService;
 
 /**
@@ -124,22 +125,22 @@ public interface ClusterJobService {
 	 * to participate in specified {@code GridJob}.
 	 * 
 	 * @param jobId JobId of GridJob, which the invoking {@code GridNode} expects to join.
+	 * @param nodeProfile {@code GridNode}s profile
 	 * 
 	 * @return GridJobInfo Grid Job Information, if request accepted.
 	 * 
 	 * @throws GridJobPermissionDeniedException if permission denied
 	 */
-	// TODO Pass GridNode profile ?
-	public GridJobInfo requestJob(String jobId) throws GridJobPermissionDeniedException;
+	public GridJobInfo requestJob(String jobId, GridNodeProfile nodeProfile) throws GridJobPermissionDeniedException;
 	
 	/**
 	 * Requests next available {@code GridJob}. If no {@code GridJob} is available,
 	 * this method will return {@code null}.
 	 * 
-	 * @return If available, {@code GridJobInfo}, or {@code null} if no {@code GridJob}
-	 * is available.
+	 * @param nodeProfile {@code GridNode}s profile
 	 * 
-	 * @throws GridJobPermissionDeniedException if permission denied
+	 * @return If available, {@code GridJobInfo}, or {@code null} if no {@code GridJob}
+	 * is available for which the given node can participate.
 	 */
-	public GridJobInfo requestNextJob() throws GridJobPermissionDeniedException;
+	public GridJobInfo requestNextJob(GridNodeProfile nodeProfile);
 }

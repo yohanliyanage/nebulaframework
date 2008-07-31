@@ -26,8 +26,6 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.ObjectMessage;
 
-import org.apache.activemq.ActiveMQConnectionFactory;
-import org.apache.activemq.ActiveMQPrefetchPolicy;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJob;
@@ -90,6 +88,8 @@ public class TaskExecutor {
 
 	private static Log log = LogFactory.getLog(TaskExecutor.class);
 
+	public static final int MAX_CONSECUTIVE_FAILURES = 3;
+	
 	// Active TaskExecutors, against JobId
 	private static Map<String, TaskExecutor> executors = new HashMap<String, TaskExecutor>();
 
@@ -100,6 +100,9 @@ public class TaskExecutor {
 	private DefaultMessageListenerContainer container; // Receiving Tasks
 
 	private int taskCount = 0; // # of Tasks Executed
+	
+	private int consecFails = 0;
+	
 
 	/**
 	 * Constructs a TaskExecutor for given {@code JobId}, Owner
@@ -155,60 +158,73 @@ public class TaskExecutor {
 
 			public void run() {
 
-				ClassLoader classLoader;
-				// Configure Thread Context Class Loader to use
-				// GridNodeClassLoader,
-				final ClassLoader nodeClassLoader = AccessController
-						.doPrivileged(new PrivilegedAction<ClassLoader>() {
-							
-							public ClassLoader run() {
-								
-								// Return Class Loader
-								return new GridNodeClassLoader(jobId,
-										classLoadingService, Thread
-												.currentThread()
-												.getContextClassLoader());
-							}
-						});
-				
-				classLoader = nodeClassLoader;
-				
-				if (archive != null) {
-					// If its an archived Job, configure to use
-					// GridArchvieClassLoader
-					// chained to GridNodeClassLoader
-					ClassLoader archiveLoader = AccessController
-							.doPrivileged(new PrivilegedAction<ClassLoader>() {
-								
-								public ClassLoader run() {
-									
-									// Archive Class Loader
-									return new GridArchiveClassLoader(archive,
-											nodeClassLoader);
-								}
-							});
-					classLoader = archiveLoader;
-				}
-
-				// Set ClassLoader as Thread Context Class Loader
-				Thread.currentThread().setContextClassLoader(classLoader);
-
 				// Create Executor
 				TaskExecutor executor = new TaskExecutor(jobId, node,
 						connectionFactory);
-
+				
 				// Put to active executors Map
 				synchronized (TaskExecutor.class) {
 					TaskExecutor.executors.put(jobId, executor);
 				}
-
+				
+				// Create ClassLoader
+				ClassLoader loader = createClassLoader(jobId, classLoadingService, archive);
+				// Set ClassLoader as Thread Context Class Loader
+				Thread.currentThread().setContextClassLoader(loader);
+				
 				// Start Executor
-				executor.start();
+				executor.start(loader);
 			}
 
 		}).start();
 	}
 
+	/**
+	 * Creates the ClassLoader to be used for remote class loading.
+	 * 
+	 * @param jobId JobId
+	 * @param classLoadingService Remote Class Loading Service Proxy
+	 * @param archive GridArchive, if available (or null)
+	 * @return ClassLoader instance
+	 */
+	private static ClassLoader createClassLoader(final String jobId, 
+			final ClassLoadingService classLoadingService,
+			final GridArchive archive) {
+	
+		ClassLoader classLoader = null;
+		
+		// Configure Thread Context Class Loader to use
+		// GridNodeClassLoader
+		
+		final ClassLoader nodeClassLoader =	AccessController
+				.doPrivileged(new PrivilegedAction<ClassLoader>() {
+					
+					public ClassLoader run() {
+						ClassLoader current = Thread.currentThread().getContextClassLoader();
+						return new GridNodeClassLoader(jobId, classLoadingService, current );
+					}
+				});
+		
+		classLoader = nodeClassLoader;
+		
+		// If its an archived Job, configure to use
+		// GridArchvieClassLoader
+		// chained to GridNodeClassLoader
+		if (archive != null) {
+
+			ClassLoader archiveLoader = AccessController
+					.doPrivileged(new PrivilegedAction<ClassLoader>() {
+						
+						public ClassLoader run() {
+							// Archive Class Loader
+							return new GridArchiveClassLoader(archive, nodeClassLoader);
+						}
+					});
+			classLoader = archiveLoader;
+		}
+		
+		return classLoader;
+	}
 	/**
 	 * Stops the {@code TaskExecutor} for the given {@code GridJob}.
 	 * 
@@ -235,13 +251,13 @@ public class TaskExecutor {
 	 * <p>
 	 * Once initialized, the instance will start Task Execution.
 	 */
-	protected void start() {
+	protected void start(ClassLoader loader) {
 
 		// Create Local Listeners for ResultQueue and TaskQueue
 		// (Order is important)
 		initializeResultQueueWriter(); // First
 		initializeTaskQueueListener(); // Second
-
+		
 		log.debug("[TaskExecutor] Started Job {" + jobId + "}");
 	}
 
@@ -252,17 +268,35 @@ public class TaskExecutor {
 	 * removed from the active {@code TaskExecutor}s Map.
 	 */
 	protected void stop() {
+		
 		// Shutdown Container
-		container.shutdown();
+		new Thread(new Runnable() {
 
+			@Override
+			public void run() {
+				
+				if (container == null) return;
+				
+				container.shutdown();
+				container = null;
+			}
+			
+		}).start();
+
+		
 		// Remove from Active TaskExecutors
 		synchronized (TaskExecutor.class) {
-			TaskExecutor.executors.remove(this.jobId);
+			if (TaskExecutor.executors.containsKey(this.jobId)) {
+
+				TaskExecutor.executors.remove(this.jobId);
+				
+				// Log
+				log.debug("[TaskExecutor] Stopped Job {" + jobId + "}");
+				log.debug("[TaskExecutor] Stats : Executed " + taskCount + " tasks");
+			}
 		}
 
-		// Log
-		log.debug("[TaskExecutor] Stopped Job {" + jobId + "}");
-		log.debug("[TaskExecutor] Stats : Executed " + taskCount + " tasks");
+
 	}
 
 	/**
@@ -286,13 +320,7 @@ public class TaskExecutor {
 		if (this.jmsTemplate == null) {
 			throw new IllegalStateException("ResultQueueWriter not Initialized");
 		}
-
-		ActiveMQConnectionFactory cf = (ActiveMQConnectionFactory) connectionFactory;
-
-		ActiveMQPrefetchPolicy policy = new ActiveMQPrefetchPolicy();
-		policy.setQueuePrefetch(1);
-		cf.setPrefetchPolicy(policy);
-
+		
 		// Create Listener and Container
 		container = new DefaultMessageListenerContainer();
 		container.setConnectionFactory(connectionFactory);
@@ -302,7 +330,7 @@ public class TaskExecutor {
 		// Start Container
 		container.afterPropertiesSet();
 	}
-
+	
 	/**
 	 * Initializes the ResultWriter ({@code JMSTemplate}) for this
 	 * {@code TaskExecutor}. Configures the {@code JmsTemplate} to send
@@ -347,6 +375,9 @@ public class TaskExecutor {
 			// Put result into Result Wrapper
 			taskResult.setResult(result);
 			
+			// Reset Consecutive Failure Count
+			consecFails = 0;
+			
 		} catch (Exception e) {
 
 			log.warn("[TaskExecutor] Exception while executing GridTask", e);
@@ -354,6 +385,13 @@ public class TaskExecutor {
 			// Exception, send exception details instead of result
 			taskResult.setException(e);
 
+			// Update consecutive failures, and check for limit
+			consecFails++;
+			if (consecFails > MAX_CONSECUTIVE_FAILURES) {
+				this.stop();
+			}
+			
+			
 		} finally {
 			
 			// Set Execution Time

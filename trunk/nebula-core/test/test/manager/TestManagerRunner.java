@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package org.nebulaframework.core.grid.cluster.manager;
+package test.manager;
 
 import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.command.ActiveMQQueue;

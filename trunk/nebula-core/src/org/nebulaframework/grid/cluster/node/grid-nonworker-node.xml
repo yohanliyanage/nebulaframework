@@ -31,14 +31,18 @@
 	<context:load-time-weaver/>
 	
 	<!-- Client Connection Factory -->
-	<!--  
-	<bean id="jmsConnectionFactory" class="org.springframework.jms.connection.SingleConnectionFactory">
+	<bean id="jmsConnectionFactory" class="org.springframework.jms.connection.CachingConnectionFactory">
 		<property name="targetConnectionFactory">
-			<amq:connectionFactory brokerURL="${cluster.url}" />
+			<bean class="org.apache.activemq.ActiveMQConnectionFactory">
+				<property name="brokerURL" value="${cluster.service}" />
+				<property name="prefetchPolicy">
+					<amq:prefetchPolicy queuePrefetch="1" />
+				</property>
+			</bean>
 		</property>
+		<property name="sessionCacheSize" value="2" />
 	</bean>
-	-->
-	<amq:connectionFactory id="jmsConnectionFactory" brokerURL="${cluster.service}" />
+	<!-- <amq:connectionFactory id="jmsConnectionFactory" brokerURL="${cluster.service}" />  -->
 
 	<!-- Local Node Instance -->
 	<bean id="localNode" class="org.nebulaframework.grid.cluster.node.GridNode" factory-method="createNode">

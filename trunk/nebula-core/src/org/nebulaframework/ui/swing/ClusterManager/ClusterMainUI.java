@@ -663,8 +663,9 @@ public class ClusterMainUI extends JFrame {
 						public void run() {
 							progressBar.setIndeterminate(true);
 							progressBar.setStringPainted(false);
-							percentLabel.setText("< Unbounded >");
 							
+							// Infinity Symbol
+							percentLabel.setText(String.valueOf('\u221e'));
 							
 						}
 					});
@@ -679,10 +680,6 @@ public class ClusterMainUI extends JFrame {
 						// 500ms Interval
 						Thread.sleep(500);
 						
-						// Job Finished, Stop
-						if (profile.getFuture().isJobFinished()) {
-							return;
-						}
 					} catch (InterruptedException e) {
 						log.warn("Interrupted Progress Updater Thread",e);
 					}
@@ -712,14 +709,24 @@ public class ClusterMainUI extends JFrame {
 					JLabel elapsedLabel = getUIElement("jobs."+jobId+".execution.elapsedtime");
 					elapsedLabel.setText(TimeUtils.timeDifference(startTime));
 					
+					// Job State
+					final JLabel statusLabel = getUIElement("jobs."+jobId+".execution.status");
+					
 					// If not in Executing Mode
 					if ((!profile.getFuture().isJobFinished())&&profile.getFuture().getState()!=GridJobState.EXECUTING) {
 						SwingUtilities.invokeLater(new Runnable() {
 							public void run() {
+								
+								// Progress Bar
 								progressBar.setIndeterminate(true);
 								progressBar.setStringPainted(false);
+								
+								// Status Text
 								String state = profile.getFuture().getState().toString();
-								percentLabel.setText(StringUtils.capitalize(state.toLowerCase()));
+								statusLabel.setText(StringUtils.capitalize(state.toLowerCase()));
+								
+								// Percentage Label
+								percentLabel.setText(String.valueOf('\u221e'));
 							}
 						});
 					}
@@ -760,7 +767,7 @@ public class ClusterMainUI extends JFrame {
 		// Job End Hook to Execute Job End Actions
 		ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
 
-			public void onServiceEvent(ServiceMessage event) {
+			public void onServiceEvent(final ServiceMessage event) {
 				SwingUtilities.invokeLater(new Runnable() {
 					public void run() {
 						
@@ -772,14 +779,29 @@ public class ClusterMainUI extends JFrame {
 						JProgressBar progress = getUIElement("jobs."+jobId+".progress");
 						JLabel percentage = getUIElement("jobs."+jobId+".execution.percentage");
 						
-						if (progress.isIndeterminate()) {
-							progress.setIndeterminate(false);
-							progress.setStringPainted(false);
-							percentage.setText("< Canceled >");
-						}
+
 						
 						progress.setEnabled(false);
 						
+						// If Successfully Finished
+						if (event.getType()==ServiceMessageType.JOB_END) {
+							
+							progress.setValue(100);
+							percentage.setText("100 %");
+							
+							if (progress.isIndeterminate()) {
+								progress.setIndeterminate(false);
+								progress.setStringPainted(true);
+							}
+						}
+						else if (event.getType()==ServiceMessageType.JOB_CANCEL){
+							
+							if (progress.isIndeterminate()) {
+								progress.setIndeterminate(false);
+								progress.setStringPainted(false);
+								percentage.setText("N/A");
+							}
+						}
 					}
 				});
 			}

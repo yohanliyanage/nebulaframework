@@ -18,9 +18,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJobState;
 import org.nebulaframework.core.job.GridJobStateListener;
+import org.nebulaframework.core.job.exceptions.SecurityViolationException;
 import org.nebulaframework.core.task.GridTaskResult;
 import org.nebulaframework.grid.cluster.manager.services.jobs.GridJobProfile;
+import org.nebulaframework.grid.cluster.manager.services.jobs.ResultCollectionSupport;
 import org.nebulaframework.grid.cluster.manager.support.CleanUpSupport;
+import org.springframework.jms.JmsException;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
 
 /**
@@ -34,15 +37,17 @@ import org.springframework.jms.listener.DefaultMessageListenerContainer;
  * @author Yohan Liyanage
  * @version 1.0
  */
-public class ResultCollector implements GridJobStateListener {
+// TODO Update JavaDoc about failure traces
+public class ResultCollector extends ResultCollectionSupport implements GridJobStateListener {
 
 	private static Log log = LogFactory.getLog(ResultCollector.class);
 
 	private boolean aggregated = false;
 	
-	private GridJobProfile profile;
 	private SplitAggregateJobManager jobManager;
 	private DefaultMessageListenerContainer container;
+	
+	
 
 	/**
 	 * Constructs a {@code ResultCollector} instance for given {@code GridJob}.
@@ -88,6 +93,9 @@ public class ResultCollector implements GridJobStateListener {
 			// Update Task Tracker
 			profile.getTaskTracker().resultReceived(result.getTaskId(), result.getExecutionTime());
 			
+			// Clear Failure Traces (if any)
+			clearFailureTrace(result.getWorkerId());
+			
 			// Check if Job has finished
 			finished = (taskCount == 0)&&(profile.getFuture().getState()== GridJobState.EXECUTING);
 
@@ -99,10 +107,25 @@ public class ResultCollector implements GridJobStateListener {
 
 		} else { // Result Not Valid / Exception
 			
+			// Check for Security Violations (Fails Job)
+			if (result.getException() instanceof SecurityException) {
+				
+				log.error("[ResultCollector] Security Violation detected. Terminating GridJob" + 
+				          profile.getJobId());
+				
+				// Fail the Job
+				profile.getFuture().fail(new SecurityViolationException("Security Violation Detected", 
+				                                                        result.getException()));
+				return;
+			}
+			
 			log.warn("[ResultCollector] Result Failed, ReEnqueueing - " + result.getException());
 			
 			// Update Profile
 			profile.failedTaskReceived();
+			
+			// Add Failure Trace
+			addFailureTrace(result.getWorkerId());
 			
 			//Request re-enqueue of Task
 			jobManager.getSplitter().reEnqueueTask(profile.getJobId(),
@@ -129,7 +152,22 @@ public class ResultCollector implements GridJobStateListener {
 	 */
 	protected void destroy() {
 		if (container != null) {
-			container.shutdown();
+			
+			new Thread(new Runnable() {
+
+				@Override
+				public void run() {
+					try {
+						container.shutdown();
+						container = null;
+					} catch (JmsException e) {
+						log.debug("[ResultCollector] Unable to shutdown JMS Container",e);
+					}					
+				}
+				
+			}).start();
+			
+			
 		}
 	}
 	
@@ -147,6 +185,7 @@ public class ResultCollector implements GridJobStateListener {
 	 * {@inheritDoc}
 	 */
 	public boolean cancel() {
+		
 		try {
 			this.destroy();
 			return true;
