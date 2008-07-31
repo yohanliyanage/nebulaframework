@@ -25,12 +25,14 @@ import org.nebulaframework.core.job.GridJobState;
 import org.nebulaframework.core.job.ResultCallback;
 import org.nebulaframework.core.job.annotations.UnboundedProcessingSettings;
 import org.nebulaframework.core.job.exceptions.InvalidResultException;
+import org.nebulaframework.core.job.exceptions.SecurityViolationException;
 import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
 import org.nebulaframework.core.task.GridTask;
 import org.nebulaframework.core.task.GridTaskResult;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.manager.services.jobs.GridJobProfile;
 import org.nebulaframework.grid.cluster.manager.services.jobs.InternalClusterJobService;
+import org.nebulaframework.grid.cluster.manager.services.jobs.ResultCollectionSupport;
 import org.nebulaframework.grid.cluster.manager.support.CleanUpSupport;
 import org.nebulaframework.util.jms.JMSNamingSupport;
 import org.springframework.jms.core.JmsTemplate;
@@ -54,10 +56,12 @@ import org.springframework.util.Assert;
  * 
  * @see UnboundedGridJob
  */
-public class UnboundedJobProcessor  {
+public class UnboundedJobProcessor extends ResultCollectionSupport {
 
 	private static Log log = LogFactory.getLog(UnboundedJobProcessor.class);
 
+	public static final int MAX_CONSECUTIVE_NODE_FAILS = 3;
+	
 	private GridJobProfile profile;		// Profile of GridJob
 	private UnboundedGridJob<?> job;	// GridJob
 
@@ -396,6 +400,9 @@ public class UnboundedJobProcessor  {
 				// Update Profile
 				profile.failedTaskReceived();
 				
+				// Add Failure Trace
+				addFailureTrace(taskResult.getWorkerId());
+				
 				reEnqueueTask(taskResult.getTaskId());
 				return;
 				
@@ -409,12 +416,36 @@ public class UnboundedJobProcessor  {
 			// Fire intermediate results callback
 			profile.fireCallback(result);
 			
+			// Clear Failure Traces
+			clearFailureTrace(taskResult.getWorkerId());
+			
 			// Task completed, remove it from TaskMap
 			// Add Dummy Place-holder for Result List
 			profile.addResultAndRemoveTask(taskResult.getTaskId(), null);
 
 		} else { // Result Not Valid / Exception
-
+			
+			// Check for Security Violations (Fails Job)
+			if (taskResult.getException() instanceof SecurityException) {
+				
+				log.error("[UnboundedJobProcessor] Security Violation detected. Terminating GridJob" + 
+				          profile.getJobId());
+				
+				// Fail the Job
+				profile.getFuture().fail(new SecurityViolationException("Security Violation Detected", 
+				                                                        taskResult.getException()));
+				// Stop Result Collector
+				destroy();
+				
+				return;
+			}
+			
+			// Update Profile
+			profile.failedTaskReceived();
+			
+			// Add Failure Trace
+			addFailureTrace(taskResult.getWorkerId());
+			
 			log.warn("[UnboundedJobProcessor] Result Failed ["
 					+ taskResult.getTaskId() + "], ReEnqueueing - "
 					+ taskResult.getException());

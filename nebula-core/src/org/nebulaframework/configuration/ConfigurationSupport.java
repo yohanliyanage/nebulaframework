@@ -108,13 +108,12 @@ public class ConfigurationSupport {
 			fis = new FileInputStream(fileName);
 			props.load(fis);
 			return true;
-		} catch (IOException e) {
-	
+		} catch (Exception e) {
 			log.debug("[GridConfiguration] Failed to Read Properties : " + fileName, e);
 			return false;
 		} finally {
 			try {
-				fis.close();
+				if (fis!=null) fis.close();
 			} catch (IOException e) {
 				log.error("Unable to Close FileInputStream",e);
 			}

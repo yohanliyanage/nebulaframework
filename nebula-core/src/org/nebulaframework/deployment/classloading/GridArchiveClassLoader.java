@@ -18,6 +18,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.AccessController;
+import java.security.PrivilegedExceptionAction;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -70,12 +72,13 @@ import org.springframework.util.Assert;
  * @see GridArchive
  * @see GridNodeClassLoader
  */
-public class GridArchiveClassLoader extends ClassLoader {
+public class GridArchiveClassLoader extends AbstractNebulaClassLoader {
 
 	private static Log log = LogFactory.getLog(GridArchiveClassLoader.class);
 
 	private ClassLoader parent; // Parent Class Loader
 	private File archiveFile; // Physical File (User Specified / Temp)
+	
 	
 	/**
 	 * Constructs a {@code GridArchiveClassLoader} for the {@code .nar} file
@@ -212,11 +215,28 @@ public class GridArchiveClassLoader extends ClassLoader {
 	}
 
 	/**
+	 * Loads the class with the specified binary name. This method delegates to
+	 * overloaded version {@link #loadClass(String, boolean)}, with second argument
+	 * as {@code true}.
+	 * 
+	 * @param name Binary name of class
+	 * @return Class, if found
+	 * @throws ClassNotFoundException if class is not found
+	 */
+	@Override
+	public Class<?> loadClass(String name) throws ClassNotFoundException {
+		return loadClass(name, true);
+	}
+
+	/**
 	 * {@inheritDoc}
+	 * @throws ClassNotFoundException  if class is not found
+	 * @throws SecurityException if class is not accessible due to security reasons
 	 */
 	@Override
 	public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException, SecurityException {
 		
+
 		try {
 			// Delegate to Super Class
 			// (which will call findClass)
@@ -242,6 +262,8 @@ public class GridArchiveClassLoader extends ClassLoader {
 		}
 	}
 
+
+
 	/**
 	 * Attempts to find the given Class with in the {@code GridArchive}. If
 	 * found (either as direct class file or with in a {@code .jar} library
@@ -256,13 +278,20 @@ public class GridArchiveClassLoader extends ClassLoader {
 		try {
 
 			// Convert class name to file name
-			String fileName = name.replaceAll("\\.", "/") + ".class";
+			final String fileName = name.replaceAll("\\.", "/") + ".class";
 
 			// Search in Archive | Exception if failed
-			byte[] bytes = findInArchive(fileName);
+			byte[] bytes = AccessController.doPrivileged(new PrivilegedExceptionAction<byte[]>() {
+
+				@Override
+				public byte[] run() throws IOException,	ClassNotFoundException {
+					return findInArchive(fileName);
+				}
+				
+			});
 
 			// If found, define class and return
-			return defineClass(name, bytes, 0, bytes.length);
+			return defineClass(name, bytes, 0, bytes.length, REMOTE_CODESOURCE);
 
 		} catch (Exception e) {
 			throw new ClassNotFoundException("Unable to locate class", e);

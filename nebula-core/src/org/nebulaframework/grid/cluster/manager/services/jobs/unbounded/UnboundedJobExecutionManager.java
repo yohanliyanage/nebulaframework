@@ -20,8 +20,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
+import org.nebulaframework.grid.cluster.manager.services.jobs.AbstractJobExecutionManager;
 import org.nebulaframework.grid.cluster.manager.services.jobs.GridJobProfile;
-import org.nebulaframework.grid.cluster.manager.services.jobs.JobExecutionManager;
 import org.nebulaframework.grid.cluster.manager.services.jobs.tracking.GridJobTaskTracker;
 import org.nebulaframework.grid.service.event.ServiceEventsSupport;
 import org.nebulaframework.grid.service.event.ServiceHookCallback;
@@ -36,12 +36,11 @@ import org.nebulaframework.grid.service.message.ServiceMessageType;
  * @author Yohan Liyanage
  * @version 1.0
  */
-public class UnboundedJobExecutionManager implements JobExecutionManager {
+public class UnboundedJobExecutionManager extends AbstractJobExecutionManager {
 
 	private static Log log = LogFactory.getLog(UnboundedJobExecutionManager.class);
 	
 	private Map<String, UnboundedJobProcessor> processors = new HashMap<String, UnboundedJobProcessor>();
-
 
 	/**
 	 * {@inheritDoc}
@@ -93,7 +92,7 @@ public class UnboundedJobExecutionManager implements JobExecutionManager {
 							processors.remove(profile.getJobId());
 						}
 						
-					}, profile.getJobId(), ServiceMessageType.JOB_CANCEL, ServiceMessageType.JOB_END);
+					}, profile.getJobId(), ServiceMessageType.JOB_END);
 					processor.start();
 				}
 			}).start();
@@ -114,14 +113,28 @@ public class UnboundedJobExecutionManager implements JobExecutionManager {
 	@Override
 	public boolean cancel(String jobId) {
 		if (processors.containsKey(jobId)){
-			return processors.get(jobId).cancel();
+			
+			// Cancel
+			boolean result = processors.get(jobId).cancel();
+			
+			// Record Cancellation
+			if (result) {
+				markCanceled(jobId);
+			}
+			
+			return result;
 		}
 		else {
+			
+			// If this job was canceled already
+			if (isRecentlyCancelled(jobId)) return true;
+			
 			log.warn("[UnboundedJobService] Unable to Cancel Job " 
 			         + jobId + " : No Processor Reference");
 			return false;
 		}
 	}
+
 
 
 	/**

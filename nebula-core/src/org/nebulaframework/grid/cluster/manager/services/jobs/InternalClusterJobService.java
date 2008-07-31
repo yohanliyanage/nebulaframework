@@ -60,7 +60,6 @@ public interface InternalClusterJobService extends ClusterJobService {
 	public void notifyJobCancel(String jobId);
 
 
-
 	/**
 	 * Returns the {@code GridJobProfile} for a given {@code GridJob}.
 	 * 

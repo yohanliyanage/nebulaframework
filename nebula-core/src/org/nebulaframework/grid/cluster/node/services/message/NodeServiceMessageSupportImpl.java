@@ -72,15 +72,21 @@ public class NodeServiceMessageSupportImpl implements ServiceMessagesSupport {
 	 */
 	public void onServiceMessage(ServiceMessage message) {
 
+		// Ignore HeartBeat Messages
+		if (message.getType()==ServiceMessageType.HEARTBEAT_FAILED) {
+			return;
+		}
+		
 		log.debug("[Service] " + message);
 
 		this.message = message;
 
 		GridNode node = GridNode.getInstance();
 		
-		// If Job Message
+
+		// Notify Relevant Parties
 		if (message.isJobMessage()) {
-			// Notify Job Service
+			// If Job Message Notify Job Service
 			if (node.getJobExecutionService()!=null) {
 				node.getJobExecutionService().onServiceMessage(message);
 			}
@@ -88,10 +94,25 @@ public class NodeServiceMessageSupportImpl implements ServiceMessagesSupport {
 				log.debug("[ServiceMessage]Job Message ignored as no JobExecutionService is registered");
 			}
 		}
-		
-		// Ignore HeartBeat Messages
-		if (message.getType()==ServiceMessageType.HEARTBEAT_FAILED) {
-			return;
+		else if (message.getType()==ServiceMessageType.NODE_BANNED) {
+			
+			// If Message is a Banned Message for this Node
+			
+			if (node.getId().toString().equals(message.getMessage().split("#")[0])) {
+				
+				try {
+					// Create a Cancel Message and Send
+					ServiceMessage msg = new ServiceMessage(message.getMessage().split("#")[1], ServiceMessageType.JOB_CANCEL);
+					node.getJobExecutionService().onServiceMessage(msg);
+					
+				} catch (Exception e) {
+					log.warn("[ServiceMessage] Exception while processing message", e);
+				}
+				
+			}
+			else {
+				log.debug("Disregarding Node Banned for : " + message.getMessage() + ", Local : " + node.getId());
+			}
 		}
 		
 		// Notify Service Event

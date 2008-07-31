@@ -12,6 +12,6 @@
 </manifest>
 <selectedElements exportClassFiles="true" exportJavaFiles="false" exportOutputFolder="false">
 <javaElement handleIdentifier="=Nebula-Trunk/src"/>
-<javaElement handleIdentifier="=Nebula-Trunk/test&lt;org.nebulaframework.core.grid.cluster.node{TestNodeWorker.java"/>
+<javaElement handleIdentifier="=Nebula-Trunk/test&lt;test.node{TestNodeWorker.java"/>
 </selectedElements>
 </jardesc>

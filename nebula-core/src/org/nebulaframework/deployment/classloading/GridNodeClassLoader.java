@@ -14,6 +14,9 @@
 
 package org.nebulaframework.deployment.classloading;
 
+import java.security.AccessController;
+import java.security.PrivilegedExceptionAction;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.deployment.classloading.service.ClassLoadingService;
@@ -49,7 +52,7 @@ import org.springframework.util.Assert;
  * @see GridArchiveClassLoader
  * @see ClassLoadingService
  */
-public class GridNodeClassLoader extends ClassLoader {
+public class GridNodeClassLoader extends AbstractNebulaClassLoader {
 
 	private static Log log = LogFactory.getLog(GridNodeClassLoader.class);
 
@@ -63,90 +66,94 @@ public class GridNodeClassLoader extends ClassLoader {
 	 */
 	protected ClassLoadingService classLoadingService; 
 
-	
 
-	/**
-	 * Constructs a {@code GridNodeClassLoader} for the given {@code GridJob},
-	 * using the specified {@code ClassLoadingService} and the parent
-	 * {@code ClassLoader}.
-	 * 
-	 * @param jobId
-	 *            JobId for which the {@code GridNodeClassLoader} is
-	 *            instantiated
-	 * @param classLoadingService
-	 *            Proxy for remote {@code ClassLoadingService} at
-	 *            {@code ClusterManager}
-	 * @param parent
-	 *            the parent {@code ClassLoader}, or {@code null} if none
-	 * 
-	 * @throws IllegalArgumentException
-	 *             if either {@code jobId} or {@code ClassLoadingService} is
-	 *             {@code null}
-	 * @throws SecurityException if class loader creation is prohibited by
-	 * current SecurityManager
-	 */
-	public GridNodeClassLoader(	String jobId,
-								ClassLoadingService classLoadingService, 
-								final ClassLoader parent)
-	
-			throws IllegalArgumentException, SecurityException {
+    /**
+     * Constructs a {@code GridNodeClassLoader} for the given {@code GridJob},
+     * using the specified {@code ClassLoadingService} and the parent
+     * {@code ClassLoader}.
+     *
+     * @param jobId
+     *            JobId for which the {@code GridNodeClassLoader} is
+     *            instantiated
+     * @param classLoadingService
+     *            Proxy for remote {@code ClassLoadingService} at
+     *            {@code ClusterManager}
+     * @param parent
+     *            the parent {@code ClassLoader}, or {@code null} if none
+     *
+     * @throws IllegalArgumentException
+     *             if either {@code jobId} or {@code ClassLoadingService} is
+     *             {@code null}
+     */
+    public GridNodeClassLoader(String jobId,
+                    ClassLoadingService classLoadingService, final ClassLoader parent)
+                    throws IllegalArgumentException {
 
-		super(parent); // May throw SecurityException
+            super(parent);
+            
+            Assert.notNull(jobId);
+            Assert.notNull(classLoadingService);
+
+            this.jobId = jobId;
+            this.classLoadingService = classLoadingService;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Class<?> loadClass(String name) throws ClassNotFoundException {
 		
-		Assert.notNull(jobId);
-		Assert.notNull(classLoadingService);
+    	return super.loadClass(name);
+    }
 
-		this.jobId = jobId;
-		this.classLoadingService = classLoadingService;
-	}
+    /**
+     * Attempts to find the class definition for the given class name, by first
+     * searching the local cache, and then through the remote
+     * {@link ClassLoadingService}.
+     *
+     * @param name
+     *            binary name of the class
+     *
+     * @return The {@code Class<?>} object for requested class, if found
+     *
+     * @throws ClassNotFoundException
+     *             if unable to find the class
+     */
+    @Override
+    protected Class<?> findClass(final String name) throws ClassNotFoundException {
 
-	
+            log.debug("[GridNodeClassLoader] Finding Class : " + name);
 
-	/**
-	 * Attempts to find the class definition for the given class name, by first
-	 * searching the local cache, and then through the remote
-	 * {@link ClassLoadingService}.
-	 * 
-	 * @param name
-	 *            binary name of the class
-	 * 
-	 * @return The {@code Class<?>} object for requested class, if found
-	 * 
-	 * @throws ClassNotFoundException
-	 *             if unable to find the class
-	 */
-	@Override
-	protected Class<?> findClass(String name) throws ClassNotFoundException {
+            Class<?> cls = null;
+            // Attempt remote load
+            try {
+                    log.debug("[GridNodeClassLoader] Attempt Remote Loading : " + name);
+                    
+                    // Get bytes for class from remote service
+                    byte[] bytes = AccessController.doPrivileged(new PrivilegedExceptionAction<byte[]>() {
 
-		if (log.isDebugEnabled()) {
-			log.debug("[GridNodeClassLoader] Finding Class : " + name);
-		}
-		
-		Class<?> cls = null;
-		
-		// Attempt remote load
-		try {
-			
-			if (log.isDebugEnabled()) {
-				log.debug("[GridNodeClassLoader] Attempt Remote Loading : " + name);
-			}
-			
-			// Get bytes for class from remote service
-			byte[] bytes = classLoadingService.findClass(jobId, name);
-			cls = defineClass(name, bytes, 0, bytes.length);
-			
-			if (log.isDebugEnabled()) {
-				log.debug("[GridNodeClassLoader] Remote Loaded : " + name);
-			}
-			
-			return cls;
+						@Override
+						public byte[] run() throws ClassNotFoundException {
+							return classLoadingService.findClass(jobId, name);
+						}
+                    	
+                    });
+                    
+                    
+                    cls = defineClass(name, bytes, 0, bytes.length, REMOTE_CODESOURCE);
+                    log.debug("[GridNodeClassLoader] Remote Loaded : " + name);
 
-		} catch (Exception ex) {
-			log.warn("[GridNodeClassLoader] Exception while Remote Loading ",
-						ex);
-			throw new ClassNotFoundException(
-					"Class not found due to Exception", ex);
-		}
-	}
+                    return cls;
+
+            } catch (Exception ex) {
+                    log.warn("[GridNodeClassLoader] Exception while Remote Loading ",
+                                            ex);
+                    throw new ClassNotFoundException(
+                                    "Class not found due to Exception", ex);
+            }
+    }
+
+  
 
 }

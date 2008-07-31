@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package org.nebulaframework.core.grid.cluster.node;
+package test.node;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

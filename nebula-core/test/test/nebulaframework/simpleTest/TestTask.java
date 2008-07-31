@@ -15,7 +15,7 @@ package test.nebulaframework.simpleTest;
 
 import java.util.Random;
 
-import org.apache.tools.ant.AntClassLoader;
+import org.apache.tools.ant.taskdefs.Ant;
 import org.nebulaframework.core.task.GridTask;
 import org.nebulaframework.grid.GridExecutionException;
 
@@ -33,10 +33,18 @@ public class TestTask implements GridTask<Integer> {
 		Integer val = new Random().nextInt(100);
 
 		// Test loading an external library
-		AntClassLoader.class.getName();
+		Ant.class.getName();
 
 		//System.out.println("Random Value : " + val);
-
+		//try {
+			//new SecurityManager();
+		//if (true) throw new GridExecutionException();
+		System.err.println("I can create Sec Man");
+		//} catch (Exception e1) {
+		//	System.err.println("OOPS. I CAN'T");
+		//}
+		
+		
 		try {
 			// Wait for 1 second, to simulate a large work unit
 			Thread.sleep(1000);

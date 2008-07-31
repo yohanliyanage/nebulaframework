@@ -105,6 +105,30 @@ public class GridJobFutureServerImpl implements InternalGridJobFuture, GridJobFu
 		
 		return result;
 	}
+	
+	/**
+	 * Marks the {@code GridJob} represented by this
+	 * Future implementation as a <b>failed</b> job,
+	 * and stops further execution.
+	 * <p>
+	 * Sets the given exception as the reason for
+	 * the failure of this job.
+	 * 
+	 * @param exception cause of failure
+	 * 
+	 * @return value {@code true} if successfully marked as failed.
+	 */
+	public boolean fail(Exception exception) {
+		
+		// Cancel Job Execution
+		boolean result =  jobService.cancelJob(jobId);
+		
+		// Mark as failed
+		this.setException(exception);
+		this.setState(GridJobState.FAILED);
+		
+		return result;
+	}
 
 	/**
 	 * Sets the result after the {@link GridJob} execution.
@@ -141,9 +165,17 @@ public class GridJobFutureServerImpl implements InternalGridJobFuture, GridJobFu
 	 * Sets the state of the {@code GridJob} of this {@code GridJobFutureImpl}
 	 * to the given {@link GridJobState}.
 	 * 
-	 * @param state
+	 * @param state new state
+	 * 
+	 * @throws IllegalStateException if job is in finished state
 	 */
-	public void setState(GridJobState state) {
+	public void setState(GridJobState state) throws IllegalStateException {
+		
+		// If in finished state, throw exception
+		if (isJobFinished()) {
+			throw new IllegalStateException("Unable to change the state of GridJob.");
+		}
+		
 		synchronized (mutex) {
 			
 			this.state = state;

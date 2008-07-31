@@ -7,8 +7,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.splitaggregate.SplitAggregateGridJob;
+import org.nebulaframework.grid.cluster.manager.services.jobs.AbstractJobExecutionManager;
 import org.nebulaframework.grid.cluster.manager.services.jobs.GridJobProfile;
-import org.nebulaframework.grid.cluster.manager.services.jobs.JobExecutionManager;
 import org.nebulaframework.grid.cluster.manager.services.jobs.tracking.GridJobTaskTracker;
 import org.nebulaframework.grid.service.event.ServiceEventsSupport;
 import org.nebulaframework.grid.service.event.ServiceHookCallback;
@@ -17,7 +17,7 @@ import org.nebulaframework.grid.service.message.ServiceMessageType;
 import org.springframework.beans.factory.annotation.Required;
 
 // TODO FixDoc
-public class SplitAggregateJobManager implements JobExecutionManager {
+public class SplitAggregateJobManager extends AbstractJobExecutionManager {
 	
 	private static final Log log = LogFactory.getLog(SplitAggregateJobManager.class);
 	
@@ -53,10 +53,13 @@ public class SplitAggregateJobManager implements JobExecutionManager {
 			// Allow Final Results
 			profile.getFuture().setFinalResultSupported(true);
 			
+			// Create Task Tracker
+			profile.setTaskTracker(GridJobTaskTracker.startTracker(profile, this));
+			
 			// Start Splitter & Aggregator for GridJob
 			splitter.startSplitter(profile);
 			aggregator.startAggregator(profile, this);
-			profile.setTaskTracker(GridJobTaskTracker.startTracker(profile, this));
+			
 			
 			
 			return true;
@@ -152,7 +155,7 @@ public class SplitAggregateJobManager implements JobExecutionManager {
 					collectors.remove(jobId);
 				}
 				
-			}, jobId, ServiceMessageType.JOB_CANCEL, ServiceMessageType.JOB_END);
+			}, jobId, ServiceMessageType.JOB_END);
 		}
 		else {
 			throw new IllegalArgumentException("[Split-Aggregate] Result Collector Registered for Job " 
@@ -165,10 +168,21 @@ public class SplitAggregateJobManager implements JobExecutionManager {
 	 */
 	@Override
 	public boolean cancel(String jobId) {
+		
 		if (collectors.containsKey(jobId)){
-			return collectors.get(jobId).cancel();
+			boolean result = collectors.get(jobId).cancel();
+			
+			// Record Cancellation
+			if (result) {
+				markCanceled(jobId);
+			}
+			
+			return result;
 		}
 		else {
+			
+			// If this job was canceled already
+			if (isRecentlyCancelled(jobId)) return true;
 			log.warn("[SplitAggregateJobService] Unable to Cancel Job " 
 			         + jobId + " : No Processor Reference");
 			return false;

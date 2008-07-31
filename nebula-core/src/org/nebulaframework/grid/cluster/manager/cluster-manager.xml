@@ -39,14 +39,15 @@
 	</amq:broker>
  	
 	<!-- JMS Connection Factory -->
-	<!-- 
-	<bean id="jmsConnectionFactory" class="org.springframework.jms.connection.SingleConnectionFactory">
+	
+	<bean id="jmsConnectionFactory" class="org.springframework.jms.connection.CachingConnectionFactory">
 		<property name="targetConnectionFactory">
 			<amq:connectionFactory brokerURL="${cluster.service}" />
 		</property>
+		<property name="sessionCacheSize" value="2" />
 	</bean>
-	 -->
-	<amq:connectionFactory id="jmsConnectionFactory" brokerURL="${cluster.service}" />
+	
+	<!-- <amq:connectionFactory id="jmsConnectionFactory" brokerURL="${cluster.service}" />  -->
 
 	<!-- ClusterManager -->
 	<bean id="clusterManager" class="org.nebulaframework.grid.cluster.manager.ClusterManager" factory-method="getInstance">

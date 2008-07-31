@@ -41,6 +41,12 @@ public enum ServiceMessageType {
 	JOB_CANCEL,
 	
 	/**
+	 * A {@code GridNode} has been banned from participating for a 
+	 * {@code GridJob}.
+	 */
+	NODE_BANNED,
+	
+	/**
 	 * A GridNode has joined the Cluster.
 	 */
 	NODE_REGISTERED,

@@ -15,6 +15,7 @@
 package org.nebulaframework.grid.cluster.node;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 /**
  * GridNodeInfo Implementation. Holds information regarding a node of Grid.
@@ -26,7 +27,9 @@ public class GridNodeProfileImpl implements Serializable, GridNodeProfile {
 
 	private static final long serialVersionUID = -7303863519997272578L;
 	
-	private String ipAddress;	// IP Address
+	private UUID id;				// Node Id
+	private UUID clusterId;			// Cluster Id
+	private String ipAddress;		// IP Address
 	private String name;			// System Name
 	private String architecture;	// System Architecture
 	private String OS;				// Operating System
@@ -39,6 +42,49 @@ public class GridNodeProfileImpl implements Serializable, GridNodeProfile {
 	 */
 	public GridNodeProfileImpl() {
 		super();
+	}
+
+	
+	/**
+	 * Returns the GridNodeID for this
+	 * Node.
+	 * 
+	 * @return UUID NodeId
+	 */
+	public UUID getId() {
+		return id;
+	}
+
+
+	/**
+	 * Sets the GridNodeID for this
+	 * Node.
+	 * 
+	 * @param id Node ID
+	 */
+	public void setId(UUID id) {
+		this.id = id;
+	}
+
+	// TODO Uncomment in interface
+	/**
+	 * Returns the ClusterID for this
+	 * {@code GridNode}.
+	 * 
+	 * @return UUID ClusterID
+	 */
+	public UUID getClusterId() {
+		return clusterId;
+	}
+
+	/**
+	 * 	Sets the ClusterID for this
+	 * {@code GridNode}.
+	 * 
+	 * @param clusterId ClusterID
+	 */
+	public void setClusterId(UUID clusterId) {
+		this.clusterId = clusterId;
 	}
 
 
