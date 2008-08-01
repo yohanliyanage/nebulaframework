@@ -6,8 +6,14 @@ import java.security.CodeSource;
 import java.security.SecureClassLoader;
 import java.security.cert.Certificate;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 // TODO FixDoc
 public abstract class AbstractNebulaClassLoader extends SecureClassLoader {
+	
+	private static final Log log = LogFactory
+			.getLog(AbstractNebulaClassLoader.class);
 	
 	/**
 	 * CodeBase URL for remote loaded classes.
@@ -19,6 +25,29 @@ public abstract class AbstractNebulaClassLoader extends SecureClassLoader {
 	 */
 	protected static final CodeSource REMOTE_CODESOURCE;
 	
+    /**
+     * The classes belonging to these packages and sub-packages
+     * of these packages, will not be accessible through instances
+     * of this Class Loader.
+     */
+    // TODO Ensure List is Up to Date
+    protected static final String[] PROHIBITED_PACKAGES = {
+            "org.nebulaframework.grid.cluster",
+            "org.nebulaframework.grid.service",
+            "org.nebulaframework.discovery",
+            "org.nebulaframework.configuration",
+            "org.nebulaframework.ui"
+    };
+    
+    /**
+     * The classes specified in this will not be accessible 
+     * through instances of this Class Loader.
+     */
+    // TODO Ensure List is Up to Date
+    protected static final String[] PROHIBITED_CLASSES = {
+        "org.nebulaframework.grid.Grid",
+    };
+
 	static {
 		try {
 			// Initialize CodeSource
@@ -28,20 +57,6 @@ public abstract class AbstractNebulaClassLoader extends SecureClassLoader {
 		}
 	}
 	
-	/**
-	 * The classes belonging to these packages and sub-packages
-	 * of these packages, will not be accessible through instances
-	 * of this Class Loader.
-	 */
-	// TODO Ensure List is Up to Date
-	protected static final String[] PROHIBITED_PACKAGES = {
-		"org.nebulaframework.grid",
-		"org.nebulaframework.deployment",
-		"org.nebulaframework.discovery",
-		"org.nebulaframework.configuration"
-	};
-	
-	
 	public AbstractNebulaClassLoader() throws SecurityException {
 		super();
 	}
@@ -50,15 +65,22 @@ public abstract class AbstractNebulaClassLoader extends SecureClassLoader {
 		super(parent);
 	}
 
-	
-	// TODO FixDoc
-	protected void checkProhibited(String name) throws SecurityException {
-		for (String pkg : PROHIBITED_PACKAGES) {
-			if (name.startsWith(pkg)) {
-				throw new SecurityException("Package " + pkg + " is not accessible");
-			}
-		}
-	}
+    // TODO FixDoc
+    protected void checkProhibited(String name) throws SecurityException {
+            for (String pkg : PROHIBITED_PACKAGES) {
+                    if (name.startsWith(pkg)) {
+                		log.warn("Attempted to access prohibited package : " + pkg);
+                        throw new SecurityException("Package " + pkg + " is not accessible");
+                    }
+            }
+            for (String cls : PROHIBITED_CLASSES) {
+                if (name.equals(cls)) {
+                		log.warn("Attempted to access prohibited class : " + name);
+                        throw new SecurityException("Class " + cls + " is not accessible");
+                }
+        }
+    }
+
 
 	/**
 	 * {@inheritDoc}

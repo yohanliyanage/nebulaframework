@@ -14,6 +14,7 @@
 
 package org.nebulaframework.grid.cluster.manager.services.jobs;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -28,6 +29,9 @@ import org.nebulaframework.core.job.deploy.GridJobInfo;
 import org.nebulaframework.core.job.exceptions.GridJobPermissionDeniedException;
 import org.nebulaframework.core.job.exceptions.GridJobRejectionException;
 import org.nebulaframework.core.job.future.GridJobFutureServerImpl;
+import org.nebulaframework.deployment.classloading.GridArchiveClassLoader;
+import org.nebulaframework.deployment.classloading.GridNodeClassLoader;
+import org.nebulaframework.deployment.classloading.service.ClassLoadingService;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.manager.services.jobs.remote.RemoteClusterJobService;
 import org.nebulaframework.grid.cluster.manager.services.jobs.splitaggregate.AggregatorService;
@@ -38,6 +42,7 @@ import org.nebulaframework.grid.service.event.ServiceHookCallback;
 import org.nebulaframework.grid.service.message.ServiceMessage;
 import org.nebulaframework.grid.service.message.ServiceMessageType;
 import org.nebulaframework.util.hashing.SHA1Generator;
+import org.nebulaframework.util.io.IOSupport;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.util.Assert;
 
@@ -63,6 +68,7 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 
 	private static Log log = LogFactory.getLog(ClusterJobServiceImpl.class);
 	private static int finished = 0;
+	
 	
 	private ClusterManager cluster;
 	private JobServiceJmsSupport jmsSupport;
@@ -104,45 +110,44 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 			executors.put(manager.getInterface(), manager);
 		}
 	}
-	
+
 	/**
-	 * Implementation of {@link ClusterJobService#submitJob(UUID, GridJob).
-	 * <p>
 	 * {@inheritDoc}
 	 */
-	public String submitJob(UUID owner, GridJob<?, ?> job)
+	@Override
+	public String submitJob(UUID owner,  String className, byte[] classData)
 			throws GridJobRejectionException {
 		// Delegate to overloaded version
-		return submitJob(owner, job, null, null);
+		return submitJob(owner, className, classData, null, null);
 	}
 
 	/**
-	 * Implementation of
-	 * {@link ClusterJobService#submitJob(UUID, GridJob, GridArchive)).
-	 * <p>
 	 * {@inheritDoc}
 	 */
-	public String submitJob(UUID owner, GridJob<?, ?> job, GridArchive archive)
+	@Override
+	public String submitJob(UUID owner,  String className, byte[] classData, GridArchive archive)
 			throws GridJobRejectionException {
-		return submitJob(owner, job, archive, null);
+		return submitJob(owner, className, classData, archive, null);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public String submitJob(UUID owner, GridJob<?, ?> job,
+	@Override
+	public String submitJob(UUID owner,  String className, byte[] classData,
 			String resultCallbackQueue) throws GridJobRejectionException {
-		return submitJob(owner, job, null, resultCallbackQueue);
+		return submitJob(owner, className, classData, null, resultCallbackQueue);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */	
-	public String submitJob(UUID owner, GridJob<?, ?> job, GridArchive archive,
+	@Override
+	public String submitJob(final UUID owner,  final String className, final byte[] classData, GridArchive archive,
 			String resultCallbackQueue) throws GridJobRejectionException {
 
 		// Create JobId [ClusterID.OwnerID.RandomUUID]
-		String jobId = this.cluster.getClusterId() + "." + owner + "."
+		final String jobId = this.cluster.getClusterId() + "." + owner + "."
 				+ UUID.randomUUID();
 
 		// Create Infrastructure - JMS Queues
@@ -152,15 +157,29 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 
 		// Create GridJobFuture, which will be used remotely by
 		// owner node to monitor / obtain results
-		GridJobFutureServerImpl future = jmsSupport.createFuture(jobId, this);
+		final GridJobFutureServerImpl future = jmsSupport.createFuture(jobId, this);
 
 		// Create GridJobProfile for GridJob
-		GridJobProfile profile = new GridJobProfile();
+		final GridJobProfile profile = new GridJobProfile();
 		profile.setJobId(jobId);
 		profile.setOwner(owner);
-		profile.setJob(job);
 		profile.setFuture(future);
-
+		
+		try {
+			// Deserialize and retrieve GridJob
+			profile.setJob(getGridJobInstance(owner, classData, archive));
+		} catch (Exception e) {
+			log.warn("[JobService] Unable to de-serialize Job", e);
+			throw new GridJobRejectionException("Unable to de-serialize Job",e);
+		}
+		
+		
+		synchronized (this) {
+			// Insert GridJob to active jobs map
+			this.jobs.put(jobId, profile);
+		}
+		
+		
 		if (resultCallbackQueue != null) {
 			ResultCallback proxy = jmsSupport.createResultCallbackProxy(jobId, resultCallbackQueue);
 			profile.setResultCallback(proxy);
@@ -175,17 +194,11 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 			// Put Archive into GridJobProfile
 			profile.setArchive(archive);
 		}
-
-		synchronized (this) {
-			// Insert GridJob to active jobs map
-			this.jobs.put(jobId, profile);
-		}
-
 		
 		if (!startGridJob (profile)) {
 			// Unsupported Type
 			throw new GridJobRejectionException("GridJob Type Not Supported : " + 
-			                                    job.getClass().getName());
+			                                    profile.getJob().getClass().getName());
 		}
 
 		// Track to see if Job Submitter Node Fails
@@ -198,6 +211,27 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		return jobId;
 	}
 
+	// TODO FixDoc
+	private GridJob<?, ?> getGridJobInstance(UUID owner, byte[] classData, GridArchive archive) throws IOException, ClassNotFoundException {
+		
+		if (archive!=null) {
+			// Read from Archive if Archived GridJob
+			return (GridJob<?,?>) IOSupport.deserializeFromBytes(classData, new GridArchiveClassLoader(archive));
+		}
+		else {
+			// Read from GridNodeClassLoader
+			return (GridJob<?,?>) IOSupport.deserializeFromBytes(classData,
+	                                                             createClassLoader(owner));
+		}
+	}
+
+	// TODO FixDoc
+	protected ClassLoader createClassLoader(UUID owner) {
+		ClassLoadingService service = ClusterManager.getInstance().getClassLoadingService();
+		return new GridNodeClassLoader(owner, service);
+	}
+
+	
 	// TODO FixDoc
 	private boolean startGridJob(GridJobProfile profile) {
 		

@@ -16,6 +16,7 @@ package org.nebulaframework.deployment.classloading;
 
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
+import java.util.UUID;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -62,11 +63,70 @@ public class GridNodeClassLoader extends AbstractNebulaClassLoader {
 	protected String jobId; 
 	
 	/**
+	 * OwnerId of the GridJob, if known (can be null)
+	 */
+	protected UUID ownerId;
+	
+	/**
 	 * Allows to load class definitions from remote nodes.
 	 */
 	protected ClassLoadingService classLoadingService; 
 
 
+	 /**
+     * Constructs a {@code GridNodeClassLoader} for the given {@code GridJob},
+     * using the specified {@code ClassLoadingService}.
+     *
+     * @param jobId
+     *            JobId for which the {@code GridNodeClassLoader} is
+     *            instantiated
+     * @param classLoadingService
+     *            Proxy for remote {@code ClassLoadingService} at
+     *            {@code ClusterManager}
+     *
+     * @throws IllegalArgumentException
+     *             if either {@code jobId} or {@code ClassLoadingService} is
+     *             {@code null}
+     */
+    public GridNodeClassLoader(String jobId,
+                    ClassLoadingService classLoadingService)
+                    throws IllegalArgumentException {
+
+            super();
+    	
+            Assert.notNull(jobId);
+            Assert.notNull(classLoadingService);
+
+            this.jobId = jobId;
+            this.classLoadingService = classLoadingService;
+    }
+    
+    /**
+     * Constructs a {@code GridNodeClassLoader} for the given {@code GridJob},
+     * using the specified {@code ClassLoadingService}.
+     *
+     * @param ownerId Job Owner Node Id
+     * @param classLoadingService
+     *            Proxy for remote {@code ClassLoadingService} at
+     *            {@code ClusterManager}
+     *
+     * @throws IllegalArgumentException
+     *             if either {@code jobId} or {@code ClassLoadingService} is
+     *             {@code null}
+     */
+    public GridNodeClassLoader(UUID ownerId, 
+                    ClassLoadingService classLoadingService)
+                    throws IllegalArgumentException {
+
+            super();
+    	
+            Assert.notNull(ownerId);
+            Assert.notNull(classLoadingService);
+
+            this.ownerId = ownerId;
+            this.classLoadingService = classLoadingService;
+    }
+    
     /**
      * Constructs a {@code GridNodeClassLoader} for the given {@code GridJob},
      * using the specified {@code ClassLoadingService} and the parent
@@ -90,7 +150,7 @@ public class GridNodeClassLoader extends AbstractNebulaClassLoader {
                     throws IllegalArgumentException {
 
             super(parent);
-            
+    	
             Assert.notNull(jobId);
             Assert.notNull(classLoadingService);
 
@@ -103,11 +163,16 @@ public class GridNodeClassLoader extends AbstractNebulaClassLoader {
      */
     @Override
     public Class<?> loadClass(String name) throws ClassNotFoundException {
+    	
+		// Check if the class is Prohibited to be accessed
+    	// (throws SecurityException in such cases)
+		checkProhibited(name);
 		
     	return super.loadClass(name);
     }
 
-    /**
+    
+	/**
      * Attempts to find the class definition for the given class name, by first
      * searching the local cache, and then through the remote
      * {@link ClassLoadingService}.
@@ -135,7 +200,14 @@ public class GridNodeClassLoader extends AbstractNebulaClassLoader {
 
 						@Override
 						public byte[] run() throws ClassNotFoundException {
-							return classLoadingService.findClass(jobId, name);
+							
+							// If we don't know owner
+							if (ownerId==null) {
+								return classLoadingService.findClass(jobId, name);
+							}
+							else { // If we know owner
+								return classLoadingService.findClass(ownerId,name);
+							}
 						}
                     	
                     });

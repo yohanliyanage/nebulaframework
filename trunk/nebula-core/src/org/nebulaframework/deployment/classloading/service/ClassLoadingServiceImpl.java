@@ -91,19 +91,32 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 		this.regService = regService;
 	}
 
+
+
+
 	/**
 	 * {@inheritDoc}
 	 */
 	public byte[] findClass(String jobId, String name)
 			throws ClassNotFoundException {
 		
-		// Check for nulls
-		Assert.notNull(jobId);
-		Assert.notNull(name);
+		UUID ownerId = null;
+		
+		try {
+			// Get the owner node
+			ownerId = jobService.getProfile(jobId).getOwner();
+		} catch (IllegalArgumentException e) {
+			throw new ClassNotFoundException("Unable to load class " + name, e);
+		}
 		
 		try {
 			log.debug("[ClassLoadingService] Finding Class " + name);
 
+			// Check for nulls
+			Assert.notNull(ownerId);
+			Assert.notNull(jobId);
+			Assert.notNull(name);
+			
 			// Check in cache, if found, return
 			synchronized (this) {
 				if (this.cache.containsKey(name)) {
@@ -120,18 +133,8 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 				}
 			}
 			
-			/* -- Remote Loading -- */
+			byte[] bytes = findClass(ownerId, name);
 			
-			// Get the owner node
-			UUID ownerId = jobService.getProfile(jobId).getOwner();
-
-			// Get ClassExporter of owner node
-			GridNodeClassExporter exporter = regService
-					.getGridNodeDelegate(ownerId).getClassExporter();
-
-			// Request class export
-			byte[] bytes = exporter.exportClass(name);
-
 			// If found, put to local cache
 			if (bytes != null) {
 				synchronized (this) {
@@ -140,10 +143,7 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 				return bytes;
 			}
 			
-			// Class Not Found
-			log.debug("[ClassLoadingService] Cannot Find Class");
-			throw new ClassNotFoundException(
-					"ClassLoaderService cannot locate class");
+			throw new ClassNotFoundException("Unable to find class");
 			
 		} catch (Exception e) { 
 			log.debug("[ClassLoadingService] Cannot Find Class Due to Exception");
@@ -152,6 +152,33 @@ public class ClassLoadingServiceImpl implements ClassLoadingService {
 		}
 	}
 
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public byte[] findClass(UUID ownerId, String name)
+			throws ClassNotFoundException, IllegalArgumentException {
+
+		/* -- Remote Loading -- */
+
+		// Get ClassExporter of owner node
+		GridNodeClassExporter exporter = regService
+				.getGridNodeDelegate(ownerId).getClassExporter();
+
+		// Request class export
+		byte[] bytes = exporter.exportClass(name);
+
+		if (bytes!=null) {
+			return bytes;
+		}
+		
+		// Class Not Found
+		log.debug("[ClassLoadingService] Cannot Find Class");
+		throw new ClassNotFoundException(
+				"ClassLoaderService cannot locate class");
+		
+	}
 	
 	/**
 	 * Nested wrapper class for class definitions which are stored

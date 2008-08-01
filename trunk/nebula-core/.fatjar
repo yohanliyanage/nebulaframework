@@ -1,0 +1,14 @@
+#Fat Jar Configuration File
+#Fri Aug 01 15:35:36 LKT 2008
+onejar.license.required=false
+manifest.classpath=
+manifest.removesigners=true
+onejar.checkbox=true
+jarname=Nebula-Trunk_fat.jar
+manifest.mergeall=true
+manifest.mainclass=org.nebulaframework.ui.swing.ClusterManager.ClusterManagerStarter
+manifest.file=<createnew>
+jarname.isextern=false
+onejar.expand=
+excludes=<jar|ant.jar>
+includes=

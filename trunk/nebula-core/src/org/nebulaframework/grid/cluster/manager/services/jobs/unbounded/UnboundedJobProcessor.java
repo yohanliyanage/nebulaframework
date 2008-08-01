@@ -62,7 +62,6 @@ public class UnboundedJobProcessor extends ResultCollectionSupport {
 
 	public static final int MAX_CONSECUTIVE_NODE_FAILS = 3;
 	
-	private GridJobProfile profile;		// Profile of GridJob
 	private UnboundedGridJob<?> job;	// GridJob
 
 	private boolean canceled = false;
@@ -234,9 +233,29 @@ public class UnboundedJobProcessor extends ResultCollectionSupport {
 					try {
 						// Get next task to be enqueued
 						task = job.task();
+					} catch (SecurityException e) {
+						log.error("[UnboundedJobProcessor] Security Violation while invoking task()",e);
+						log.warn("[UnboundedJobProcessor] Stopping Task Generation");
+						
+						// Update Future
+						profile.getFuture().setState(GridJobState.FAILED);
+						profile.getFuture().setException(e);
+						
+						// Stop Job Execution
+						stopJob();
+						
+						break;
 					} catch (Exception e) {
-						log.error("[UnboundedJobProcessor] Exception while invoking task()",e);
-						log.error("[UnboundedJobProcessor] Stopping Task Generation");
+						log.warn("[UnboundedJobProcessor] Exception while invoking task()",e);
+						log.warn("[UnboundedJobProcessor] Stopping Task Generation");
+						
+						// Update Future
+						profile.getFuture().setState(GridJobState.FAILED);
+						profile.getFuture().setException(e);
+						
+						// Stop Job Execution
+						stopJob();
+						
 						break;
 					}
 
@@ -362,8 +381,11 @@ public class UnboundedJobProcessor extends ResultCollectionSupport {
 
 		// Update Future and return Result (null for unbounded)
 		profile.getFuture().setResult(null);
-		profile.getFuture().setState(GridJobState.COMPLETE);
-
+		
+		if (! profile.getFuture().isJobFinished() ) {
+			profile.getFuture().setState(GridJobState.COMPLETE);
+		}
+		
 		// Destroy this instance
 		destroy();
 	}
@@ -406,9 +428,27 @@ public class UnboundedJobProcessor extends ResultCollectionSupport {
 				reEnqueueTask(taskResult.getTaskId());
 				return;
 				
+			} catch (SecurityException e) {
+				log.error("[UnboundedJobProcessor] Security Violation while Processing Result",e);
+				log.warn("[UnboundedJobProcessor] Stopping Job Execution");
+				
+				// Update Future
+				profile.getFuture().setState(GridJobState.FAILED);
+				profile.getFuture().setException(e);
+				
+				// Stop Job Execution
+				stopJob();
+				
+				return;
 			} catch (Exception e) {
-				log.error("[UnboundedJobProcessor] Exception while Processing Result",e);
-				log.error("[UnboundedJobProcessor] Stopping Job Execution");
+				log.warn("[UnboundedJobProcessor] Exception while Processing Result",e);
+				log.warn("[UnboundedJobProcessor] Stopping Job Execution");
+				
+				// Update Future
+				profile.getFuture().setState(GridJobState.FAILED);
+				profile.getFuture().setException(e);
+				
+				// Stop Job Execution
 				stopJob();
 				return;
 			}

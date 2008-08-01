@@ -47,9 +47,11 @@ public class ClassLoadingServiceSupport {
 	 * @param manager {@code ClusterManager} cluster
 	 * @param connectionFactory JMS {@code ConnectionFactory}
 	 * 
+	 * @return {@code ClassLoadingService} instance
+	 * 
 	 * @throws IllegalArgumentException if any argument is null
 	 */
-	public static void startClassLoadingService() throws IllegalArgumentException {
+	public static ClassLoadingService startClassLoadingService() throws IllegalArgumentException {
 
 		ClusterManager manager = ClusterManager.getInstance();
 		
@@ -65,6 +67,8 @@ public class ClassLoadingServiceSupport {
 		JMSRemotingSupport.createService(cf, queueName, service, ClassLoadingService.class);
 		
 		log.debug("[ClassLoadingService] Started");
+		
+		return service;
 	}
 
 	/**

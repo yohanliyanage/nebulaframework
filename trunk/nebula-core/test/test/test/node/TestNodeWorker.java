@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package test.node;
+package test.test.node;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

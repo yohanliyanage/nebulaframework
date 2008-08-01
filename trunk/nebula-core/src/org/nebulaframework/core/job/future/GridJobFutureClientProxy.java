@@ -26,6 +26,10 @@ import org.nebulaframework.core.job.ResultCallback;
 import org.nebulaframework.grid.GridExecutionException;
 import org.nebulaframework.grid.GridTimeoutException;
 import org.nebulaframework.grid.cluster.node.GridNode;
+import org.nebulaframework.grid.service.event.ServiceEventsSupport;
+import org.nebulaframework.grid.service.event.ServiceHookCallback;
+import org.nebulaframework.grid.service.message.ServiceMessage;
+import org.nebulaframework.grid.service.message.ServiceMessageType;
 import org.nebulaframework.util.hashing.SHA1Generator;
 import org.nebulaframework.util.jms.JMSRemotingSupport;
 
@@ -83,6 +87,16 @@ public class GridJobFutureClientProxy implements GridJobFuture {
 				
 			});
 		}
+		
+		// Job End / Cancel Hook to update finished flag
+		ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
+
+			@Override
+			public void onServiceEvent(ServiceMessage message) {
+				jobFinished = true;
+			}
+			
+		}, future.getJobId() , ServiceMessageType.JOB_CANCEL, ServiceMessageType.JOB_END);
 	}
 
 	/**

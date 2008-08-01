@@ -786,9 +786,18 @@ public class ClusterMainUI extends JFrame {
 						// If Successfully Finished
 						if (event.getType()==ServiceMessageType.JOB_END) {
 							
-							progress.setValue(100);
-							percentage.setText("100 %");
 							
+							if (profile.getFuture().getState()!=GridJobState.FAILED) {
+								// If Not Job Failed
+								progress.setValue(100);
+								percentage.setText("100 %");
+							}
+							else {
+								// If Failed
+								percentage.setText("N/A");
+							}
+							
+							// Stop (if) Indeterminate Progress Bar
 							if (progress.isIndeterminate()) {
 								progress.setIndeterminate(false);
 								progress.setStringPainted(true);
@@ -806,7 +815,7 @@ public class ClusterMainUI extends JFrame {
 				});
 			}
 			
-		}, jobId, ServiceMessageType.JOB_CANCEL, ServiceMessageType.JOB_END, ServiceMessageType.CLUSTER_SHUTDOWN);
+		}, jobId, ServiceMessageType.JOB_CANCEL, ServiceMessageType.JOB_END);
 	}
 
 	private String getJobType(GridJob<?, ?> job) {

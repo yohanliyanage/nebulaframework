@@ -120,9 +120,22 @@ public class SplitterServiceImpl implements SplitterService {
 				enqueueTask(profile, i, task); 	// Put to Task Queue
 			}	
 			
+		} catch (SecurityException e) {
+			// Security Violation during Split
+			log.error("[Splitter] Security Violation while Splitting Job " + profile.getJobId(), e);
+			
+			// Notify Workers
+			jobServiceImpl.notifyJobCancel(profile.getJobId());
+			
+			// Update Future State to 'Failed'
+			profile.getFuture().setException(e);
+			profile.getFuture().setState(GridJobState.FAILED);
+			
+			return;
+			
 		} catch (Exception e) {
 			// Exception during Split
-			log.warn("Exception while Splitting Job " + profile.getJobId(), e);
+			log.warn("[Splitter] Exception while Splitting Job " + profile.getJobId(), e);
 			
 			// Notify Workers
 			jobServiceImpl.notifyJobCancel(profile.getJobId());

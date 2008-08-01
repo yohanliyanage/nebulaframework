@@ -48,14 +48,14 @@ public interface ClusterJobService {
 	 * results in job enqueue and infrastructure allocation.
 	 * 
 	 * @param owner Owner of Job (Node Id)
-	 * @param job GridJob
+	 * @param className GridJob Class Name
+	 * @param classData Serialized GridJob Object Data
 	 * 
 	 * @return String JobId assigned for the submitted Job
 	 * 
 	 * @throws GridJobRejectionException if job is rejected
 	 */
-	public String submitJob(UUID owner,
-			GridJob<?,?> job) throws GridJobRejectionException;
+	public String submitJob(UUID owner, String className, byte[] classData) throws GridJobRejectionException;
 	
 	/**
 	 * Submits a {@code GridJob} to the {@code ClusterManager}, which 
@@ -67,7 +67,8 @@ public interface ClusterJobService {
 	 * {@link JobSubmissionService}.
 	 * 
 	 * @param owner Owner of Job (Node Id)
-	 * @param job GridJob
+	 * @param className GridJob Class Name
+	 * @param classData Serialized GridJob Object Data
 	 * @param resultCallbackQueue JMS QueueName used for ResultCallback 
 	 * communication
 	 * 
@@ -75,7 +76,7 @@ public interface ClusterJobService {
 	 * 
 	 * @throws GridJobRejectionException if job is rejected
 	 */
-	public String submitJob(UUID owner, GridJob<?,?> job,  String resultCallbackQueue) throws GridJobRejectionException;
+	public String submitJob(UUID owner,  String className, byte[] classData,  String resultCallbackQueue) throws GridJobRejectionException;
 	
 	/**
 	 * Submits an <i>archived</i> {@code GridJob} to the {@code ClusterManager}, 
@@ -84,7 +85,8 @@ public interface ClusterJobService {
 	 * which contains the submitted {@code GridJob}.
 	 * 
 	 * @param owner Owner of Job (Node Id)
-	 * @param job GridJob
+	 * @param className GridJob Class Name
+	 * @param classData Serialized GridJob Object Data
 	 * @param archive GridArchive, if applicable. This may be {@code null}.
 	 * 
 	 * @return String JobId assigned for the submitted Job
@@ -92,7 +94,7 @@ public interface ClusterJobService {
 	 * @throws GridJobRejectionException if job is rejected
 	 */	
 	public String submitJob(UUID owner,
-			GridJob<?,?> job, GridArchive archive) throws GridJobRejectionException;
+			 String className, byte[] classData, GridArchive archive) throws GridJobRejectionException;
 	
 	/**
 	 * Submits an <i>archived</i> {@code GridJob} with the given
@@ -118,7 +120,7 @@ public interface ClusterJobService {
 	 * @throws GridJobRejectionException if job is rejected
 	 */
 	public String submitJob(UUID owner,
-			GridJob<?,?> job, GridArchive archive, String resultCallbackQueue) throws GridJobRejectionException;
+			 String className, byte[] classData, GridArchive archive, String resultCallbackQueue) throws GridJobRejectionException;
 	
 	/**
 	 * Requests permission for the invoking {@code GridNode} 

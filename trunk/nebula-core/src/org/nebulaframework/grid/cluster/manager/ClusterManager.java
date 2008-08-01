@@ -20,6 +20,7 @@ import javax.jms.ConnectionFactory;
 import org.apache.activemq.broker.BrokerService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nebulaframework.deployment.classloading.service.ClassLoadingService;
 import org.nebulaframework.deployment.classloading.service.ClassLoadingServiceSupport;
 import org.nebulaframework.discovery.multicast.MulticastDiscovery;
 import org.nebulaframework.discovery.ws.WSDiscovery;
@@ -89,6 +90,7 @@ public class ClusterManager implements InitializingBean {
 	private InternalRemoteClusterJobService remoteJobService;
 	private InternalClusterHeartBeatService heartBeatService;
 	private PeerClusterService peerService;
+	private ClassLoadingService classLoadingService;
 	
 	/**
 	 * <b>Private Constructor</b> which instantiates ClusterManager, 
@@ -279,6 +281,16 @@ public class ClusterManager implements InitializingBean {
 		this.peerService = peerService;
 	}
 
+	/**
+	 * Returns the {@link ClassLoadingService}, which is responsible
+	 * for loading classes from remote {@link GridNode}s.
+	 * 
+	 * @return ClassLoadingService instance
+	 */
+	public ClassLoadingService getClassLoadingService() {
+		return classLoadingService;
+	}
+
 
 	/**
 	 * Sets the JMS {@code ConnectionFactory} used by the {@code ClusterManager} to 
@@ -379,7 +391,7 @@ public class ClusterManager implements InitializingBean {
 		Assert.notNull(clusterRegistrationService);
 		
 		// Start Remote Class Loading Service
-		ClassLoadingServiceSupport.startClassLoadingService();
+		classLoadingService = ClassLoadingServiceSupport.startClassLoadingService();
 		
 		// Start Remote Cluster Job Service
 		remoteJobService = new RemoteClusterJobServiceImpl(this);

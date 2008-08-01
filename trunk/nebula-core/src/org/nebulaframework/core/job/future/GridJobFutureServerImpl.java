@@ -94,9 +94,20 @@ public class GridJobFutureServerImpl implements InternalGridJobFuture, GridJobFu
 	}
 
 	/**
+	 * Returns the JobId for this {@code GridJob}.
+	 * 
+	 * @return JobId
+	 */
+	public String getJobId() {
+		return jobId;
+	}
+
+
+	/**
 	 * {@inheritDoc}
 	 */
 	public boolean cancel() {
+		
 		boolean result =  jobService.cancelJob(jobId);
 		
 		if (result) {
@@ -120,14 +131,12 @@ public class GridJobFutureServerImpl implements InternalGridJobFuture, GridJobFu
 	 */
 	public boolean fail(Exception exception) {
 		
-		// Cancel Job Execution
-		boolean result =  jobService.cancelJob(jobId);
-		
 		// Mark as failed
 		this.setException(exception);
 		this.setState(GridJobState.FAILED);
 		
-		return result;
+		// Cancel Job Execution
+		return jobService.cancelJob(jobId);
 	}
 
 	/**

@@ -19,6 +19,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.AccessController;
+import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
@@ -133,7 +134,7 @@ public class GridArchiveClassLoader extends AbstractNebulaClassLoader {
 		try {
 			// Create Temporary File
 			this.archiveFile = createTempArchiveFile(archive);
-		} catch (IOException e) {
+		} catch (Exception e) {
 			throw new RuntimeException(
 					"Cannot create class loader for Archive", e);
 		}
@@ -198,20 +199,32 @@ public class GridArchiveClassLoader extends AbstractNebulaClassLoader {
 	 * @throws IOException
 	 *             if IOException occurs during {@code File} handling
 	 */
-	protected File createTempArchiveFile(GridArchive archive)
-			throws IOException {
+	protected File createTempArchiveFile(final GridArchive archive)
+			throws Exception {
+		
+		try {
+			// Run with Privileges
+			return AccessController.doPrivileged(new PrivilegedExceptionAction<File>(){
 
-		// Create Temp File
-		File archiveFile = File.createTempFile("archivetemp", "nar");
-		archiveFile.deleteOnExit(); // Mark to delete
+				@Override
+				public File run() throws IOException {
+					// Create Temp File
+					File archiveFile = File.createTempFile("archivetemp", "nar");
+					archiveFile.deleteOnExit(); // Mark to delete
 
-		// Write the byte[]
-		FileOutputStream fout = new FileOutputStream(archiveFile);
-		fout.write(archive.getBytes());
-		fout.flush();
-		fout.close();
+					// Write the byte[]
+					FileOutputStream fout = new FileOutputStream(archiveFile);
+					fout.write(archive.getBytes());
+					fout.flush();
+					fout.close();
 
-		return archiveFile;
+					return archiveFile;
+				}
+				
+			});
+		} catch (PrivilegedActionException e) {
+			throw e.getException();
+		}
 	}
 
 	/**
@@ -237,6 +250,10 @@ public class GridArchiveClassLoader extends AbstractNebulaClassLoader {
 	public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException, SecurityException {
 		
 
+		// Check if the class is Prohibited to be accessed
+    	// (throws SecurityException in such cases)
+		checkProhibited(name);
+		
 		try {
 			// Delegate to Super Class
 			// (which will call findClass)

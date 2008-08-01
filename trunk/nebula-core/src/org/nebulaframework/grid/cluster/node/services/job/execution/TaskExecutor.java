@@ -88,7 +88,7 @@ public class TaskExecutor {
 
 	private static Log log = LogFactory.getLog(TaskExecutor.class);
 
-	public static final int MAX_CONSECUTIVE_FAILURES = 3;
+	public static final int CONSECUTIVE_FAILURES_THRESHOLD = 3;
 	
 	// Active TaskExecutors, against JobId
 	private static Map<String, TaskExecutor> executors = new HashMap<String, TaskExecutor>();
@@ -387,10 +387,18 @@ public class TaskExecutor {
 
 			// Update consecutive failures, and check for limit
 			consecFails++;
-			if (consecFails > MAX_CONSECUTIVE_FAILURES) {
-				this.stop();
-			}
 			
+			if (consecFails > CONSECUTIVE_FAILURES_THRESHOLD) {
+				try {
+					
+					// If we are above consecutive failure threshold,
+					// slow down result production
+					Thread.sleep(500 * (consecFails - CONSECUTIVE_FAILURES_THRESHOLD));
+					
+				} catch (InterruptedException ie) {
+					log.warn("Interrupted", ie);
+				}
+			}
 			
 		} finally {
 			

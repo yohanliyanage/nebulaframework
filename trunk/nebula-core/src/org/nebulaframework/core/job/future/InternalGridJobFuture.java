@@ -36,6 +36,13 @@ import org.nebulaframework.grid.cluster.manager.services.jobs.ClusterJobService;
 public interface InternalGridJobFuture extends GridJobFuture {
 	
 	/**
+	 * Returns the JobId for this {@code GridJob}.
+	 * 
+	 * @return JobId
+	 */
+	public String getJobId();
+	
+	/**
 	 * Creates a {@link ResultCallback} proxy using the specified JMS QueueName,
 	 * which will be invoked when the final result of the {@code GridJob} is
 	 * available.

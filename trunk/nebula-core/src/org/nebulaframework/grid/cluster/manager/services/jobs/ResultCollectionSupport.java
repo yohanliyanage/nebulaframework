@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
+import org.nebulaframework.grid.cluster.manager.services.messaging.ServiceMessageSender;
 import org.nebulaframework.grid.service.message.ServiceMessage;
 import org.nebulaframework.grid.service.message.ServiceMessageType;
 
@@ -46,29 +47,52 @@ public class ResultCollectionSupport {
 	 */
 	protected void addFailureTrace(UUID workerId) {
 		
-		if (!failureTrace.containsKey(workerId)) {
-			failureTrace.put(workerId, 1);
-		}
-		else {
-			
-			int count = failureTrace.get(workerId);
-			
-			if (count > MAX_CONSECUTIVE_NODE_FAILS) {
+		log.trace("Adding Failure for " + workerId);
+		
+		synchronized (failureTrace) {
+			if (!failureTrace.containsKey(workerId)) {
+				failureTrace.put(workerId, 1);
+			}	
+			else {
 				
-				// Add to banned list
-				profile.addBannedNode(workerId);
+				int count = failureTrace.get(workerId) + 1;
 				
-				String msgBody = workerId + "#" + profile.getJobId();
+				if (count > MAX_CONSECUTIVE_NODE_FAILS) {
+					
+					log.trace("Baning " + workerId);
+					
+					// Add to banned list
+					try {
+						profile.addBannedNode(workerId);
+					} catch (RuntimeException e1) {
+						e1.printStackTrace();
+					}
+					
+					String msgBody = workerId + "#" + profile.getJobId();
+					
+					log.trace("Msg " + msgBody);
+					
+					// Send banned message
+					ServiceMessage message = new ServiceMessage(msgBody, 
+					                                            ServiceMessageType.NODE_BANNED);
+					
+					log.trace("Msg Created");
+					
+					try {
+						ServiceMessageSender sender = ClusterManager.getInstance().getServiceMessageSender();
+						log.trace("I got Sender : " + sender);
+						sender.sendServiceMessage(message);
+						log.trace("Sent");
+					} catch (Exception e) {
+						log.error("Error Sending Message", e);
+					}
+					
+					log.trace("Sent Bann Message " + workerId);
+				}
 				
-				// Send banned message
-				ServiceMessage message = new ServiceMessage(msgBody, 
-				                                            ServiceMessageType.NODE_BANNED);
-				ClusterManager.getInstance().getServiceMessageSender().sendServiceMessage(message);
-				
-				return;
+				failureTrace.put(workerId, count);
 			}
-			
-			failureTrace.put(workerId, count + 1);
 		}
+		log.trace("Failure Count for " + workerId + " = " + failureTrace.get(workerId));
 	}
 }

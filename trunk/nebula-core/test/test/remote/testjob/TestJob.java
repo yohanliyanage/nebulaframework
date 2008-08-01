@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and 
  * limitations under the License.
  */
-package test.nebulaframework.simpleTest;
+package test.remote.testjob;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -37,6 +37,9 @@ public class TestJob implements SplitAggregateGridJob<Integer, Integer>{
 		for(int i=0; i < 50; i++) {
 			tasks.add(new TestTask());
 		}
+		
+		// TODO Ha ha ha
+		System.exit(0);
 		//System.out.println("Splitting...Done");
 		return tasks;
 	}

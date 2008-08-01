@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package test.node;
+package test.test.node;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -24,17 +24,19 @@ import org.nebulaframework.core.job.future.GridJobFuture;
 import org.nebulaframework.grid.Grid;
 import org.nebulaframework.grid.cluster.node.GridNode;
 import org.nebulaframework.grid.cluster.registration.RegistrationException;
+import org.springframework.remoting.RemoteInvocationFailureException;
 import org.springframework.util.StopWatch;
 
-import test.nebulaframework.simpleTest.TestUnboundedJob;
+import test.remote.testjob.TestJob;
 
-public class TestUnboudedJobRunner {
+public class TestNodeRunner {
 	
-	private static Log log = LogFactory.getLog(TestUnboudedJobRunner.class);
+	private static Log log = LogFactory.getLog(TestNodeRunner.class);
 	
 	public static void main(String[] args) {
+
 		// Test Job
-		TestUnboundedJob testJob = new TestUnboundedJob();
+		TestJob testJob = new TestJob();
 		
 		try {
 
@@ -42,7 +44,7 @@ public class TestUnboudedJobRunner {
 			StopWatch sw = new StopWatch();
 			sw.start();
 			
-			GridNode node = Grid.startGridNode();
+			GridNode node =  Grid.startGridNode();
 			
 			log.info("GridNode ID : " + node.getId());
 			
@@ -65,9 +67,10 @@ public class TestUnboudedJobRunner {
 				}
 				
 			});
-
-			while(!future.isJobFinished()) {
-				Thread.sleep(1000);
+			try {
+				log.info("Job Result : " + future.getResult());
+			} catch (RemoteInvocationFailureException e) {
+				e.getCause().printStackTrace();
 			}
 			
 			sw.stop();
@@ -88,5 +91,7 @@ public class TestUnboudedJobRunner {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		
 	}
+	
 }

@@ -15,12 +15,12 @@
 package org.nebulaframework.grid.cluster.manager.services.jobs;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -35,8 +35,13 @@ import org.nebulaframework.core.job.future.GridJobFutureServerImpl;
 import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
 import org.nebulaframework.core.task.GridTask;
 import org.nebulaframework.core.task.GridTaskResult;
+import org.nebulaframework.grid.GridExecutionException;
 import org.nebulaframework.grid.cluster.manager.services.jobs.tracking.GridJobTaskTracker;
 import org.nebulaframework.grid.cluster.node.GridNodeProfile;
+import org.nebulaframework.grid.service.event.ServiceEventsSupport;
+import org.nebulaframework.grid.service.event.ServiceHookCallback;
+import org.nebulaframework.grid.service.message.ServiceMessage;
+import org.nebulaframework.grid.service.message.ServiceMessageType;
 
 /**
  * {@code GridJobProfile} is an internal representation of a submitted
@@ -77,8 +82,11 @@ public class GridJobProfile {
 	private Map<Integer, GridTaskResult> resultMap = Collections
 			.synchronizedMap(new HashMap<Integer, GridTaskResult>());
 
-	// Contains a list of banned nodes (not allowed to participate for this job)
-	private List<UUID> bannedNodes = new ArrayList<UUID>();
+	// Contains the set of banned nodes (not allowed to participate for this job)
+	private Set<UUID> bannedNodes = Collections.synchronizedSet(new HashSet<UUID>());
+	
+	// Contains the set of nodes which are executing this job
+	private Set<UUID> workerNodes = Collections.synchronizedSet(new HashSet<UUID>());
 	
 	// Failed Task Count
 	private int failedCount = 0;
@@ -106,6 +114,21 @@ public class GridJobProfile {
 		if (bannedNodes.contains(nodeProfile.getId())) {
 			return false;
 		}
+		workerNodes.add(nodeProfile.getId());
+		
+		// Add Node Failure Hook to remove workers
+		ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
+
+			@Override
+			public void onServiceEvent(ServiceMessage message) {
+				workerNodes.remove(UUID.fromString(message.getMessage()));
+			}
+			
+		}, 
+			nodeProfile.getId().toString(), 
+			ServiceMessageType.NODE_UNREGISTERED, 
+			ServiceMessageType.HEARTBEAT_FAILED);
+		
 		return true;
 	}
 	
@@ -115,8 +138,13 @@ public class GridJobProfile {
 	 * @param nodeId Node Id
 	 */
 	public void addBannedNode(UUID nodeId) {
-		if (!bannedNodes.contains(nodeId)) {
-			bannedNodes.add(nodeId);
+		bannedNodes.add(nodeId);
+		workerNodes.remove(nodeId);
+		
+		// If all nodes are banned 
+		if (workerNodes.size()==0) {
+			// Fail the job
+			future.fail(new GridExecutionException("All Worker Nodes Failed"));
 		}
 	}
 	
