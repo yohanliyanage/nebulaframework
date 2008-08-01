@@ -16,7 +16,6 @@ package org.nebulaframework.grid.cluster.manager.services.facade;
 
 import java.util.UUID;
 
-import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.core.job.deploy.GridJobInfo;
 import org.nebulaframework.core.job.exceptions.GridJobPermissionDeniedException;
@@ -63,11 +62,12 @@ public class ClusterManagerServicesFacadeImpl implements
 	 * Delegates to {@code ClusterManager}'s {@code ClusterJobService} to
 	 * submit a given {@code GridJob}.
 	 * 
-	 * @see ClusterJobService#submitJob(UUID, GridJob, GridArchive)
+	 * @see ClusterJobService#submitJob(UUID,  String, byte[], GridArchive)
 	 */
-	public String submitJob(UUID owner, GridJob<?, ?> job)
+	@Override
+	public String submitJob(UUID owner, String className, byte[] classData)
 			throws GridJobRejectionException {
-		return this.cluster.getJobService().submitJob(owner, job);
+		return this.cluster.getJobService().submitJob(owner, className, classData);
 	}
 
 	/**
@@ -76,11 +76,12 @@ public class ClusterManagerServicesFacadeImpl implements
 	 * Delegates to {@code ClusterManager}'s {@code ClusterJobService} to
 	 * submit a given {@code GridJob}.
 	 * 
-	 * @see ClusterJobService#submitJob(UUID, GridJob, GridArchive, String)
+	 * @see ClusterJobService#submitJob(UUID,  String, byte[], GridArchive, String)
 	 */
-	public String submitJob(UUID owner, GridJob<?, ?> job,
+	@Override
+	public String submitJob(UUID owner, String className, byte[] classData,
 			String resultCallbackQueue) throws GridJobRejectionException {
-		return this.cluster.getJobService().submitJob(owner, job, resultCallbackQueue);
+		return this.cluster.getJobService().submitJob(owner, className, classData, resultCallbackQueue);
 	}
 	
 	/**
@@ -91,11 +92,12 @@ public class ClusterManagerServicesFacadeImpl implements
 	 * {@code GridArchive}.
 	 * 
 	 * @see GridArchive
-	 * @see ClusterJobService#submitJob(UUID, GridJob, GridArchive, String)
+	 * @see ClusterJobService#submitJob(UUID,  String, byte[], GridArchive, String)
 	 */
-	public String submitJob(UUID owner, GridJob<?, ?> job, GridArchive archive,
+	@Override
+	public String submitJob(UUID owner, String className, byte[] classData, GridArchive archive,
 			String resultCallbackQueue) throws GridJobRejectionException {
-		return this.cluster.getJobService().submitJob(owner, job, archive, resultCallbackQueue);
+		return this.cluster.getJobService().submitJob(owner, className, classData, archive, resultCallbackQueue);
 	}
 	
 	/**
@@ -106,12 +108,13 @@ public class ClusterManagerServicesFacadeImpl implements
 	 * {@code GridArchive}.
 	 * 
 	 * @see GridArchive
-	 * @see ClusterJobService#submitJob(UUID, GridJob, GridArchive)
+	 * @see ClusterJobService#submitJob(UUID, String, byte[], GridArchive)
 	 */
-	public String submitJob(UUID owner, GridJob<?, ?> job, GridArchive archive)
+	@Override
+	public String submitJob(UUID owner, String className, byte[] classData, GridArchive archive)
 			throws GridJobRejectionException {
 		// If SplitAggregate this, if not other
-		return this.cluster.getJobService().submitJob(owner, job, archive);
+		return this.cluster.getJobService().submitJob(owner, className, classData, archive);
 	}
 
 	/**
@@ -122,6 +125,7 @@ public class ClusterManagerServicesFacadeImpl implements
 	 * 
 	 * @see ClusterJobService#requestJob(String)
 	 */
+	@Override
 	public GridJobInfo requestJob(String jobId, GridNodeProfile nodeProfile)
 			throws GridJobPermissionDeniedException {
 		return this.cluster.getJobService().requestJob(jobId, nodeProfile);
@@ -133,6 +137,7 @@ public class ClusterManagerServicesFacadeImpl implements
 	 * Delegates to {@code ClusterManager}'s {@code ClusterJobService} to
 	 * request permission to participate for next available {@code GridJob}.
 	 */
+	@Override
 	public GridJobInfo requestNextJob(GridNodeProfile nodeProfile) {
 		return this.cluster.getJobService().requestNextJob(nodeProfile);
 	}

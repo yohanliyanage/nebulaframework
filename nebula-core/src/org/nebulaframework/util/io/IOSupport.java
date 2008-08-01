@@ -14,8 +14,13 @@
 
 package org.nebulaframework.util.io;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -108,5 +113,70 @@ public class IOSupport {
 		}
 
 		return bytes;
+	}
+	
+	/**
+	 * Serializes the given object and returns a byte[] representation of
+	 * the serialized data.
+	 * 
+	 * @param obj Object to Serialize
+	 * 
+	 * @return byte[] of serialized data
+	 * 
+	 * @throws IOException if thrown during serialization
+	 */
+	public static <T extends Serializable> byte[] serializeToBytes(T obj) throws IOException{
+		
+		Assert.notNull(obj);
+		
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		ObjectOutputStream oos = new ObjectOutputStream(bos);
+		oos.writeObject(obj);
+		
+		return bos.toByteArray();
+	}
+	
+	/**
+	 * Deserializes an object instance from the given byte[] 
+	 * of serial data.
+	 * 
+	 * @param bytes Byte[] containing serialized data
+	 * 
+	 * @return Deserialized object
+	 * 
+	 * @throws IOException if thrown during serialization
+	 */
+	@SuppressWarnings("unchecked") // Ignore type casting Warnings
+	public static <T extends Serializable> T deserializeFromBytes(byte[] bytes) throws IOException, ClassNotFoundException {
+		
+		Assert.notNull(bytes);
+		
+		ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bytes));
+		return (T) ois.readObject();
+	}
+	
+	/**
+	 * Deserializes an object instance from the given byte[] 
+	 * of serial data, and uses the specified ClassLoader 
+	 * during process.
+	 * 
+	 * @param bytes Byte[] containing serialized data
+	 * @param classLoader ClassLoader to be used to resolve classes
+	 * 
+	 * @return Deserialized object
+	 * 
+	 * @throws IOException if thrown during serialization
+	 */
+	@SuppressWarnings("unchecked") // Ignore type casting Warnings
+	public static <T extends Serializable> T deserializeFromBytes(byte[] bytes, ClassLoader classLoader) throws IOException, ClassNotFoundException {
+		
+		Assert.notNull(bytes);
+		
+		// Use NebulaObjectInputStream, which allows using a specified ClassLoader
+		// to resolve classes
+		NebulaObjectInputStream ois = new NebulaObjectInputStream(new ByteArrayInputStream(bytes));
+		ois.setClassLoader(classLoader);
+		
+		return (T) ois.readObject();
 	}
 }

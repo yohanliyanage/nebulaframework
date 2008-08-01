@@ -80,7 +80,11 @@ public class HeartBeatInvoker implements Runnable {
 			} catch (RemoteAccessException e) {
 				
 				// Cluster Down
-				log.error("[HeartBeat] Error Sending Heart Beat",e);
+				log.error("[HeartBeat] Error Sending Heart Beat (See Debug log for details)");
+				if (log.isDebugEnabled()) {
+					log.debug("[HeartBeat] Exception While Sending", e);
+				}
+				
 				stop();
 				
 				// Shutdown GridNode

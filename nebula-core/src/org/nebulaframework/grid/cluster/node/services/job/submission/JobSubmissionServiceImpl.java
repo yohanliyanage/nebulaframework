@@ -14,6 +14,7 @@
 
 package org.nebulaframework.grid.cluster.node.services.job.submission;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,6 +35,7 @@ import org.nebulaframework.core.job.splitaggregate.SplitAggregateGridJob;
 import org.nebulaframework.grid.cluster.manager.services.facade.ClusterManagerServicesFacade;
 import org.nebulaframework.grid.cluster.node.GridNode;
 import org.nebulaframework.util.hashing.SHA1Generator;
+import org.nebulaframework.util.io.IOSupport;
 import org.nebulaframework.util.jms.JMSNamingSupport;
 import org.nebulaframework.util.jms.JMSRemotingSupport;
 import org.springframework.beans.factory.annotation.Required;
@@ -191,21 +193,36 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
 	protected GridJobFuture submitJob(GridJob<?, ?> job, GridArchive archive,
 			ResultCallback callback) throws GridJobRejectionException {
 
+		
 		String resultCallbackQueue = null;
 		if (callback != null) {
 			// Expose Callback as Service, and Create Proxy
 			resultCallbackQueue = exposeCallback(callback);
 		}
 
-		log.info("Submitting GridJob " + job.getClass().getName());
-
+		
+		
 		// Submit Job to Cluster and retrieve JobId
+		log.info("[JobSubmission] Submitting GridJob " + job.getClass().getName());
+		
+		// Serialize Job Instance
+		byte[] serialData = null;
+		try {
+			serialData = IOSupport.serializeToBytes(job);
+		} catch (IOException e) {
+			log.error("[JobSubmission] IO Exception while serializing data");
+			throw new GridJobRejectionException("Serialization Failed");
+		}
+		
 		String jobId = this.node
 				.getServicesFacade()
-				.submitJob(this.node.getId(), job, archive, resultCallbackQueue);
+				.submitJob(this.node.getId(), 
+				           job.getClass().getName(), 
+				           serialData, archive, resultCallbackQueue);
 
-		log.debug("Submitted");
 
+		log.info("[JobSubmission] Submitted GridJob " + job.getClass().getName());
+		
 		// Create local proxy to interface remote service
 		String queueName = JMSNamingSupport.getFutureQueueName(jobId);
 		InternalGridJobFuture future = JMSRemotingSupport

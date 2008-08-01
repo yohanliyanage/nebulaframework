@@ -31,7 +31,7 @@ public class GridJobTaskTracker {
 	private boolean stopped;
 	
 	// Average Execution Time, in Seconds
-	private long averageTaskDuration = -1;
+	private int averageTaskDuration = -1;
 	
 	// Enqueued Tasks
 	private Queue<Integer> enqueued = new LinkedList<Integer>();
@@ -99,7 +99,7 @@ public class GridJobTaskTracker {
 		log.debug("[GridJobTaskTracker] Started Tracking for " + profile.getJobId());
 		
 		// Wait until average information is available
-		while (averageTaskDuration < 0 && (profile.getFuture().getState()!=GridJobState.EXECUTING)) {
+		while (averageTaskDuration < 0 || (profile.getFuture().getState()!=GridJobState.EXECUTING)) {
 			
 			// If Stopped
 			if (stopped) {
@@ -141,7 +141,6 @@ public class GridJobTaskTracker {
 		log.debug("[GridJobTaskTracker] Stopping for Job " + profile.getJobId());
 		
 	}
-
 
 
 	private long getMultipler() {
@@ -235,10 +234,10 @@ public class GridJobTaskTracker {
 					if (seconds==0) seconds = 1;
 
 					if (averageTaskDuration <=0) {
-						averageTaskDuration = (long) seconds;
+						averageTaskDuration = (int) seconds;
 					}
 					else {
-						averageTaskDuration = (long) Math.floor(((averageTaskDuration + seconds) / 2));
+						averageTaskDuration = (int) Math.floor(((averageTaskDuration + seconds) / 2));
 					}
 				}
 			}

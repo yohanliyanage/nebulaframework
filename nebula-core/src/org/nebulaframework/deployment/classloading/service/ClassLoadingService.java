@@ -14,6 +14,8 @@
 
 package org.nebulaframework.deployment.classloading.service;
 
+import java.util.UUID;
+
 import org.nebulaframework.deployment.classloading.GridNodeClassLoader;
 import org.nebulaframework.deployment.classloading.node.exporter.GridNodeClassExporter;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
@@ -38,6 +40,22 @@ import org.nebulaframework.grid.cluster.manager.ClusterManager;
  * @see GridNodeClassExporter
  */
 public interface ClassLoadingService {
+	
+	/**
+	 * Attempts to find the class definition for a given class, of a given 
+	 * {@code GridJob} through the {@code GridNodeClassExporter} service
+	 * of the submitter {@code GridNode}.
+	 * 
+	 * @param ownerId Submitter GridNode
+	 * @param name Class Name
+	 * 
+	 * @return A {@code byte[]} of the class definition
+	 * 
+	 * @throws ClassNotFoundException if class is not found
+	 * @throws IllegalArgumentException if any of the arguments is {@code null}
+	 */
+	public byte[] findClass(UUID ownerId, String name) 
+			throws ClassNotFoundException, IllegalArgumentException;
 	
 	/**
 	 * Attempts to find the class definition for a given class, of a given 

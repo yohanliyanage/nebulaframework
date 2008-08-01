@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package test.nebulaframework.simpleTest;
+package test.remote.testjob;
 
 import java.io.Serializable;
 

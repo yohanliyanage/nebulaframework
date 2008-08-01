@@ -171,6 +171,19 @@ public class AggregatorServiceImpl implements AggregatorService {
 			// Do Aggregation
 			jobResult = ((SplitAggregateGridJob<?, ?>)profile.getJob()).aggregate(results);
 			
+		} catch (SecurityException e) {
+			
+			log.error("[Aggregator] Security Violation while aggregating final result of "
+					+ profile.getJobId(), e);
+			
+			// Update Future
+			profile.getFuture().setException(e);
+			profile.getFuture().setState(GridJobState.FAILED);
+			
+			// Notify Workers that Job is canceled
+			jobService.notifyJobCancel(profile.getJobId());
+			
+			return;
 		} catch (Exception e) {
 			
 			log.warn("[Aggregator] Exception while aggregating final result of "

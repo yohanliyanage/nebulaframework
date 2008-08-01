@@ -14,15 +14,3 @@ MANDELBROT GOT STUCK ONCE AFTER ALL RESULTS WERE SENT. TRY 2 FIND BUG.
 
 
 ---
-
-If a node fails repetitively, kick it from job, and blacklist it so that it cannot rejoin
-
-if more than 80% nodes are blacklisted, fail the job
-
----
-
-Enable to plug-in job types by externalizing Job Managers
-
-Task re-enquement when node fails
-
-Need more security with Access Controller n all. Also, got 2 dissallow user code to terminate VM (@ server, worker, etc)

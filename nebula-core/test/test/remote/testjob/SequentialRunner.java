@@ -11,40 +11,40 @@
  * See the License for the specific language governing permissions and 
  * limitations under the License.
  */
-package test.nebulaframework.simpleTest;
+package test.remote.testjob;
 
+import java.util.Date;
 import java.util.Random;
 
-import org.apache.tools.ant.taskdefs.Ant;
-import org.nebulaframework.core.task.GridTask;
-import org.nebulaframework.grid.GridExecutionException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
- * Task Implementation for Test Job.
+ * Executes a Sequential Job to Demonstrate Sequential Running Time.
  * 
  * @author Yohan Liyanage
  * 
  */
-public class TestTask implements GridTask<Integer> {
+public class SequentialRunner {
 
-	private static final long serialVersionUID = -4826864297461445244L;
+	private static Log log = LogFactory.getLog(SequentialRunner.class);
 
-	public Integer execute() throws GridExecutionException {
+	public static void main(String[] args) {
+		Date start = new Date();
+		int sum = 0;
+		log.info("Starting Job...");
+		for (int i = 0; i < 50; i++) {
+			sum += execute();
+		}
+		Date end = new Date();
+		log.info("Job Complete. RESULT : " + sum);
+		log.info("Execution Time : " + (end.getTime() - start.getTime())
+				+ " milliseconds");
+	}
+
+	private static int execute() {
 		Integer val = new Random().nextInt(100);
-
-		// Test loading an external library
-		Ant.class.getName();
-
-		//System.out.println("Random Value : " + val);
-		//try {
-			//new SecurityManager();
-		//if (true) throw new GridExecutionException();
-		System.err.println("I can create Sec Man");
-		//} catch (Exception e1) {
-		//	System.err.println("OOPS. I CAN'T");
-		//}
-		
-		
+		System.out.println("Got Random Value : " + val);
 		try {
 			// Wait for 1 second, to simulate a large work unit
 			Thread.sleep(1000);
@@ -53,5 +53,4 @@ public class TestTask implements GridTask<Integer> {
 		}
 		return val;
 	}
-
 }

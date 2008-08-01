@@ -117,7 +117,8 @@ public class ServiceEventsSupport {
 	}
 
 	/**
-	 * Invoked by {@code ServiceMessagesSupport} or {@code ServiceMessageSender}
+	 * Invoked by {@code ServiceMessagesSupport} ({@code GridNode}) 
+	 * or {@code ServiceMessageSender} ({@code ClusterManager}),
 	 * when a message is received / dispatched.
 	 * 
 	 * @param message ServiceMessage
@@ -136,7 +137,7 @@ public class ServiceEventsSupport {
 		
 		final ServiceHookElement[] elements = hooks.toArray(new ServiceHookElement[hooks.size()]);
 		
-		new Thread(new Runnable() {
+		executorService.execute(new Runnable() {
 			public void run() {
 					for (final ServiceHookElement hook : elements ) {
 						if (hook.getEvent().isEvent(message)) {
@@ -154,7 +155,7 @@ public class ServiceEventsSupport {
 						}
 					}
 			}
-		}).start();
+		});
 	}
 
 	/**
