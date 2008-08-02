@@ -399,7 +399,7 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		// Check for Nulls
 		Assert.notNull(profile);
 
-		GridJobInfo info = new GridJobInfo(profile.getJobId());
+		GridJobInfo info = new GridJobInfo(profile.getJobId(), profile.getJob().getClass().getSimpleName());
 
 		if (profile.isArchived()) {
 			// If Archived Job, include Archive

@@ -39,6 +39,7 @@ public class GridJobInfo implements Serializable {
 	private static final long serialVersionUID = 1792194789111207025L;
 	
 	private String jobId;
+	private String jobName;
 	private GridArchive archive;
 
 	/**
@@ -47,9 +48,10 @@ public class GridJobInfo implements Serializable {
 	 * 
 	 * @param jobId Job ID of {@code GridJob}
 	 */
-	public GridJobInfo(String jobId) {
+	public GridJobInfo(String jobId, String jobName) {
 		super();
 		this.jobId = jobId;
+		this.jobName = jobName;
 	}
 
 	/**
@@ -60,6 +62,14 @@ public class GridJobInfo implements Serializable {
 	 */
 	public GridArchive getArchive() {
 		return archive;
+	}
+
+	/**
+	 * Returns the JobName for this GridJob.
+	 * @return
+	 */
+	public String getJobName() {
+		return jobName;
 	}
 
 	/**

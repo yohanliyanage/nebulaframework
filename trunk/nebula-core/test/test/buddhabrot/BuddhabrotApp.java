@@ -66,7 +66,7 @@ public class BuddhabrotApp extends JFrame {
 					}
 				}
 				
-				node.shutdown(true,false);
+				node.shutdown();
 				// Give time to send termination message
 				try {
 					Thread.sleep(2000);

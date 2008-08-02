@@ -127,6 +127,8 @@ public class WSDiscovery {
 
 	public static String discoverCluster(String url) throws Exception {
 		
+		log.debug("[WSDiscovery] Attempting Discovery  (" + url + ")");
+		
 		// Create CXF JAX-WS Proxy
 		JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
 		factory.setServiceClass(ColombusDiscovery.class);
@@ -138,11 +140,11 @@ public class WSDiscovery {
 		
 		if (cluster==null) {
 			// Discovery Failed
-			log.debug("[WSDiscovery] Discovery Failed");
+			log.debug("[WSDiscovery] Discovery Failed (" + url + ")");
 		}
 		else {
 			// Discovered
-			log.debug("[WSDiscovery] Discovered Cluster " + cluster);
+			log.info("[WSDiscovery] Discovered Cluster " + cluster);
 		}
 		
 		return cluster;

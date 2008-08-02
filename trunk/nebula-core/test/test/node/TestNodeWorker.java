@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package test.test.node;
+package test.node;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -39,14 +39,6 @@ public class TestNodeWorker {
 			log.info("GridNode Started Up. [" + sw.getLastTaskTimeMillis() + " ms]");
 			
 			log.info("GridNode ID : " + node.getId());
-			
-			try {
-				node.getNodeRegistrationService().register();
-				log.info("Registered in Cluster : " + node.getNodeRegistrationService().getRegistration().getClusterId());
-			} catch (RuntimeException e) {
-				System.err.println("Exception");
-				e.printStackTrace();
-			}
 			
 			log.debug("Press any key to unregister GridNode and terminate");
 			System.in.read();

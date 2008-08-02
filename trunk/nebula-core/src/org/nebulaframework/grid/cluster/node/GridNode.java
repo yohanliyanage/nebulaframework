@@ -21,14 +21,19 @@ import javax.jms.ConnectionFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.deployment.classloading.node.exporter.GridNodeClassExporterSupport;
+import org.nebulaframework.grid.Grid;
 import org.nebulaframework.grid.ID;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.manager.services.facade.ClusterManagerServicesFacade;
 import org.nebulaframework.grid.cluster.node.services.heartbeat.HeartBeatInvoker;
 import org.nebulaframework.grid.cluster.node.services.job.execution.JobExecutionService;
+import org.nebulaframework.grid.cluster.node.services.job.execution.TaskExecutor;
 import org.nebulaframework.grid.cluster.node.services.job.submission.JobSubmissionService;
 import org.nebulaframework.grid.cluster.node.services.message.ServiceMessagesSupport;
 import org.nebulaframework.grid.cluster.node.services.registration.NodeRegistrationService;
+import org.nebulaframework.grid.service.event.ServiceEventsSupport;
+import org.nebulaframework.grid.service.message.ServiceMessage;
+import org.nebulaframework.grid.service.message.ServiceMessageType;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -67,16 +72,20 @@ public class GridNode implements InitializingBean{
 	private static Log log = LogFactory.getLog(GridNode.class);
 
 	private static GridNode instance = null;
+	private static boolean disconnected = false;
 	
 	private UUID id;					// Node Id
 	private GridNodeProfile profile;	// Holds meta-data about node
 
 	private ConnectionFactory connectionFactory;
+	private UUID clusterId;
+	private String clusterUrl;
 	private NodeRegistrationService nodeRegistrationService;
 	private ServiceMessagesSupport serviceMessageSupport;
 	private ClusterManagerServicesFacade servicesFacade;
 	private JobExecutionService jobExecutionService;
 	private JobSubmissionService jobSubmissionService;
+	
 	
 	/**
 	 * <b>Private Constructor</b> constructs a {@code GridNode} 
@@ -90,6 +99,9 @@ public class GridNode implements InitializingBean{
 		this.id = ID.getId();
 		profile.setId(id);
 		this.profile = profile;
+		
+		disconnected = false;
+		
 		log.debug("Node " + id + " created");
 	}
 
@@ -116,6 +128,8 @@ public class GridNode implements InitializingBean{
 		
 		// If previous instance found, throw exception
 		if (instance!=null) throw new IllegalStateException("GridNode already created");
+		
+		ServiceEventsSupport.initialize();
 		
 		return instance = new GridNode(profile);
 	}
@@ -313,6 +327,57 @@ public class GridNode implements InitializingBean{
 	}
 
 	/**
+	 * Returns the Cluster Service URL.
+	 * <p>
+	 * <b>Note : </b>This is a <b>required</b> dependency.
+	 * <p>
+	 * <i>Spring Injected</i>
+	 * @return Cluster Service URL.
+	 */
+	@Required
+	public String getClusterUrl() {
+		return clusterUrl;
+	}
+
+	/**
+	 * Sets the Cluster Service URL.
+	 * 
+	 * @param clusterUrl Cluster URL
+	 */
+	public void setClusterUrl(String clusterUrl) {
+		this.clusterUrl = clusterUrl;
+	}
+
+	/**
+	 * Returns the ClusterId of this GridNode.
+	 * 
+	 * @return UUID ClusterId
+	 */
+	public UUID getClusterId() {
+		return clusterId;
+	}
+	
+	/**
+	 * Sets the ClusterID for this GridNode.
+	 * This method should not be invoked externally.
+	 * 
+	 * @param clusterId ClusterId
+	 */
+	public void setClusterId(UUID clusterId) {
+		this.clusterId = clusterId;
+	}
+
+	/**
+	 * Returns true if this node has been disconnected from
+	 * Cluster
+	 * 
+	 * @return true if disconnected from Cluster
+	 */
+	public static boolean isDisconnected() {
+		return disconnected;
+	}
+
+	/**
 	 * This method ensures that all dependencies of the {@code GridNode} is set. 
 	 * Also, this method starts {@code GridNodeClassExporter} for the Cluster.
 	 * <p>
@@ -326,17 +391,16 @@ public class GridNode implements InitializingBean{
 	 */
 	public void afterPropertiesSet() throws Exception {
 		
+		// Register in Cluster
+		getNodeRegistrationService().register();
+		
 		// Start Class Exporter Service
 		GridNodeClassExporterSupport.startService();
 		
 		// Start Heart Beat Service
 		new HeartBeatInvoker().start();
-		
 	}
-	
-	public UUID getClusterId() {
-		return this.nodeRegistrationService.getRegistration().getClusterId();
-	}
+
 
 	/**
 	 * Attempts to shutdown the {@code GridNode}. 
@@ -352,7 +416,7 @@ public class GridNode implements InitializingBean{
 	 *  submitted by this {@code GridNode}.
 	 */
 	public void shutdown() throws IllegalStateException {
-		shutdown(false, true);
+		shutdown(false);
 	}
 	
 	/**
@@ -373,19 +437,43 @@ public class GridNode implements InitializingBean{
 	 * 	@throws IllegalStateException In non-forced mode, if any active 
 	 * {@code GridJob} exists, which is submitted by this {@code GridNode}.
 	 */
-	public void shutdown(boolean force, boolean cluster) throws IllegalStateException {
+	public void shutdown(boolean force) throws IllegalStateException {
 		
 		// TODO Check for existing Jobs / Terminate TaskExecutors / Cancle Jobs
 		
-		if (cluster) {
-			log.error("[GridNode] Shutting Down GridNode as ClusterManager has Shutdown");
-			System.exit(0);
-		}
-		else {
-			if (nodeRegistrationService.isRegistered()) {
+		try {
+			if (!force && nodeRegistrationService.isRegistered()) {
 				nodeRegistrationService.unregister();
 			}
+		} catch (Exception e) {
+			log.warn("[GridNode] Exception while shutting down",e);
 		}
+		
+	}
+
+	/**
+	 * Invoked by HeartBeat Invoker to notify that the Node
+	 * has been disconnected from the Cluster.
+	 */
+	public void disconnected() {
+		instance = null;
+		
+		// Fire Service Event (as ClusterShutdown)
+		ServiceMessage message = new ServiceMessage(this.clusterId.toString(),
+		                                            ServiceMessageType.NODE_DISCONNECTED);
+		
+		// Reset Grid State
+		Grid.nodeDisconnected();
+		
+		ServiceEventsSupport.fireServiceEvent(message);
+		
+		// Clean Up
+		TaskExecutor.resetExecutors();
+		ServiceEventsSupport.destroySingleton();
+		
+		disconnected = true;
+		
+		log.info("[GridNode] Disconnected from " + clusterUrl);
 		
 	}
 	

@@ -74,5 +74,39 @@ public enum ServiceMessageType {
 	/**
 	 * {@code ClusterManager} is shutting down.
 	 */
-	CLUSTER_SHUTDOWN
+	CLUSTER_SHUTDOWN,
+	
+	/**
+	 * {@code GridNode} was disconnected from
+	 * Cluster.
+	 */
+	NODE_DISCONNECTED,
+	
+	/**
+	 * Local Job Start Event for GridNodes.
+	 */
+	LOCAL_JOBSTARTED,
+	
+	/**
+	 * Local Job Finished Event for GridNodes.
+	 */
+	LOCAL_JOBFINISHED,
+	
+	/**
+	 * Local Task Finished Event for GridNodes.
+	 */
+	LOCAL_TASKDONE,
+	
+	/**
+	 * Local Task Failed Event for GridNodes.
+	 */
+	LOCAL_TASKFAILED,
+	
+	
+	/**
+	 * Local Task Executed Event for GridNodes.
+	 */
+	LOCAL_TASKEXEC
+	
+	
 }

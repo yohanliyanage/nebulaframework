@@ -15,13 +15,19 @@ package org.nebulaframework.grid;
 
 import java.util.Properties;
 
+import javax.jms.Connection;
+
+import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nebulaframework.configuration.ConfigurationKeys;
 import org.nebulaframework.configuration.ConfigurationSupport;
 import org.nebulaframework.discovery.ClusterDiscoverySupport;
+import org.nebulaframework.discovery.DiscoveryFailureException;
 import org.nebulaframework.discovery.GridNodeDiscoverySupport;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.node.GridNode;
+import org.nebulaframework.grid.cluster.node.services.job.execution.TaskExecutor;
 import org.nebulaframework.util.spring.NebulaApplicationContext;
 import org.springframework.util.StopWatch;
 
@@ -60,7 +66,9 @@ public class Grid {
 	
 	private static NebulaApplicationContext applicationContext = null;
 	private static boolean clusterManager = false;
-
+	private static boolean node = false;
+	private static boolean lightweight = false;
+	
 	/**
 	 * No instantiation
 	 */
@@ -118,10 +126,10 @@ public class Grid {
 		 
 	}
 
-
 	/**
 	 * Starts a {@link GridNode} with default settings, read from
-	 * default properties file.
+	 * default properties file. This version invokes the {@link #startGridNode(boolean)}
+	 * with value true.
 	 * 
 	 * @return GridNode
 	 * 
@@ -130,6 +138,24 @@ public class Grid {
 	 * Member per VM.
 	 */
 	public static GridNode startGridNode() throws IllegalStateException {
+		return startGridNode(true);
+	}
+	
+
+	/**
+	 * Starts a {@link GridNode} with default settings, read from
+	 * default properties file.
+	 * 
+	 * @param useConfigDiscovery indicates whether to use information
+	 * from configuration to discover
+	 * 
+	 * @return GridNode
+	 * 
+	 * @throws IllegalStateException if a Grid Member (Cluster / Node) has
+	 * already started with in the current VM. Nebula supports only one Grid
+	 * Member per VM.
+	 */
+	public static GridNode startGridNode(boolean useConfigDiscovery) throws IllegalStateException {
 		
 		if (isInitialized()) {
 			// A Grid Member has already started in this VM
@@ -139,8 +165,8 @@ public class Grid {
 		StopWatch sw = new StopWatch();
 		
 		try {
+			
 			sw.start();
-			log.info("GridNode Starting...");
 			
 			// Set Security Manager
 			System.setSecurityManager(new SecurityManager());
@@ -148,8 +174,12 @@ public class Grid {
 			// Detect Configuration
 			Properties config = ConfigurationSupport.detectNodeConfiguration();
 			
+			log.info("GridNode Attempting Discovery...");
+			
 			// Discover Cluster If Needed
-			GridNodeDiscoverySupport.discover(config);
+			GridNodeDiscoverySupport.discover(config, useConfigDiscovery);
+			
+			checkJMSBroker(config.getProperty(ConfigurationKeys.CLUSTER_SERVICE.value()));
 			
 			log.debug("Starting up Spring Container...");
 			
@@ -157,18 +187,28 @@ public class Grid {
 			
 			log.debug("Spring Container Started");
 			
-			clusterManager = false;
+			node = true;
+			
+			sw.stop();
+			
+			log.info("GridNode Started Up. " + sw.getLastTaskTimeMillis() + " ms");
+			
 			return (GridNode) applicationContext.getBean("localNode");
 		} finally {
-			sw.stop();
-			log.info("GridNode Started Up. " + sw.getLastTaskTimeMillis() + " ms");
+			if (sw.isRunning()) {
+				sw.stop();
+			}
 		}
 	}
-	
+
+
 	/**
 	 * Starts a Light-weight {@link GridNode} (a GridNode without
 	 * Job Execution Support, that is non-worker) with default
 	 * settings, read from default properties file.
+	 * 
+	 * This version invokes the {@link #startLightGridNode(boolean)}
+	 * with value true.
 	 * 
 	 * @return GridNode
 	 * 
@@ -177,6 +217,24 @@ public class Grid {
 	 * Member per VM.
 	 */
 	public static GridNode startLightGridNode() throws IllegalStateException {
+		return startLightGridNode(true);
+	}
+	
+	/**
+	 * Starts a Light-weight {@link GridNode} (a GridNode without
+	 * Job Execution Support, that is non-worker) with default
+	 * settings, read from default properties file.
+	 * 
+	 * @param useConfigDiscovery indicates whether to use information
+	 * from configuration to discover
+	 * 
+	 * @return GridNode
+	 * 
+	 * @throws IllegalStateException if a Grid Member (Cluster / Node) has
+	 * already started with in the current VM. Nebula supports only one Grid
+	 * Member per VM.
+	 */
+	public static GridNode startLightGridNode(boolean useConfigDiscovery) throws IllegalStateException {
 		
 		if (isInitialized()) {
 			// A Grid Member has already started in this VM
@@ -185,19 +243,23 @@ public class Grid {
 		
 		StopWatch sw = new StopWatch();
 		
+		
 		try {
 			sw.start();
-			log.info("GridNode Starting...");
 		
 			// Set Security Manager
 			System.setSecurityManager(new SecurityManager());
 			
 			Properties config = ConfigurationSupport.detectNodeConfiguration();
 			
-			// Discover Cluster If Needed
-			GridNodeDiscoverySupport.discover(config);
+			log.info("GridNode Attempting Discovery...");
 			
-			clusterManager = false;
+			// Discover Cluster If Needed
+			GridNodeDiscoverySupport.discover(config, useConfigDiscovery);
+			
+			checkJMSBroker(config.getProperty(ConfigurationKeys.CLUSTER_SERVICE.value()));
+			
+			// If we reach here, connection test succeeded
 			
 			log.debug("Starting up Spring Container...");
 			
@@ -205,14 +267,45 @@ public class Grid {
 			
 			log.debug("Spring Container Started");
 			
+			node = true;
+			lightweight = true;
+			
+			sw.stop();
+			log.info("GridNode Started Up. " + sw.getLastTaskTimeMillis() + " ms");
+			
 			return (GridNode) applicationContext.getBean("localNode");
 		
 		} finally {
-			sw.stop();
-			log.info("GridNode Started Up. " + sw.getLastTaskTimeMillis() + " ms");
+			if (sw.isRunning()) {
+				sw.stop();
+			}
 		}
 	}
 
+	/**
+	 * Checks the given Service URL to see if the
+	 * Broker is running.
+	 * 
+	 * @param url connection url
+	 */
+	private static void checkJMSBroker(String url) {
+		try {
+			
+			log.debug("Attempting to establish connection with Cluster " + url);
+			
+			ActiveMQConnectionFactory cf = new ActiveMQConnectionFactory(url);
+			Connection testConnection = cf.createConnection();
+			testConnection.start();
+			testConnection.close();
+			
+			log.debug("Connection established");
+			
+		} catch (Exception e) {
+			log.warn("Unable to establish cluster connection");
+			throw new DiscoveryFailureException("Unable to connect to Cluster",e);
+		}
+	}
+	
 	/**
 	 * Returns the {@link NebulaApplicationContext} for this 
 	 * Grid Member, if available.
@@ -235,7 +328,6 @@ public class Grid {
 	 */
 	public static boolean isClusterManager() {
 		return clusterManager;
-		//return (isInitialized())&&(! clusterManager);
 	}
 	
 	/**
@@ -246,10 +338,20 @@ public class Grid {
 	 * a {@code GridNode}.
 	 */
 	public static boolean isNode() {
-		return ! clusterManager;
-		//return (isInitialized())&&(! clusterManager);
+		return node;
 	}
 	
+	
+	/**
+	 * Returns true if the current node is
+	 * a lightweight (no {@link TaskExecutor}} {@code GridNode}.
+	 * 
+	 * @return true if the current node is lightweight
+	 */
+	public static boolean isLightweight() {
+		return lightweight;
+	}
+
 	/**
 	 * Returns true if this Grid has been initialized before.
 	 * 
@@ -257,6 +359,12 @@ public class Grid {
 	 */
 	protected static boolean isInitialized() {
 		return applicationContext !=null;
+	}
+
+	public static void nodeDisconnected() {
+		applicationContext = null;
+		node = false;
+		lightweight = false;
 	}
 
 	

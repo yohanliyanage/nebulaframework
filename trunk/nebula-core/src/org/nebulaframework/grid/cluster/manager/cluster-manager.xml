@@ -72,6 +72,9 @@
 				<constructor-arg ref="jmsConnectionFactory" />
 			</bean>
 		</property>
+		<property name="peerService">
+			<bean class="org.nebulaframework.grid.cluster.manager.services.peers.PeerClusterServiceImpl" />
+		</property>
 		<property name="clusterInfo">
 			<bean class="org.nebulaframework.grid.cluster.manager.ClusterInfo">
 				<property name="serviceUrl" value="${cluster.service}" />

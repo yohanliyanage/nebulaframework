@@ -21,6 +21,7 @@ import java.util.concurrent.Executors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nebulaframework.grid.cluster.node.GridNode;
 import org.nebulaframework.grid.service.message.ServiceMessage;
 import org.nebulaframework.grid.service.message.ServiceMessageType;
 
@@ -43,7 +44,7 @@ public class ServiceEventsSupport {
 
 	
 	/** Singleton Instance */
-	private static final ServiceEventsSupport instance = new ServiceEventsSupport();
+	private static ServiceEventsSupport instance;
 	
 	private static Log log = LogFactory.getLog(ServiceEventsSupport.class);
 	
@@ -59,6 +60,12 @@ public class ServiceEventsSupport {
 		// No instantiation : Singleton
 	}
 	
+	public synchronized static void initialize() {
+		if (instance==null) {
+			instance = new ServiceEventsSupport();
+		}
+	}
+	
 	/**
 	 * Returns the {@code ServiceEventsSupport} singleton instance.
 	 * 
@@ -66,6 +73,27 @@ public class ServiceEventsSupport {
 	 */
 	public static ServiceEventsSupport getInstance() {
 		return instance; 
+	}
+	
+	/**
+	 * Invoked to reset the {@link ServiceEventsSupport}
+	 * by destroying singleton instance. This is used
+	 * by {@link GridNode}s to reset state when
+	 * disconnected from Cluster.
+	 */
+	public synchronized static void destroySingleton() {
+		instance = null;
+	}
+	
+	/**
+	 * Fires a <b>local</b> service event.
+	 * 
+	 * @param message ServiceMessage for event
+	 */
+	public static void fireServiceEvent(ServiceMessage message) {
+		if (instance==null) throw new IllegalStateException("Not initialized");
+		
+		instance.onServiceMessage(message);
 	}
 	
 	/**
@@ -77,16 +105,20 @@ public class ServiceEventsSupport {
 	 * @param callback ServiceHookCallback
 	 */
 	public static void addServiceHook(ServiceEvent event, ServiceHookCallback callback) {
+		if (instance==null) throw new IllegalStateException("Not initialized");
 		getInstance().hooks.add(new ServiceHookElement(event,callback));
 	}
 	
 	// TODO FixDoc
 	public static void addServiceHook(ServiceHookCallback serviceHookCallback, ServiceMessageType... types) throws IllegalArgumentException {
+		if (instance==null) throw new IllegalStateException("Not initialized");
 		addServiceHook(serviceHookCallback, null, types);
 	}
 	
 	// TODO FixDoc
 	public static void addServiceHook(ServiceHookCallback serviceHookCallback, String message, ServiceMessageType... types) throws IllegalArgumentException {
+		
+		if (instance==null) throw new IllegalStateException("Not initialized");
 		
 		// No Event
 		if ((types.length==0)&&(message==null)) {

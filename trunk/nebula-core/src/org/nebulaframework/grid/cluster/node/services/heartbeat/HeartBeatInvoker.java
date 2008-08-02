@@ -88,7 +88,9 @@ public class HeartBeatInvoker implements Runnable {
 				stop();
 				
 				// Shutdown GridNode
-				GridNode.getInstance().shutdown(true, true);
+				GridNode.getInstance().disconnected();
+				
+				break;
 			}
 		}
 	}

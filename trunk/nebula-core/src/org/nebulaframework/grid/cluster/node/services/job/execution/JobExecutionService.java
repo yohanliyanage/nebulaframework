@@ -44,4 +44,13 @@ public interface JobExecutionService {
 	 * @param message {@link ServiceMessage} incoming message
 	 */
 	void onServiceMessage(ServiceMessage message);
+	
+	/**
+	 * Returns the user friendly Job Name for a given
+	 * JobId, if it exists. Returns null otherwise.
+	 * 
+	 * @param jobId JobId
+	 * @return Job Name
+	 */
+	String getJobName(String jobId);
 }

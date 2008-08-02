@@ -21,7 +21,6 @@ public class ClusterManagerStarter {
 	public static void main(String[] args) {
 
 		try {
-			//UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -33,10 +32,11 @@ public class ClusterManagerStarter {
 			Grid.startClusterManager();
 		} catch (Exception e) {
 			splash.setVisible(false);
-			e.printStackTrace();
+			log.error("Exception while starting",e);
+			
 			JOptionPane.showMessageDialog(null, "Unable to start ClusterManager due to Exception." +
-					"\nSee StackTrace for details", "Nebula Cluster", JOptionPane.ERROR_MESSAGE);
-			System.exit(0);
+					"\nSee StackTrace (log) for details", "Nebula Cluster", JOptionPane.ERROR_MESSAGE);
+			System.exit(1);
 		}
 		
 		ClusterMainUI ui = ClusterMainUI.create();

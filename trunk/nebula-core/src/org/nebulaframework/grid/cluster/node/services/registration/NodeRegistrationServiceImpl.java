@@ -91,6 +91,9 @@ public class NodeRegistrationServiceImpl implements NodeRegistrationService {
 		// Do registration
 		this.registration = clusterRegistrationService.registerNode(node.getId(), node.getProfile());
 
+		// Set ClusterId
+		GridNode.getInstance().setClusterId(registration.getClusterId());
+		
 		// Log
 		log.debug("Node " + node.getId() + " registered in Cluster "
 				+ registration.getClusterId());
