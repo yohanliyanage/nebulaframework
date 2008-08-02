@@ -14,6 +14,9 @@
 
 package org.nebulaframework.grid.cluster.node.services.job.execution;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.jms.ConnectionFactory;
 
 import org.apache.commons.logging.Log;
@@ -21,9 +24,6 @@ import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.core.job.deploy.GridJobInfo;
 import org.nebulaframework.core.job.exceptions.GridJobPermissionDeniedException;
-import org.nebulaframework.deployment.classloading.GridArchiveClassLoader;
-import org.nebulaframework.deployment.classloading.GridNodeClassLoader;
-import org.nebulaframework.deployment.classloading.node.exporter.GridNodeClassExporter;
 import org.nebulaframework.deployment.classloading.service.ClassLoadingService;
 import org.nebulaframework.deployment.classloading.service.ClassLoadingServiceSupport;
 import org.nebulaframework.grid.cluster.node.GridNode;
@@ -67,6 +67,10 @@ import org.springframework.util.Assert;
  * @see TaskExecutor
  * @see ClassLoadingService
  */
+/**
+ * @author Yohan
+ *
+ */
 public class JobExecutionServiceImpl implements JobExecutionService, InitializingBean {
 
 	private static Log log = LogFactory.getLog(JobExecutionServiceImpl.class);
@@ -78,6 +82,8 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 	private ConnectionFactory connectionFactory; // JMS ConnectionFactory
 	private ClassLoadingService classLoadingService; // Service Proxy
 
+	private Map<String, String> jobNames = new HashMap<String, String>();
+	
 	/**
 	 * Constructs a {@code JobExecutionServiceImpl} for the given
 	 * {@code GridNode}.
@@ -152,12 +158,16 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 			try {
 				GridJobInfo jobInfo = node.getServicesFacade().requestJob(jobId, node.getProfile());
 
+				jobNames.put(jobId, jobInfo.getJobName());
+				
 				// Start it
 				if (jobInfo.isArchived()) {	// Archived Job
 					startNewArchivedJob(jobId, jobInfo.getArchive());
 				} else {					// Normal Job
 					startNewJob(jobId);
 				}
+				
+				
 
 			} catch (GridJobPermissionDeniedException e) {
 				// Permission Denied
@@ -183,6 +193,8 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 			// Request for Job
 			GridJobInfo jobInfo = node.getServicesFacade().requestNextJob(node.getProfile());
 
+			jobNames.put(jobInfo.getJobId(), jobInfo.getJobName());
+			
 			// If no job, do nothing
 			if (jobInfo == null) {
 				log.info("[JobExecution] Idle as no active GridJobs");
@@ -260,6 +272,8 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 			this.currentJobId = null;
 			this.idle = true;
 			
+			jobNames.remove(jobId);
+			
 			requestNextJob();
 			
 		} else {	// Log & ignore
@@ -291,6 +305,8 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 			this.currentJobId = null;
 			this.idle = true;
 			
+			jobNames.remove(jobId);
+			
 			requestNextJob();
 			
 		} else { // Log & ignore
@@ -318,6 +334,17 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 		return idle;
 	}
 
+	/**
+	 * Returns the JobName for the given JobId,
+	 * if its an active Job.
+	 * 
+	 * @param jobId JobId
+	 * @return Job Name
+	 */
+	public String getJobName(String jobId) {
+		return this.jobNames.get(jobId);
+	}
+	
 	/**
 	 * Initializes the {@code ClassLoadingService} proxy. This method creates a
 	 * proxy object which is used to communicate with the
@@ -394,6 +421,11 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 					
 					// Check until initialized
 					while(!initalizeService()) {
+						
+						// If disconnected, abort
+						if (GridNode.isDisconnected()) {
+							break;
+						}
 						
 						attempts++; // Increment attempts
 						

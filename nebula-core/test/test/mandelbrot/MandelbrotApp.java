@@ -74,7 +74,7 @@ public class MandelbrotApp extends JFrame {
 							future.cancel();
 						}
 					}
-					nodeRef.shutdown(true, false);
+					nodeRef.shutdown();
 					
 				} catch (Exception e1) {
 					e1.printStackTrace();

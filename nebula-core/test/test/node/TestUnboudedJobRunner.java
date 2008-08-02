@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package test.test.node;
+package test.node;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -23,7 +23,6 @@ import org.nebulaframework.core.job.ResultCallback;
 import org.nebulaframework.core.job.future.GridJobFuture;
 import org.nebulaframework.grid.Grid;
 import org.nebulaframework.grid.cluster.node.GridNode;
-import org.nebulaframework.grid.cluster.registration.RegistrationException;
 import org.springframework.util.StopWatch;
 
 import test.remote.testjob.TestUnboundedJob;
@@ -45,9 +44,6 @@ public class TestUnboudedJobRunner {
 			GridNode node = Grid.startGridNode();
 			
 			log.info("GridNode ID : " + node.getId());
-			
-			node.getNodeRegistrationService().register();
-			log.info("Registered in Cluster : " + node.getNodeRegistrationService().getRegistration().getClusterId());
 			
 			sw.stop();
 
@@ -81,8 +77,6 @@ public class TestUnboudedJobRunner {
 			System.exit(0);
 			
 		
-		} catch (RegistrationException e) {
-			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (Exception e) {

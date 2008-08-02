@@ -12,60 +12,59 @@
  * limitations under the License.
  */
 
-package test.test.node;
+package test.node;
 
-import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nebulaframework.core.job.archive.GridArchive;
-import org.nebulaframework.core.job.archive.GridArchiveException;
+import org.nebulaframework.core.job.ResultCallback;
 import org.nebulaframework.core.job.future.GridJobFuture;
 import org.nebulaframework.grid.Grid;
-import org.nebulaframework.grid.GridExecutionException;
 import org.nebulaframework.grid.cluster.node.GridNode;
-import org.nebulaframework.grid.cluster.registration.RegistrationException;
 import org.springframework.remoting.RemoteInvocationFailureException;
 import org.springframework.util.StopWatch;
 
-public class TestNodeNARRunner {
+import test.remote.testjob.TestJob;
+
+public class TestNodeRunner {
 	
 	private static Log log = LogFactory.getLog(TestNodeRunner.class);
 	
-
 	public static void main(String[] args) {
+
+		// Test Job
+		TestJob testJob = new TestJob();
+		
 		try {
 
 			log.info("GridNode Starting...");
 			StopWatch sw = new StopWatch();
 			sw.start();
 			
-			GridNode node = Grid.startGridNode();
+			GridNode node =  Grid.startGridNode();
 			
 			log.info("GridNode ID : " + node.getId());
-			
-			node.getNodeRegistrationService().register();
-			log.info("Registered in Cluster : " + node.getNodeRegistrationService().getRegistration().getClusterId());
 			
 			sw.stop();
 
 			log.info("GridNode Started Up. [" + sw.getLastTaskTimeMillis() + " ms]");
 			
 			// Submit Job
-			log.debug("Reading NAR");
+			log.debug("Submitting Job");
 			
 			sw.start();
 			
-			GridArchive archive;
-			archive = GridArchive.fromFile(new File("simpletestjob.nar"));
-			
-			log.debug("Submitting NAR");
-			
-			GridJobFuture future = (GridJobFuture) node.getJobSubmissionService().submitArchive(archive).values().toArray()[0];
-			
+			GridJobFuture future = node.getJobSubmissionService().submitJob(testJob,new ResultCallback() {
+
+				public void onResult(Serializable result) {
+					System.err.println(result);
+				}
+				
+			});
 			try {
-				log.info("RESULT : " + future.getResult());
+				log.info("Job Result : " + future.getResult());
 			} catch (RemoteInvocationFailureException e) {
 				e.getCause().printStackTrace();
 			}
@@ -80,21 +79,13 @@ public class TestNodeNARRunner {
 			log.info("Unregistered, Terminating...");
 			System.exit(0);
 			
-			
-		} 
-		catch (GridArchiveException e) {
-			log.fatal("GridArchiveException",e);
+		
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		catch (GridExecutionException e) {
-			log.fatal("Execution Failed",e);
-		}
-		catch (RegistrationException e) {
-			log.error("Registration Failed",e);
-		}
-		catch (IOException e) {
-			log.error("IOException",e);
-		}
-
+		
 	}
+	
 }
-

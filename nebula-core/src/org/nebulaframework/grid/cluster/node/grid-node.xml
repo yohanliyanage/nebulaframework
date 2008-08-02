@@ -93,6 +93,7 @@
 			</bean>		
 		</property>		
 		<property name="connectionFactory" ref="jmsConnectionFactory" />
+		<property name="clusterUrl" value="${cluster.service}" />
 		<property name="serviceMessageSupport" ref="serviceMessageSupport" />
 	</bean>
 	

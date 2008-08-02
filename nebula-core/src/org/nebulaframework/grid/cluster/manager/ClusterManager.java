@@ -36,6 +36,7 @@ import org.nebulaframework.grid.cluster.manager.services.peers.PeerClusterServic
 import org.nebulaframework.grid.cluster.manager.services.registration.ClusterRegistrationService;
 import org.nebulaframework.grid.cluster.manager.services.registration.InternalClusterRegistrationService;
 import org.nebulaframework.grid.cluster.node.GridNode;
+import org.nebulaframework.grid.service.event.ServiceEventsSupport;
 import org.nebulaframework.grid.service.message.ServiceMessage;
 import org.nebulaframework.grid.service.message.ServiceMessageType;
 import org.springframework.beans.factory.InitializingBean;
@@ -104,6 +105,7 @@ public class ClusterManager implements InitializingBean {
 	private ClusterManager() {
 		super();
 		this.clusterId = ID.getId();
+		ServiceEventsSupport.initialize();
 	}
 
 	
@@ -389,6 +391,7 @@ public class ClusterManager implements InitializingBean {
 		Assert.notNull(connectionFactory);
 		Assert.notNull(jobService);
 		Assert.notNull(clusterRegistrationService);
+		Assert.notNull(peerService);
 		
 		// Start Remote Class Loading Service
 		classLoadingService = ClassLoadingServiceSupport.startClassLoadingService();
@@ -412,7 +415,7 @@ public class ClusterManager implements InitializingBean {
 	private void configTransports() {
 		if (brokerService!=null) {
 			
-			// Do in seperate Thread
+			// Do in separate Thread
 			new Thread(new Runnable() {
 				public void run() {
 					for(String transport : clusterInfo.getTransportUrls()) {

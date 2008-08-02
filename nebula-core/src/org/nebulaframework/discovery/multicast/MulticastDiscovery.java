@@ -177,7 +177,7 @@ public class MulticastDiscovery {
 	 */
 	public static String discoverCluster() {
 		
-		log.info("[MulticastDiscovery] Attempting to discover cluster");
+		log.debug("[MulticastDiscovery] Attempting to discover cluster");
 		
 		// Synchronization Mutex
 		final Object mutex = new Object();
@@ -193,7 +193,7 @@ public class MulticastDiscovery {
 					// Attempt Discovery
 					mDisc.doDiscover();
 				} catch (IOException e) {
-					log.warn("[MulticastDiscovery] Failed to Discover",e);
+					log.debug("[MulticastDiscovery] Failed to Discover",e);
 				}
 				
 				// Notify waiting Threads

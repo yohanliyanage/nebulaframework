@@ -38,8 +38,6 @@ public class TestJob implements SplitAggregateGridJob<Integer, Integer>{
 			tasks.add(new TestTask());
 		}
 		
-		// TODO Ha ha ha
-		System.exit(0);
 		//System.out.println("Splitting...Done");
 		return tasks;
 	}

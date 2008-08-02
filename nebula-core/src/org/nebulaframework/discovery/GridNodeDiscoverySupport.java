@@ -4,7 +4,6 @@ import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nebulaframework.configuration.ConfigurationException;
 import org.nebulaframework.configuration.ConfigurationKeys;
 import org.nebulaframework.discovery.multicast.MulticastDiscovery;
 import org.nebulaframework.discovery.ws.WSDiscovery;
@@ -22,40 +21,82 @@ public class GridNodeDiscoverySupport {
 	
 	private static Log log = LogFactory.getLog(GridNodeDiscoverySupport.class);
 	
+	private static Properties config = null;
+	
+	
+	/**
+	 * Attempts to discover a cluster using the given
+	 * GridNode configuration. This overloaded version
+	 * invokes the {@link #discover(Properties, boolean)} method
+	 * with boolean value {@code true}.
+	 * 
+	 * @param config GridNode Configuration
+	 * in the property file
+	 * 
+	 * @throws DiscoveryFailureException if failed to discover a node
+	 */
+	public static void discover(Properties config) {
+		discover(config, true);
+	}
+	
 	/**
 	 * Attempts to discover a cluster using the given
 	 * GridNode configuration.
 	 * 
 	 * @param config GridNode Configuration
+	 * @param useConfig Indicated whether to use value supplied
+	 * in the property file
+	 * 
+	 * @throws DiscoveryFailureException if failed to discover a node
 	 */
-	public static void discover(Properties config) {
+	public static void discover(Properties config, boolean useConfig) throws DiscoveryFailureException {
 		
-		String cluster = null;
+		
+		GridNodeDiscoverySupport.config = config;
 		
 		// If URL is specified by User, do not attempt discovery
-		if (config.containsKey(ConfigurationKeys.CLUSTER_SERVICE.value())) {
+		if (useConfig && config.containsKey(ConfigurationKeys.CLUSTER_SERVICE.value())) {
 			log.debug("[Discovery] Found Cluster Service in Configuration");
 			return;
 		}
 		
-		// FIXME Multicast Commented to test WS
-		
 		/* -- No User Specified Cluster Service URL : Attempt Discovery -- */
 		
 		// (1). Attempt Multicast Discovery
+		if (discoverMulticast()) return;
 		
-		cluster = MulticastDiscovery.discoverCluster();
+		// (2). Attempt Web Service Discovery
+		if (discoverColombus()) return;
+		
+		throw new DiscoveryFailureException("Unable to Discover a Cluster");
+	}
+	
+	public static boolean discoverMulticast() {
+		
+		if (config == null) {
+			throw new IllegalStateException("Configuration not Set");
+		}
+		
+		String cluster = MulticastDiscovery.discoverCluster();
 		
 		if (cluster != null) {	// Found
 			// FIXME Multicast defaults to TCP ?? OK coz internal cluster comm is TCP by default ?
 			config.put(ConfigurationKeys.CLUSTER_SERVICE.value(), "tcp://" + cluster);
-			return;
+			return true;
 		}
 		else {
-			log.warn("[Discovery] Multicast Discovery Failed");
+			log.debug("[Discovery] Multicast Discovery Failed");
+			return false;
+		}
+	}
+	
+	public static boolean discoverColombus() {
+		
+		if (config == null) {
+			throw new IllegalStateException("Configuration not Set");
 		}
 		
-		// (2). Attempt Web Service Discovery
+		String cluster = null;
 		
 		if (config.containsKey(ConfigurationKeys.COLOMBUS_SERVERS.value())) {
 			String[] urls = config.getProperty(ConfigurationKeys.COLOMBUS_SERVERS.value()).split(",");
@@ -66,6 +107,7 @@ public class GridNodeDiscoverySupport {
 					StringBuilder wsURL = new StringBuilder(url.trim());
 					if (!url.trim().endsWith("/")) wsURL.append("/");
 					wsURL.append(WSDiscovery.WS_DISCOVERY_PATH);
+					
 					
 					// Attempt Discovery
 					String clusterHost = WSDiscovery.discoverCluster(wsURL.toString());
@@ -83,11 +125,21 @@ public class GridNodeDiscoverySupport {
 			if (cluster!=null) {
 				// Found
 				config.put(ConfigurationKeys.CLUSTER_SERVICE.value(), "tcp://" + cluster);
-				return;
+				return true;
 			}
 		}
-		
-		throw new ConfigurationException("Unable to Discover a Cluster");
+		return false;
+
 	}
+
+	/**
+	 * Returns the Configuration Properties.
+	 * 
+	 * @return Configuration Properties
+	 */
+	public static Properties getConfig() {
+		return (Properties) config.clone();
+	}
+	
 	
 }

@@ -172,6 +172,21 @@ public class NetUtils {
 	}
 	
 	/**
+	 * Returns the real IP Address of the NIC for the localhost.
+	 * 
+	 * @return String representation of IP Address
+	 * 
+	 * @throws RuntimeException If unable to resolve address
+	 */
+	public static String getLocalHostAddress() throws RuntimeException {
+		try {
+			return InetAddress.getLocalHost().getHostAddress();
+		} catch (UnknownHostException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	/**
 	 * Returns the Protocol of given URL.
 	 * 
 	 * @param url URL to Parse

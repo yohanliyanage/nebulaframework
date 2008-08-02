@@ -36,6 +36,9 @@ import org.nebulaframework.deployment.classloading.GridArchiveClassLoader;
 import org.nebulaframework.deployment.classloading.GridNodeClassLoader;
 import org.nebulaframework.deployment.classloading.service.ClassLoadingService;
 import org.nebulaframework.grid.cluster.node.GridNode;
+import org.nebulaframework.grid.service.event.ServiceEventsSupport;
+import org.nebulaframework.grid.service.message.ServiceMessage;
+import org.nebulaframework.grid.service.message.ServiceMessageType;
 import org.nebulaframework.util.jms.JMSNamingSupport;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
@@ -131,6 +134,15 @@ public class TaskExecutor {
 	}
 
 	/**
+	 * Invoked to reset the executors list of this class.
+	 * This is invoked by {@link GridNode}s when it was
+	 * disconnected from Cluster.
+	 */
+	public static void resetExecutors() {
+		executors = new HashMap<String, TaskExecutor>();
+	}
+	
+	/**
 	 * Creates and starts a {@code TaskExecutor} instance for the given
 	 * {@code GridJob}, denoted by {@code JobId}. Each {@code TaskExecutor} is
 	 * started on a separate {@code Thread}.
@@ -174,6 +186,10 @@ public class TaskExecutor {
 				
 				// Start Executor
 				executor.start(loader);
+				
+				// Fire Local Event
+				ServiceMessage message = new ServiceMessage(jobId, ServiceMessageType.LOCAL_JOBSTARTED);
+				ServiceEventsSupport.fireServiceEvent(message);
 			}
 
 		}).start();
@@ -236,6 +252,11 @@ public class TaskExecutor {
 			synchronized (TaskExecutor.class) {
 				// Invoke stop() instance method on proper TaskExecutor
 				TaskExecutor.executors.get(jobId).stop();
+				
+				// Fire Local Event
+				ServiceMessage message = new ServiceMessage(jobId, ServiceMessageType.LOCAL_JOBFINISHED);
+				ServiceEventsSupport.fireServiceEvent(message);
+				
 			}
 		} catch (NullPointerException e) {
 			// No TaskExecutor for given Job
@@ -388,6 +409,10 @@ public class TaskExecutor {
 			// Update consecutive failures, and check for limit
 			consecFails++;
 			
+			// Fire Local Event
+			ServiceMessage message = new ServiceMessage(jobId, ServiceMessageType.LOCAL_TASKFAILED);
+			ServiceEventsSupport.fireServiceEvent(message);
+			
 			if (consecFails > CONSECUTIVE_FAILURES_THRESHOLD) {
 				try {
 					
@@ -410,6 +435,16 @@ public class TaskExecutor {
 			
 			// Send the result to ResultQueue
 			sendResult(taskResult);
+			
+			// Fire Local Event
+			ServiceMessage doneMessage = new ServiceMessage(jobId, ServiceMessageType.LOCAL_TASKDONE);
+			ServiceEventsSupport.fireServiceEvent(doneMessage);
+			
+			
+			// Fire Local Event
+			ServiceMessage timeMessage = new ServiceMessage(String.valueOf(duration), 
+			                                                ServiceMessageType.LOCAL_TASKEXEC);
+			ServiceEventsSupport.fireServiceEvent(timeMessage);
 		}
 	}
 

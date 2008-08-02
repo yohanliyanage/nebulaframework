@@ -1,5 +1,6 @@
 package org.nebulaframework.ui.swing.ClusterManager;
 
+import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.FlowLayout;
@@ -8,6 +9,12 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.HeadlessException;
+import java.awt.Image;
+import java.awt.MenuItem;
+import java.awt.PopupMenu;
+import java.awt.SystemTray;
+import java.awt.Toolkit;
+import java.awt.TrayIcon;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -63,7 +70,6 @@ import org.nebulaframework.util.log4j.JTextPaneAppender;
 import org.nebulaframework.util.profiling.TimeUtils;
 import org.springframework.util.StringUtils;
 
-// TODO Implement System Tray Support
 // TODO FixDoc
 public class ClusterMainUI extends JFrame {
 
@@ -75,6 +81,11 @@ public class ClusterMainUI extends JFrame {
 	private static final long serialVersionUID = 8992643609753054554L;
 	private static Map<String, JComponent> components = new HashMap<String, JComponent>();
 
+	private TrayIcon trayIcon;
+	
+	private Image idleIcon;
+	private Image activeIcon;
+	
 	public ClusterMainUI() throws HeadlessException, IllegalStateException {
 		super();
 		
@@ -112,6 +123,9 @@ public class ClusterMainUI extends JFrame {
 		// General Tab
 		tabs.addTab("General", setupGeneralTab());
 		
+		setupTrayIcon(this);
+		
+		
 		// Create Job Start Hook
 		ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
 			public void onServiceEvent(final ServiceMessage message) {
@@ -120,6 +134,90 @@ public class ClusterMainUI extends JFrame {
 		},ServiceMessageType.JOB_START);
 	}
 
+
+	private void setupTrayIcon(final JFrame frame) {
+		
+		idleIcon = Toolkit.getDefaultToolkit()
+			.getImage(ClassLoader.getSystemResource("META-INF/resources/cluster_inactive.png"));
+		
+		activeIcon = Toolkit.getDefaultToolkit()
+			.getImage(ClassLoader.getSystemResource("META-INF/resources/cluster_active.png"));
+		
+		frame.setIconImage(idleIcon);
+		
+		if (SystemTray.isSupported()) {
+			trayIcon = new TrayIcon(idleIcon,"Nebula Grid Cluster", createTrayPopup());
+			trayIcon.setImageAutoSize(true);
+			trayIcon.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					if (!frame.isVisible()) {
+						frame.setVisible(true);
+						frame.setExtendedState(JFrame.NORMAL);
+					}
+					frame.requestFocus();
+				}
+				
+			});
+			
+			try {
+				SystemTray.getSystemTray().add(trayIcon);
+			} catch (AWTException ae) {
+				log.debug("[UI] Unable to Initialize Tray Icon");
+				return;
+			}
+			
+			frame.addWindowListener(new WindowAdapter() {
+
+				@Override
+				public void windowIconified(WindowEvent e) {
+					// Hide (can be shown using tray icon)
+					frame.setVisible(false);
+				}
+				
+			});
+		}
+	
+	}
+
+	private PopupMenu createTrayPopup() {
+		PopupMenu trayPopup = new PopupMenu();
+		
+		MenuItem aboutItem = new MenuItem("About");
+		aboutItem.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				showAbout();
+			}
+			
+		});
+		trayPopup.add(aboutItem);
+		
+		trayPopup.addSeparator();
+		
+		MenuItem shutdownItem = new MenuItem("Shutdown");
+		shutdownItem.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				doShutdownCluster();
+			}
+			
+		});
+		trayPopup.add(shutdownItem);
+		
+		return trayPopup;
+	}
+
+	private void showBusyIcon() {
+		if (trayIcon!=null) trayIcon.setImage(activeIcon);
+	}
+	
+	private void showIdleIcon() {
+		if (trayIcon!=null) trayIcon.setImage(idleIcon);
+	}
 
 	private JMenuBar setupMenu() {
 		JMenuBar menuBar = new JMenuBar();
@@ -689,6 +787,8 @@ public class ClusterMainUI extends JFrame {
 					final int resCount = profile.getResultCount();
 					final int failCount = profile.getFailedCount();
 					
+					showBusyIcon();
+					
 					// Task Information
 					JLabel totalTaskLabel = getUIElement("jobs."+jobId+".execution.tasks");
 					totalTaskLabel.setText(String.valueOf(totalCount));
@@ -734,6 +834,7 @@ public class ClusterMainUI extends JFrame {
 						
 						// Job Finished, Stop
 						if (profile.getFuture().isJobFinished()) {
+							showIdleIcon();
 							return;
 						}
 						
@@ -779,8 +880,6 @@ public class ClusterMainUI extends JFrame {
 						JProgressBar progress = getUIElement("jobs."+jobId+".progress");
 						JLabel percentage = getUIElement("jobs."+jobId+".execution.percentage");
 						
-
-						
 						progress.setEnabled(false);
 						
 						// If Successfully Finished
@@ -811,6 +910,8 @@ public class ClusterMainUI extends JFrame {
 								percentage.setText("N/A");
 							}
 						}
+						
+						showIdleIcon();
 					}
 				});
 			}
@@ -879,6 +980,8 @@ public class ClusterMainUI extends JFrame {
 		JButton shutdownButton = getUIElement("general.shutdown");
 		shutdownButton.setEnabled(false);
 		
+		showBusyIcon();
+		
 		// Shutdown
 		onShutdown();
 	}
@@ -942,18 +1045,21 @@ public class ClusterMainUI extends JFrame {
 	
 	public void onShutdown() {
 
-		ClusterManager.getInstance().shutdown(true);
-		// Clean up UI
-		// clear stats
-		// remove tabs related to jobs
-		
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				ClusterManager.getInstance().shutdown(true);				
+			}
+			
+		}).start();
 	}
 
 	private void showClusterInfo() {
 		ClusterManager mgr = ClusterManager.getInstance();
 
 		// ClusterID
-		JLabel clusterId = getUIElement("general.stats.clusterid");
+		final JLabel clusterId = getUIElement("general.stats.clusterid");
 		clusterId.setText(mgr.getClusterId().toString());
 		
 		// HostInfo
@@ -975,10 +1081,15 @@ public class ClusterMainUI extends JFrame {
 		// Peer Clusters Update Hook
 		ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
 			public void onServiceEvent(ServiceMessage message) {
+				
 				SwingUtilities.invokeLater(new Runnable() {
 					public void run() {
-						int peers = ClusterManager.getInstance().getPeerService().getPeerCount();
-						clusters.setText(String.valueOf(peers));
+						try {
+							int peers = ClusterManager.getInstance().getPeerService().getPeerCount();
+							clusters.setText(String.valueOf(peers));	
+						} catch (Exception e) {
+							log.warn("[UI] Exception while accessing peer information",e);
+						}
 					}
 				});
 			}
@@ -1112,7 +1223,6 @@ public class ClusterMainUI extends JFrame {
 		splash.add(lbl);
 		
 		splash.setVisible(true);
-		splash.setAlwaysOnTop(true);
 		splash.setLocationRelativeTo(null);
 		
 		return splash;
