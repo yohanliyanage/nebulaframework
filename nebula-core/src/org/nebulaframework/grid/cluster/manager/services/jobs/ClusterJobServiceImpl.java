@@ -15,6 +15,10 @@
 package org.nebulaframework.grid.cluster.manager.services.jobs;
 
 import java.io.IOException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -211,12 +215,50 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		return jobId;
 	}
 
-	// TODO FixDoc
-	private GridJob<?, ?> getGridJobInstance(UUID owner, byte[] classData, GridArchive archive) throws IOException, ClassNotFoundException {
+	/**
+	 * De-serializes and returns the {@link GridJob} instance,
+	 * from the byte[].
+	 * 
+	 * @param owner Owner Node (for ClassLoading)
+	 * @param classData Serialized data
+	 * @param archive GridArchive, can be null
+	 * 
+	 * @return GridJob instance
+	 * 
+	 * @throws IOException if occurred while processing
+	 * @throws ClassNotFoundException if a required class definition is missing
+	 */
+	private GridJob<?, ?> getGridJobInstance(final UUID owner, final byte[] classData, final GridArchive archive) throws IOException, ClassNotFoundException {
 		
 		if (archive!=null) {
 			// Read from Archive if Archived GridJob
-			return (GridJob<?,?>) IOSupport.deserializeFromBytes(classData, new GridArchiveClassLoader(archive));
+			try {
+				return (GridJob<?,?>) AccessController.doPrivileged(new PrivilegedExceptionAction<GridJob<?,?>>() {
+
+					@Override
+					public GridJob<?, ?> run() throws Exception{
+						
+						return IOSupport.deserializeFromBytes
+							(classData, 
+						    new GridArchiveClassLoader(archive,createClassLoader(owner)));
+						
+					}
+					
+				});
+			} catch (PrivilegedActionException e) {
+				
+				Exception ex = e.getException();
+				
+				if (ex instanceof ClassNotFoundException) {
+					throw (ClassNotFoundException) ex;
+				}
+				else if (ex instanceof IOException) {
+					throw (IOException) ex;
+				}
+				else {
+					throw new RuntimeException(ex);
+				}
+			}
 		}
 		else {
 			// Read from GridNodeClassLoader
@@ -225,14 +267,37 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		}
 	}
 
-	// TODO FixDoc
-	protected ClassLoader createClassLoader(UUID owner) {
-		ClassLoadingService service = ClusterManager.getInstance().getClassLoadingService();
-		return new GridNodeClassLoader(owner, service);
+	/**
+	 * Creates a {@link GridNodeClassLoader} to remotely load
+	 * necessary class definitions.
+	 * 
+	 * @param owner Owner GridNode to load classes from
+	 * 
+	 * @return ClassLoader instance
+	 */
+	protected ClassLoader createClassLoader(final UUID owner) {
+		return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+
+			@Override
+			public ClassLoader run() {
+				ClassLoadingService service = ClusterManager.getInstance().getClassLoadingService();
+				return new GridNodeClassLoader(owner, service);
+			}
+			
+		});
 	}
 
 	
-	// TODO FixDoc
+	/**
+	 * Starts the given GridJob on the Grid. This method
+	 * attempts to find a proper {@link JobExecutionManager} for 
+	 * the job, and if found, it delegates to 
+	 * {@link #startExecution(JobExecutionManager, GridJobProfile)}
+	 * method.
+	 * 
+	 * @param profile GridJobProfile for the job
+	 * @return boolean indicating result
+	 */
 	private boolean startGridJob(GridJobProfile profile) {
 		
 		GridJob<?,?> job = profile.getJob();
@@ -261,7 +326,15 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		return false;
 	}
 
-	// TODO FixDoc
+	/**
+	 * Starts execution of  the given job, using the specified
+	 * {@link JobExecutionManager}.
+	 * 
+	 * @param jobExecutionManager Job execution manager for the job type
+	 * @param profile profile of the GridJob
+	 * 
+	 * @return boolean indicating success / failure
+	 */
 	private boolean startExecution(JobExecutionManager jobExecutionManager,
 			GridJobProfile profile) {
 		return jobExecutionManager.startExecution(profile);
@@ -580,12 +653,22 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 
 
 
-	// TODO FixDoc
+	/**
+	 * Returns the number of jobs which have
+	 * finished execution on this Cluster.
+	 * 
+	 * @return finished job count
+	 */
 	public int getFinishedJobCount() {
 		return finished;
 	}
 
-	// TODO FixDoc
+	/**
+	 * Returns the number of currently active GridJobs on
+	 * this Cluster.
+	 * 
+	 * @return active job count
+	 */
 	public int getActiveJobCount() {
 		return jobs.size();
 	}

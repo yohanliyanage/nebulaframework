@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 2008 Yohan Liyanage. 
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
+ * you may not use this file except in compliance with the License. 
+ * You may obtain a copy of the License at 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS, 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 package org.nebulaframework.util.log4j;
 
 import java.awt.Color;
@@ -14,11 +27,23 @@ import org.apache.log4j.Level;
 import org.apache.log4j.WriterAppender;
 import org.apache.log4j.spi.LoggingEvent;
 
-// TODO FixDoc
-// Ref : http://textareaappender.zcage.com/ Copyright 2006-2007 Eric Elfner
-
+/**
+ * Custom Log4J Appender which appends the given log message
+ * to a JTextPane.
+ * <p>
+ * This was implemented following the basic concept provided by
+ * <a href="http://textareaappender.zcage.com/">Eric Elfner</a>
+ * regarding appending Log4J output to a JTextArea.
+ * <p>
+ * This implementation enhances the above implementation
+ * to support a JTextPane along with colored display of 
+ * different log levels, and support for auto-scrolling.
+ */
 public class JTextPaneAppender extends WriterAppender {
 
+	/*
+	 * Log Level Colors
+	 */
 	public static final Color TRACE = Color.BLUE;
 	public static final Color DEBUG = Color.GREEN;
 	public static final Color INFO = Color.WHITE;
@@ -29,18 +54,25 @@ public class JTextPaneAppender extends WriterAppender {
 	private static JTextPane textPane = null;
 	private static boolean autoScroll = true;
 	
+	/**
+	 * Sets the target JTextPane
+	 * @param textPane target
+	 */
 	public static void setTextPane(JTextPane textPane) {
 		JTextPaneAppender.textPane = textPane;
 		
 		initialize();
 	}
 
-
+	/**
+	 * Initializes the target JTextPane.
+	 */
 	private static void initialize() {
 		if (textPane==null) return;
 		
 		textPane.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
 		
+		// Style Definitions
 		Style def = textPane.addStyle("default", null);
 		StyleConstants.setFontFamily(def, Font.MONOSPACED);
 		
@@ -65,13 +97,17 @@ public class JTextPaneAppender extends WriterAppender {
 		
 	}
 
-
+	/**
+	 * Invoked by Log4J to notify about a LoggingEvent.
+	 * @param event logging event
+	 */
 	public void append(LoggingEvent event) {
 		
 		if (textPane==null) return;
 		final String message = this.layout.format(event);
 		final String style = getStyleFor(event);
 		
+		// Update TextPane
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
 				
@@ -96,11 +132,22 @@ public class JTextPaneAppender extends WriterAppender {
 		});
 	}
 
+	/**
+	 * Enables / disables auto-scroll facility.
+	 * 
+	 * @param autoScroll
+	 */
 	public static void setAutoScroll(boolean autoScroll) {
 		JTextPaneAppender.autoScroll = autoScroll;
 	}
 
 
+	/**
+	 * Returns the proper style for given log event.
+	 * 
+	 * @param event logging event
+	 * @return Style name
+	 */
 	private String getStyleFor(LoggingEvent event)  {
 		
 		Level l = event.getLevel();

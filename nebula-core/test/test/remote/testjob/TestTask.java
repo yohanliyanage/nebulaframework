@@ -38,7 +38,7 @@ public class TestTask implements GridTask<Integer> {
 		//System.out.println("Random Value : " + val);
 		//try {
 			//new SecurityManager();
-		//if (true) throw new GridExecutionException();
+		if (true) throw new GridExecutionException();
 		//System.err.println("Is Cluster Manager " + Grid.isClusterManager());
 		//System.err.println("I can create Sec Man");
 		//} catch (Exception e1) {

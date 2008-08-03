@@ -66,7 +66,6 @@ public class GridNodeProfileImpl implements Serializable, GridNodeProfile {
 		this.id = id;
 	}
 
-	// TODO Uncomment in interface
 	/**
 	 * Returns the ClusterID for this
 	 * {@code GridNode}.

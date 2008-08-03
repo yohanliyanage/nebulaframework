@@ -75,7 +75,7 @@ public class GridNode implements InitializingBean{
 	private static boolean disconnected = false;
 	
 	private UUID id;					// Node Id
-	private GridNodeProfile profile;	// Holds meta-data about node
+	private GridNodeProfileImpl profile;	// Holds meta-data about node
 
 	private ConnectionFactory connectionFactory;
 	private UUID clusterId;
@@ -365,6 +365,7 @@ public class GridNode implements InitializingBean{
 	 */
 	public void setClusterId(UUID clusterId) {
 		this.clusterId = clusterId;
+		this.profile.setClusterId(clusterId);
 	}
 
 	/**
@@ -438,8 +439,6 @@ public class GridNode implements InitializingBean{
 	 * {@code GridJob} exists, which is submitted by this {@code GridNode}.
 	 */
 	public void shutdown(boolean force) throws IllegalStateException {
-		
-		// TODO Check for existing Jobs / Terminate TaskExecutors / Cancle Jobs
 		
 		try {
 			if (!force && nodeRegistrationService.isRegistered()) {

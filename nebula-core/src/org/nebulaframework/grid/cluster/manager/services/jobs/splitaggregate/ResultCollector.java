@@ -37,7 +37,6 @@ import org.springframework.jms.listener.DefaultMessageListenerContainer;
  * @author Yohan Liyanage
  * @version 1.0
  */
-// TODO Update JavaDoc about failure traces
 public class ResultCollector extends ResultCollectionSupport implements GridJobStateListener {
 
 	private static Log log = LogFactory.getLog(ResultCollector.class);

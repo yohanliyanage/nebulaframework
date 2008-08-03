@@ -1,4 +1,17 @@
-package org.nebulaframework.ui.swing.ClusterManager;
+/*
+ * Copyright (C) 2008 Yohan Liyanage. 
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
+ * you may not use this file except in compliance with the License. 
+ * You may obtain a copy of the License at 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS, 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
+package org.nebulaframework.ui.swing.cluster;
 
 import java.awt.AWTException;
 import java.awt.BorderLayout;
@@ -18,10 +31,10 @@ import java.awt.TrayIcon;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -65,12 +78,25 @@ import org.nebulaframework.grid.service.event.ServiceEventsSupport;
 import org.nebulaframework.grid.service.event.ServiceHookCallback;
 import org.nebulaframework.grid.service.message.ServiceMessage;
 import org.nebulaframework.grid.service.message.ServiceMessageType;
+import org.nebulaframework.ui.swing.AboutDialog;
 import org.nebulaframework.util.log4j.JLabelAppender;
 import org.nebulaframework.util.log4j.JTextPaneAppender;
 import org.nebulaframework.util.profiling.TimeUtils;
 import org.springframework.util.StringUtils;
 
-// TODO FixDoc
+import com.Ostermiller.util.Browser;
+
+/**
+ * The Swing UI for the ClusterManager.
+ * This UI exposes basic functionality of ClusterManager,
+ * and allows users to easily manage the Cluster.
+ * <p>
+ * However, for more advanced uses, such as embedding
+ * ClusterManager, consider using the API.
+ * 
+ * @author Yohan Liyanage
+ * @version 1.0
+ */
 public class ClusterMainUI extends JFrame {
 
 	private static Log log = LogFactory.getLog(ClusterMainUI.class);
@@ -86,6 +112,14 @@ public class ClusterMainUI extends JFrame {
 	private Image idleIcon;
 	private Image activeIcon;
 	
+	/**
+	 * Constructs the UI for ClusterManager.
+	 * Note that to construct the UI, the Grid should be
+	 * started and ClusterManager should be running.
+	 * 
+	 * @throws HeadlessException if UI not supported
+	 * @throws IllegalStateException if ClusterManager is not running
+	 */
 	public ClusterMainUI() throws HeadlessException, IllegalStateException {
 		super();
 		
@@ -97,6 +131,9 @@ public class ClusterMainUI extends JFrame {
 	}
 
 	
+	/**
+	 * Primary UI Setup Operations
+	 */
 	private void setupUI() {
 
 		setTitle("Nebula Grid - Cluster Manager");
@@ -135,17 +172,26 @@ public class ClusterMainUI extends JFrame {
 	}
 
 
+	/**
+	 * System Tray Icon setup
+	 * @param frame owner JFrame
+	 */
 	private void setupTrayIcon(final JFrame frame) {
 		
+		// Idle Icon
 		idleIcon = Toolkit.getDefaultToolkit()
 			.getImage(ClassLoader.getSystemResource("META-INF/resources/cluster_inactive.png"));
 		
+		// Active Icon
 		activeIcon = Toolkit.getDefaultToolkit()
 			.getImage(ClassLoader.getSystemResource("META-INF/resources/cluster_active.png"));
 		
 		frame.setIconImage(idleIcon);
 		
+		// If system tray is supported by OS
 		if (SystemTray.isSupported()) {
+			
+			// Set Icon
 			trayIcon = new TrayIcon(idleIcon,"Nebula Grid Cluster", createTrayPopup());
 			trayIcon.setImageAutoSize(true);
 			trayIcon.addActionListener(new ActionListener() {
@@ -181,9 +227,17 @@ public class ClusterMainUI extends JFrame {
 	
 	}
 
+	/**
+	 * Creates the Pop-up menu for System Tray Icon
+	 * 
+	 * @return PopupMenu
+	 */
 	private PopupMenu createTrayPopup() {
-		PopupMenu trayPopup = new PopupMenu();
 		
+		
+		PopupMenu trayPopup = new PopupMenu();
+
+		// About
 		MenuItem aboutItem = new MenuItem("About");
 		aboutItem.addActionListener(new ActionListener() {
 
@@ -197,6 +251,7 @@ public class ClusterMainUI extends JFrame {
 		
 		trayPopup.addSeparator();
 		
+		// Shutdown
 		MenuItem shutdownItem = new MenuItem("Shutdown");
 		shutdownItem.addActionListener(new ActionListener() {
 
@@ -211,14 +266,24 @@ public class ClusterMainUI extends JFrame {
 		return trayPopup;
 	}
 
+	/**
+	 * Displays the Busy Icon on SystemTray
+	 */
 	private void showBusyIcon() {
 		if (trayIcon!=null) trayIcon.setImage(activeIcon);
 	}
 	
+	/**
+	 * Displays the Idle icon on SystemTray
+	 */
 	private void showIdleIcon() {
 		if (trayIcon!=null) trayIcon.setImage(idleIcon);
 	}
 
+	/**
+	 * Setups the Menu Bar
+	 * @return
+	 */
 	private JMenuBar setupMenu() {
 		JMenuBar menuBar = new JMenuBar();
 
@@ -315,7 +380,11 @@ public class ClusterMainUI extends JFrame {
 	}
 
 
-
+	/**
+	 * Setup the General Tab Pane
+	 * 
+	 * @return JPanel for pane
+	 */
 	private JPanel setupGeneralTab() {
 
 		JPanel generalTab = new JPanel();
@@ -392,6 +461,11 @@ public class ClusterMainUI extends JFrame {
 		return generalTab;
 	}
 
+	/**
+	 * Setup the Statistics Panel of General Pane
+	 * 
+	 * @return JPanel for Stats
+	 */
 	private JPanel setupStatsPanel() {
 
 		JPanel statPanel = new JPanel();
@@ -472,17 +546,25 @@ public class ClusterMainUI extends JFrame {
 		return statPanel;
 	}
 
+	/**
+	 * Creates a tab pane for the given GridJob.
+	 * 
+	 * @param jobId JobId
+	 */
 	protected void createJobTab(final String jobId) {
 		
 		
+		// Request Job Profile
 		final InternalClusterJobService jobService = ClusterManager.getInstance().getJobService();
 		final GridJobProfile profile = jobService.getProfile(jobId);
 		
+		// Job Start Time
 		final long startTime = System.currentTimeMillis();
 		
 		final JPanel jobPanel = new JPanel();
 		jobPanel.setLayout(new BorderLayout(10,10));
 		
+		// Progess Panel
 		JPanel progressPanel = new JPanel();
 		progressPanel.setLayout(new BorderLayout(10,10));
 		progressPanel.setBorder(BorderFactory.createTitledBorder("Progress"));
@@ -493,6 +575,7 @@ public class ClusterMainUI extends JFrame {
 		progressPanel.add(progressBar, BorderLayout.CENTER);
 		addUIElement("jobs."+jobId+".progress", progressBar);	// Add to components map
 		
+		// Buttons Panel
 		JPanel buttonsPanel = new JPanel();
 		jobPanel.add(buttonsPanel, BorderLayout.SOUTH);
 		buttonsPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
@@ -505,7 +588,10 @@ public class ClusterMainUI extends JFrame {
 
 					public void run() {
 
-						String name = getClassName(profile.getJob().getClass().getName());
+						// Job Name = Class Name
+						String name = profile.getJob().getClass().getSimpleName();
+						
+						// Request user confirmation
 						int option = JOptionPane.showConfirmDialog(ClusterMainUI.this, 
 						                                                  "Are you sure to terminate GridJob " 
 						                                           + name + "?",
@@ -517,9 +603,10 @@ public class ClusterMainUI extends JFrame {
 						// Attempt Cancel
 						boolean result = profile.getFuture().cancel();
 						
+						// Notify results
 						if (result) {
 							JOptionPane.showMessageDialog(ClusterMainUI.this, "Grid Job '" + 
-							                              getClassName(profile.getJob().getClass().getName()) +
+							                              name +
 							                              "terminated successfully.", "Nebula - Job Terminated", 
 							                              JOptionPane.INFORMATION_MESSAGE);
 						}
@@ -580,7 +667,7 @@ public class ClusterMainUI extends JFrame {
 		jobInfoPanel.add(new JLabel("Name :"),c1);
 		JLabel jobNameLabel = new JLabel();
 		jobInfoPanel.add(jobNameLabel,c1);
-		jobNameLabel.setText(getClassName(profile.getJob().getClass().getName()));
+		jobNameLabel.setText(profile.getJob().getClass().getSimpleName());
 		addUIElement("jobs."+jobId+".job.name", jobNameLabel);	// Add to components map
 		
 		// Gap
@@ -740,7 +827,7 @@ public class ClusterMainUI extends JFrame {
 				// Create Tab
 				addUIElement("jobs." + jobId, jobPanel);
 				JTabbedPane tabs = getUIElement("tabs");
-				tabs.addTab(getClassName(profile.getJob().getClass().getName()), jobPanel);
+				tabs.addTab(profile.getJob().getClass().getSimpleName(), jobPanel);
 				tabs.revalidate();
 			}
 		});
@@ -919,6 +1006,13 @@ public class ClusterMainUI extends JFrame {
 		}, jobId, ServiceMessageType.JOB_CANCEL, ServiceMessageType.JOB_END);
 	}
 
+	/**
+	 * Returns the Job Type Name for given Job
+	 * 
+	 * @param job Job Instance
+	 * 
+	 * @return String representation of Job Type
+	 */
 	private String getJobType(GridJob<?, ?> job) {
 		if (job instanceof SplitAggregateGridJob<?, ?>) {
 			return "Split-Aggregate";
@@ -931,13 +1025,10 @@ public class ClusterMainUI extends JFrame {
 		}
 	}
 
-
-	private String getClassName(String clsName) {
-		String[] tokens = clsName.split("\\.");
-		return tokens[tokens.length-1];
-	}
-
-
+	/**
+	 * Removes the given Job Tab Pane
+	 * @param jobId JobId of pane
+	 */
 	protected void removeJobTab(String jobId) {
 		
 		// Detach Tab
@@ -966,6 +1057,9 @@ public class ClusterMainUI extends JFrame {
 		removeUIElement("jobs." + jobId);
 	}
 	
+	/**
+	 * Invokes the Cluster Shutdown Operation
+	 */
 	protected void doShutdownCluster() {
 
 		// Consider different messages when there are active jobs
@@ -986,75 +1080,77 @@ public class ClusterMainUI extends JFrame {
 		onShutdown();
 	}
 
+	/**
+	 * Displays About Dialog Box
+	 */
 	protected void showAbout() {
-		final JWindow window = new JWindow(this);
-		JLabel lbl = new JLabel(new ImageIcon(ClassLoader.getSystemResource("META-INF/resources/about.png")));
-		lbl.addMouseListener(new MouseAdapter() {
-			public void mousePressed(MouseEvent e) {
-				hideAbout(window);
-			}
-		});
-		
-		window.setSize(400, 200);
-		window.setLayout(new BorderLayout());
-		window.add(lbl, BorderLayout.CENTER);
-		window.setVisible(true);
-		window.setLocationRelativeTo(this);	// Center on Main UI
-		
-		// Auto Close About after 8 Seconds
-		new Thread(new Runnable() {
-
-			public void run() {
-				try {
-					Thread.sleep(8000);
-				} catch (InterruptedException e) {
-					log.warn("Interrupted Exception in About Close Handler", e);
-				}
-				
-				hideAbout(window);
-			}
-		}).start();
-	}
-	
-	protected void hideAbout(JWindow window) {
-		if (window.isVisible()) {
-			window.setVisible(false);
-			window.dispose();
-		}
+		new AboutDialog(this);
 	}
 
+	/**
+	 * Displays Help Contents
+	 */
 	protected void showHelp() {
-		// TODO Auto-generated method stub
+		
+		File helpFile = new File("help/index.html");
+		
+		if (!helpFile.exists()) {
+			JOptionPane.showMessageDialog(this, "Unable to locate Help Files");
+		}
+		
+		Browser.init();
+		try {
+			Browser.displayURLinNew(helpFile.toURI().toURL().toString());
+		} catch (IOException e) {
+			log.warn("[UI] Unable to display Help",e);
+			JOptionPane.showMessageDialog(this, "Unable to display Help Contents");
+		}
 		
 	}
 
+	/**
+	 * Invokes Peer Discovery using Colombus Web Servers.
+	 */
 	protected void doDiscoverWS() {
 		// TODO Auto-generated method stub
 		
 	}
 
+	/**
+	 * Invokes Peer Discovery using Multicast.
+	 */
 	protected void doDiscoverMulticast() {
 		// TODO Auto-generated method stub
 		
 	}
 
+	/**
+	 * Displays Configuration Dialog Box.
+	 */
 	protected void showConfiguration() {
 		// TODO Auto-generated method stub
 		
 	}
 	
+	/**
+	 * Requests Cluster Shutdown.
+	 */
 	public void onShutdown() {
 
 		new Thread(new Runnable() {
 
 			@Override
 			public void run() {
+				// Forced Shutdown
 				ClusterManager.getInstance().shutdown(true);				
 			}
 			
 		}).start();
 	}
 
+	/**
+	 * Updates UI and displays the Cluster Information.
+	 */
 	private void showClusterInfo() {
 		ClusterManager mgr = ClusterManager.getInstance();
 
@@ -1198,12 +1294,28 @@ public class ClusterMainUI extends JFrame {
 	}
 
 	
+	/**
+	 * Returns the UI Element for given Identifier.
+	 * 
+	 * @param <T> Expected Type of UI Element
+	 * @param identifier Element Identifier
+	 * 
+	 * @return UI Element Instance
+	 * 
+	 * @throws IllegalArgumentException if invalid identifier
+	 * @throws ClassCastException if invalid type
+	 */
 	@SuppressWarnings("unchecked")
 	protected <T extends JComponent> T getUIElement(String identifier) throws IllegalArgumentException, ClassCastException {
 		if (! components.containsKey(identifier)) throw new IllegalArgumentException("Invalid Identifier");
 		return (T) components.get(identifier);
 	}
 
+	/**
+	 * Displays Splash Screen
+	 * 
+	 * @return Splash Screen Reference
+	 */
 	public static JWindow showSplash() {
 		
 		JWindow splash = new JWindow();
@@ -1228,10 +1340,17 @@ public class ClusterMainUI extends JFrame {
 		return splash;
 	}
 	
+	/**
+	 * Creates the UI for ClusterManager,
+	 * and returns.
+	 * 
+	 * @return UI reference
+	 */
 	public static ClusterMainUI create() {
 		final ClusterMainUI ui = new ClusterMainUI();
 		ui.setLocationRelativeTo(null);
 
+		// Close Handler
 		ui.addWindowListener(new WindowAdapter() {
 
 			@Override

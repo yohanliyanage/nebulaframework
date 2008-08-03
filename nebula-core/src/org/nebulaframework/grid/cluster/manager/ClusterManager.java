@@ -464,14 +464,12 @@ public class ClusterManager implements InitializingBean {
 		
 		log.info("Cluster Shutting Down");
 		
-		// TODO Implement Rest
 		if (!force) {
-			// Soft Shutdown
-			// If fails, log end return
-		}
-		else {
-			// Forced Shutdown
-			// If fails, log but ignore
+			// Soft Shutdown 
+			// Does not shutdown if active jobs are there
+			if (jobService.getActiveJobCount()>0) {
+				return;
+			}
 		}
 		
 		// Send Default Peer Disconnection Messages
@@ -491,10 +489,7 @@ public class ClusterManager implements InitializingBean {
 		
 		serviceMessageSender.sendServiceMessage(message);
 		
-		// Other clean up operations
-
 		try {
-			// Wait 1 second for messages to go // TODO Revise
 			Thread.sleep(1000);
 		} catch(InterruptedException ex) {
 			log.error(ex);

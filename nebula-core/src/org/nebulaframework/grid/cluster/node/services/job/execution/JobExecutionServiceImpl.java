@@ -192,14 +192,14 @@ public class JobExecutionServiceImpl implements JobExecutionService, Initializin
 		if (idle) {
 			// Request for Job
 			GridJobInfo jobInfo = node.getServicesFacade().requestNextJob(node.getProfile());
-
-			jobNames.put(jobInfo.getJobId(), jobInfo.getJobName());
 			
 			// If no job, do nothing
 			if (jobInfo == null) {
 				log.info("[JobExecution] Idle as no active GridJobs");
 				return;
 			}
+			
+			jobNames.put(jobInfo.getJobId(), jobInfo.getJobName());
 			
 			// Start it
 			if (jobInfo.isArchived()) {	// Archived Job

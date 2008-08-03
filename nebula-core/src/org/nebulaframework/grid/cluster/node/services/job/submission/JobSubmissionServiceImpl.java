@@ -138,7 +138,6 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
 		Map<String, GridJobFuture> futureMap = new HashMap<String, GridJobFuture>();
 
 		if (callbacks == null) {
-			// TODO Detect Callbacks automatically ?
 			callbacks = new HashMap<String, ResultCallback>();
 		}
 

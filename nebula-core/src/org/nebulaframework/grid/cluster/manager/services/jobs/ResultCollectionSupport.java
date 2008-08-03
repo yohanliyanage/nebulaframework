@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 2008 Yohan Liyanage. 
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
+ * you may not use this file except in compliance with the License. 
+ * You may obtain a copy of the License at 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS, 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 package org.nebulaframework.grid.cluster.manager.services.jobs;
 
 import java.util.HashMap;
@@ -11,18 +24,43 @@ import org.nebulaframework.grid.cluster.manager.services.messaging.ServiceMessag
 import org.nebulaframework.grid.service.message.ServiceMessage;
 import org.nebulaframework.grid.service.message.ServiceMessageType;
 
-// TODO FixDoc
+/**
+ * Support class which provides routines to handle failing GridNodes.
+ * <p>
+ * This class keeps track of each GridNode, and if a GridNode
+ * returns fail results for a job for more than {@code MAX_CONSECUTIVE_NODE_FAILS}
+ * times consecutively, it bans the GridNode from further task execution
+ * of the GridJob.
+ * <p>
+ * This is necessary to ensure the accuracy and performance of 
+ * GridJob execution, as a faulty node which continues to generate
+ * fail results may affect the throughput of the execution.
+ * <p>
+ * All result collection classes are extended from this
+ * class, and uses the functionality of this to handle such
+ * issues.
+ * 
+ * @author Yohan Liyanage
+ * @version 1.0
+ */
 public class ResultCollectionSupport {
 
+	/**
+	 * Maximum allowed consecutive fail results
+	 */
 	public static final int MAX_CONSECUTIVE_NODE_FAILS = 3;
 
 	private static final Log log = LogFactory
 			.getLog(ResultCollectionSupport.class);
 	
-	// Failure Traces. Keeps track of consecutive failures from a given
-	// worker. If the # of failures > MAX_CONSECUTIVE_NODE_FAILS,
-	// the node will be banned from this job.
+	/**
+	 * Failure Traces. Keeps track of consecutive failures from a given worker. 
+	 */
 	protected Map<UUID, Integer> failureTrace = new HashMap<UUID, Integer>();
+	
+	/**
+	 * GridJob Profile
+	 */
 	protected GridJobProfile profile;
 
 	/**
@@ -31,8 +69,6 @@ public class ResultCollectionSupport {
 	 * @param workerId Worker UUID
 	 */
 	protected void clearFailureTrace(UUID workerId) {
-		
-		log.trace("Clearing Failure Trace for " + workerId);
 		
 		if (failureTrace.containsKey(workerId)) {
 			failureTrace.remove(workerId);
@@ -47,19 +83,19 @@ public class ResultCollectionSupport {
 	 */
 	protected void addFailureTrace(UUID workerId) {
 		
-		log.trace("Adding Failure for " + workerId);
-		
 		synchronized (failureTrace) {
+			
+			// If first consecutive failure
 			if (!failureTrace.containsKey(workerId)) {
 				failureTrace.put(workerId, 1);
 			}	
 			else {
 				
+				// Increment failures
 				int count = failureTrace.get(workerId) + 1;
 				
+				// If fails > MAX
 				if (count > MAX_CONSECUTIVE_NODE_FAILS) {
-					
-					log.trace("Baning " + workerId);
 					
 					// Add to banned list
 					try {
@@ -70,29 +106,23 @@ public class ResultCollectionSupport {
 					
 					String msgBody = workerId + "#" + profile.getJobId();
 					
-					log.trace("Msg " + msgBody);
 					
 					// Send banned message
 					ServiceMessage message = new ServiceMessage(msgBody, 
 					                                            ServiceMessageType.NODE_BANNED);
 					
-					log.trace("Msg Created");
-					
 					try {
 						ServiceMessageSender sender = ClusterManager.getInstance().getServiceMessageSender();
-						log.trace("I got Sender : " + sender);
 						sender.sendServiceMessage(message);
-						log.trace("Sent");
+						log.warn("[JobService] Failing GridNode Banned : " + workerId);
 					} catch (Exception e) {
 						log.error("Error Sending Message", e);
 					}
 					
-					log.trace("Sent Bann Message " + workerId);
 				}
 				
 				failureTrace.put(workerId, count);
 			}
 		}
-		log.trace("Failure Count for " + workerId + " = " + failureTrace.get(workerId));
 	}
 }

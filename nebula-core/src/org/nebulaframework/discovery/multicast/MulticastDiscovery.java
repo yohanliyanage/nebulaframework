@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 2008 Yohan Liyanage. 
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
+ * you may not use this file except in compliance with the License. 
+ * You may obtain a copy of the License at 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS, 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 package org.nebulaframework.discovery.multicast;
 
 import java.io.IOException;
@@ -25,7 +38,6 @@ import org.nebulaframework.util.net.NetUtils;
  * @author Yohan Liyanage
  * @version 1.0
  */
-// TODO Fix Doc and re check as algo changed
 public class MulticastDiscovery {
 
 	private static Log log = LogFactory.getLog(MulticastDiscovery.class);
@@ -185,7 +197,7 @@ public class MulticastDiscovery {
 		// Create Instance of MulticastDiscovery
 		final MulticastDiscovery mDisc = new MulticastDiscovery();
 		
-		// Execute on a seperate Thread
+		// Execute on a separate Thread
 		new Thread(new Runnable(){
 
 			public void run() {
@@ -268,7 +280,14 @@ public class MulticastDiscovery {
 		this.cluster = sb.toString();
 	}
 	
-	//TODO FixDOc
+	/**
+	 * Attempts to discover peer clusters using Multicast
+	 * Discovery. Each discovered Cluster will be notified
+	 * to the {@code PeerClusterService} of the 
+	 * ClusterManager.
+	 * 
+	 * @throws IOException if occurred during process
+	 */
 	public static void discoverPeerClusters() throws IOException {
 		
 		// Only allowed for ClusterManagers
@@ -284,7 +303,7 @@ public class MulticastDiscovery {
 		MulticastSocket reqSock = new MulticastSocket();
 		reqSock.send(request);
 		
-		// Wait for Response
+		// Response Socket
 		MulticastSocket resSock = new MulticastSocket(SERVICE_PORT);
 		resSock.joinGroup(SERVICE_RESPONSE_IP);
 		
@@ -301,21 +320,8 @@ public class MulticastDiscovery {
 				
 				// Receive
 				resSock.receive(response);
+				processPeerResponse(response.getData());
 				
-				byte[] data = response.getData();
-				
-				byte[] ipBytes = Arrays.copyOfRange(data, 0,4);
-				byte[] portBytes = Arrays.copyOfRange(data, 4, 9);
-				
-				InetAddress ip = InetAddress.getByAddress(ipBytes);
-				StringBuilder sb = new StringBuilder(ip.getHostAddress());
-				sb.append(":");
-				for(byte b:portBytes) {
-					sb.append(b);
-				}
-				
-				// Add Peer Cluster
-				ClusterManager.getInstance().getPeerService().addCluster(sb.toString());
 			}
 			
 		} catch (SocketTimeoutException e) {
@@ -326,5 +332,43 @@ public class MulticastDiscovery {
 			log.info("[MulticastDiscovery] Peer Cluster Discovery Complete");
 		}
 
+	}
+	
+	/**
+	 * Support routine which processes a response received for a discovery
+	 * request for peer clusters. Each invocation will be handled
+	 * in a separate thread.
+	 * 
+	 * @param data response data
+	 */
+	private static void processPeerResponse(final byte[] data)  {
+		
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				
+				try {
+					byte[] ipBytes = Arrays.copyOfRange(data, 0,4);
+					byte[] portBytes = Arrays.copyOfRange(data, 4, 9);
+					
+					InetAddress ip = null;
+					ip = InetAddress.getByAddress(ipBytes);
+					
+					StringBuilder sb = new StringBuilder(ip.getHostAddress());
+					sb.append(":");
+					for(byte b:portBytes) {
+						sb.append(b);
+					}
+					
+					// Add Peer Cluster
+					ClusterManager.getInstance().getPeerService().addCluster(sb.toString());
+				} catch (Exception e) {
+					log.warn("[Discovery] Unable to resolve peer");
+				}				
+			}
+			
+		}).start();
+		
 	}
 }

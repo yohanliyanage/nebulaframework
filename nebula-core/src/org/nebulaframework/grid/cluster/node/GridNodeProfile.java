@@ -33,14 +33,13 @@ public interface GridNodeProfile {
 	 */
 	public UUID getId();
 	
-	// TODO Uncomment
-//	/**
-//	 * Returns the Cluster ID for this
-//	 * Node.
-//	 * 
-//	 * @return UUID Cluster ID
-//	 */
-//	public UUID getClusterId();
+	/**
+	 * Returns the Cluster ID for this
+	 * Node.
+	 * 
+	 * @return UUID Cluster ID
+	 */
+	public UUID getClusterId();
 	
 	/**
 	 * Returns user-friendly name for Node

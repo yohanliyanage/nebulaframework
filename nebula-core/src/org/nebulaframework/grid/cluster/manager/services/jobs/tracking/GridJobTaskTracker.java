@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 2008 Yohan Liyanage. 
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
+ * you may not use this file except in compliance with the License. 
+ * You may obtain a copy of the License at 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS, 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 package org.nebulaframework.grid.cluster.manager.services.jobs.tracking;
 
 import java.util.ArrayList;
@@ -17,7 +30,18 @@ import org.nebulaframework.grid.service.event.ServiceHookCallback;
 import org.nebulaframework.grid.service.message.ServiceMessage;
 import org.nebulaframework.grid.service.message.ServiceMessageType;
 
-// TODO FixDoc
+/**
+ * TaskTracker which tracks the status of tasks for
+ * a given GridJob.
+ * <p>
+ * Instance of this class monitors the task execution of
+ * a GridJob, and re-enqueues potentially failed tasks.
+ * The average execution duration for a task is constantly measured
+ * by the 
+ * 
+ * @author Yohan Liyanage
+ * @version 1.0
+ */
 public class GridJobTaskTracker {
 
 	private static final Log log = LogFactory.getLog(GridJobTaskTracker.class);
@@ -44,6 +68,14 @@ public class GridJobTaskTracker {
 	private List<Integer> marked = new ArrayList<Integer>();
 	
 	
+	/**
+	 * Constructs a Task Tracker for given job.
+	 * <p>
+	 * Note that this is a <b>private</b> constructor.
+	 * 
+	 * @param profile Job Profile
+	 * @param executionManager JobExecutionManager for job
+	 */
 	private GridJobTaskTracker(GridJobProfile profile,
 			JobExecutionManager executionManager) {
 		super();
@@ -51,7 +83,13 @@ public class GridJobTaskTracker {
 		this.executionManager = executionManager;
 	}
 	
-	
+	/**
+	 * Starts a tracker instance for given Job.
+	 * 
+	 * @param profile Profile
+	 * @param executionManager Job Execution Manager
+	 * @return constructed instance
+	 */
 	public static GridJobTaskTracker startTracker(GridJobProfile profile,
 			JobExecutionManager executionManager) {
 		
@@ -71,6 +109,11 @@ public class GridJobTaskTracker {
 		return instance;
 	}
 
+	/**
+	 * Starts the tracker, which then
+	 * continues to monitor and re-enqueue possibly
+	 * failed jobs.
+	 */
 	public void start() {
 		
 		// Ignore all start() calls if already started
@@ -94,6 +137,9 @@ public class GridJobTaskTracker {
 		
 	}
 	
+	/**
+	 * Internal method to start the tracking process.
+	 */
 	protected void startTracking() {
 		
 		log.debug("[GridJobTaskTracker] Started Tracking for " + profile.getJobId());
@@ -142,7 +188,14 @@ public class GridJobTaskTracker {
 		
 	}
 
-
+	/**
+	 * Returns the sleep duration multiplier. The tracker
+	 * thread sleeps for {@code average duration * multiplier} amount of 
+	 * time (milliseconds). This multiplier is higher for tasks with lower
+	 * duration, and lower for tasks with higher duration.
+	 * 
+	 * @return multiplier
+	 */
 	private long getMultipler() {
 		
 		// 2 Times Delay for Durations Less Than 2 Seconds
@@ -160,7 +213,10 @@ public class GridJobTaskTracker {
 		
 	}
 
-
+	/**
+	 * Re-enqueues jobs which are marked as 
+	 * possibly failed.
+	 */
 	private synchronized void renqueueMarked() {
 		
 		if (marked.size() == 0) return;
@@ -174,7 +230,10 @@ public class GridJobTaskTracker {
 		
 	}
 
-
+	/**
+	 * Moves the potentially failed tasks to
+	 * marked task queue.
+	 */
 	private synchronized void potentialToMarked() {
 		for (int i=0; i <potential.size(); i++) {
 			marked.add(potential.remove(i));
@@ -182,13 +241,21 @@ public class GridJobTaskTracker {
 	}
 	
 
+	/**
+	 * Moves the existing enqueued tasks queue to
+	 * potentially failed queue.
+	 */
 	private synchronized void enqueuedToPotential() {
 		for (int i=0; i <enqueued.size(); i++) {
 			marked.add(enqueued.remove());
 		}
 	}
 
-
+	/**
+	 * Invoked to notify that a new task was enqueued.
+	 * 
+	 * @param taskId TaskId of enqueued task
+	 */
 	public synchronized void taskEnqueued(int taskId) {
 		
 		if (stopped) return;
@@ -196,6 +263,12 @@ public class GridJobTaskTracker {
 		enqueued.add(taskId);
 	}
 	
+	/**
+	 * Invoked to notify that a result was received
+	 * 
+	 * @param taskId taskId of result
+	 * @param executionTime duration taken to execute
+	 */
 	public void resultReceived(final Integer taskId, final long executionTime) {
 		
 		if (stopped) return;
@@ -228,7 +301,7 @@ public class GridJobTaskTracker {
 						marked.remove(taskId);
 					}
 					
-					// Calculate Duration
+					// Calculate Task Average Duration
 					double seconds = Math.floor(((double)(executionTime/1000)));
 					
 					if (seconds==0) seconds = 1;
@@ -244,12 +317,17 @@ public class GridJobTaskTracker {
 		});
 	}
 
-	
+	/**
+	 * Stops the TaskTracker
+	 */
 	public synchronized void stop() {
 		this.stopped = true;
 		destory();
 	}
 	
+	/**
+	 * Destroys the tracker instance.
+	 */
 	private void destory() {
 		this.enqueued = null;
 		this.marked = null;

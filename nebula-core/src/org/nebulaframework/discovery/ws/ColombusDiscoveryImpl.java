@@ -15,13 +15,18 @@ package org.nebulaframework.discovery.ws;
 
 import javax.jws.WebService;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.nebulaframework.discovery.ws.datastore.ClusterData;
+
 /**
- * {@code ColombusDiscovery} allows Nebula Grid Members to 
- * detect Clusters using a Web Service based discovery
- * mechanism, named as <b>Nebula Colombus Service</b>.
+ * Implementation of {@code ColombusDiscovery}, which allows 
+ * Nebula Grid Members to detect Clusters using a Web Service 
+ * based discovery mechanism, named as <b>Nebula Colombus 
+ * Service</b>.
  * <p>
  * This interface is the service which allows to discover
- * nodes, and it is implemented as a web service endpoint
+ * nodes, and it is implemented as a web service end-point
  * in Colombus Server.
  * <p>
  * <i>Web Service</i>
@@ -29,15 +34,17 @@ import javax.jws.WebService;
  * @author Yohan Liyanage
  * @version 1.0
  */
-@WebService
-public interface ColombusDiscovery {
+@WebService(endpointInterface="org.nebulaframework.discovery.ws.ColombusDiscovery", serviceName="ColombusDiscovery")
+public class ColombusDiscoveryImpl implements ColombusDiscovery {
+	
+	private static Log log = LogFactory.getLog(ColombusDiscoveryImpl.class);
 	
 	/**
-	 * Attempts to discover a Cluster using a given
-	 * Colombus Server.
-	 * 
-	 * @return IP Address of Cluster
+	 * {@inheritDoc}
 	 */
-	public String discover();
-	
+	public String discover() {
+		log.debug("[ColombusDiscovery] Discovery Request Received");
+		return ClusterData.nextCluster();
+	}
+
 }
