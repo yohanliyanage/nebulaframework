@@ -1,7 +1,0 @@
-grant codeBase "http://codebase.nebulaframework.org/usercode/" {
-
-};
-
-grant codeBase "file:/-" {
-	permission java.security.AllPermission;
-};
