@@ -1,4 +1,17 @@
-package org.nebulaframework.ui.swing.GridNode;
+/*
+ * Copyright (C) 2008 Yohan Liyanage. 
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
+ * you may not use this file except in compliance with the License. 
+ * You may obtain a copy of the License at 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS, 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
+package org.nebulaframework.ui.swing.node;
 
 import java.awt.AWTException;
 import java.awt.BorderLayout;
@@ -18,6 +31,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -58,11 +73,24 @@ import org.nebulaframework.grid.service.event.ServiceEventsSupport;
 import org.nebulaframework.grid.service.event.ServiceHookCallback;
 import org.nebulaframework.grid.service.message.ServiceMessage;
 import org.nebulaframework.grid.service.message.ServiceMessageType;
+import org.nebulaframework.ui.swing.AboutDialog;
 import org.nebulaframework.util.log4j.JLabelAppender;
 import org.nebulaframework.util.log4j.JTextPaneAppender;
 import org.nebulaframework.util.net.NetUtils;
 import org.nebulaframework.util.profiling.TimeUtils;
 
+import com.Ostermiller.util.Browser;
+
+/**
+ * The Swing UI for GridNode. This UI exposes basic functionality of 
+ * GridNode, and allows users to easily manage the Node.
+ * <p>
+ * However, for more advanced uses, such as embedding
+ * GridNodes, consider using the API.
+ * 
+ * @author Yohan Liyanage
+ * @version 1.0
+ */
 public class NodeMainUI extends JFrame {
 
 	private static final long serialVersionUID = 1574154489795768861L;
@@ -72,27 +100,43 @@ public class NodeMainUI extends JFrame {
 	private static final int WIDTH = 600;
 	private static final int HEIGHT = 575;
 	
+	// Components
 	private static Map<String, JComponent> components = new HashMap<String, JComponent>();
 	
+	// Job History List
 	private JobHistoryListModel historyList = new JobHistoryListModel();
 	
+	// Total Execution Time
 	private long executionTime = 0L;
+	
+	// Auto Discovery Enabled
 	private boolean autodiscover = true;
 	
+	// Last Discovery Attempt Time stamp
 	private Long lastDiscoveryAttempt = System.currentTimeMillis();
 	
+	// Currently Active JobId
 	private String activeJobId = null;
+	
 	
 	private TrayIcon trayIcon;
 	
 	private Image idleIcon;
 	private Image activeIcon;
 	
+	/**
+	 * Constructs a GridNode UI.
+	 * 
+	 * @throws HeadlessException if UI not supported.
+	 */
 	public NodeMainUI() throws HeadlessException {
 		super();
 		setupUI();
 	}
 
+	/**
+	 * UI Setup operations.
+	 */
 	private void setupUI() {
 		setTitle("Nebula Grid - Execution Node");
 		setSize(WIDTH, HEIGHT);
@@ -114,6 +158,11 @@ public class NodeMainUI extends JFrame {
 		setupTrayIcon(this);
 	}
 
+	/**
+	 * Setup System Tray Icon.
+	 * 
+	 * @param frame owner frame
+	 */
 	private void setupTrayIcon(final JFrame frame) {
 		
 		idleIcon = Toolkit.getDefaultToolkit()
@@ -124,6 +173,7 @@ public class NodeMainUI extends JFrame {
 		
 		frame.setIconImage(idleIcon);
 		
+		// If system tray is supported by OS
 		if (SystemTray.isSupported()) {
 			trayIcon = new TrayIcon(idleIcon,"Nebula Grid Node", createTrayPopup());
 			trayIcon.setImageAutoSize(true);
@@ -160,9 +210,16 @@ public class NodeMainUI extends JFrame {
 	
 	}
 
+	/**
+	 * System Tray Icon Pop Up Menu
+	 * 
+	 * @return PopupMenu
+	 */
 	private PopupMenu createTrayPopup() {
 		PopupMenu trayPopup = new PopupMenu();
 		
+		
+		// About
 		MenuItem aboutItem = new MenuItem("About");
 		aboutItem.addActionListener(new ActionListener() {
 
@@ -176,6 +233,7 @@ public class NodeMainUI extends JFrame {
 		
 		trayPopup.addSeparator();
 		
+		// Shutdown Node
 		MenuItem shutdownItem = new MenuItem("Shutdown");
 		shutdownItem.addActionListener(new ActionListener() {
 
@@ -190,15 +248,24 @@ public class NodeMainUI extends JFrame {
 		return trayPopup;
 	}
 
+	/**
+	 * Displays busy icon in System tray
+	 */
 	private void showBusyIcon() {
 		if (trayIcon!=null) trayIcon.setImage(activeIcon);
 	}
 	
+	/**
+	 * Displays Idle icon in System tray
+	 */
 	private void showIdleIcon() {
 		if (trayIcon!=null) trayIcon.setImage(idleIcon);
 	}
 
-
+	/**
+	 * Setup Menu Bar
+	 * @return JMenu Bar
+	 */
 	private JMenuBar setupMenu() {
 		JMenuBar menuBar = new JMenuBar();
 		
@@ -293,7 +360,11 @@ public class NodeMainUI extends JFrame {
 	}
 
 
-
+	/**
+	 * Setup General (Control Center) Tab
+	 * 
+	 * @return JPanel for Control Center
+	 */
 	private JPanel setupGeneral() {
 		
 		JPanel generalPanel = new JPanel();
@@ -546,6 +617,11 @@ public class NodeMainUI extends JFrame {
 		return generalPanel;
 	}
 
+	/**
+	 * Setup Job History Tab Pane
+	 * 
+	 * @return JPanel for History tab
+	 */
 	private JPanel setupHistory() {
 		
 		JPanel historyPanel = new JPanel();
@@ -637,6 +713,9 @@ public class NodeMainUI extends JFrame {
 		return historyPanel;
 	}
 	
+	/**
+	 * Resets the active Job Info fields
+	 */
 	protected void resetActiveJobInfo() {
 		
 		JLabel jobName = getUIElement("general.stats.jobname");
@@ -651,10 +730,20 @@ public class NodeMainUI extends JFrame {
 		
 	}
 	
+	/**
+	 * Updates the GridNode Status to given status
+	 * @param status status text
+	 */
 	protected void setStatus(String status) {
 		((JLabel)getUIElement("general.stats.status")).setText(status);
 	}
 	
+	/**
+	 * Displays the Job info for given {@link JobHistoryElement} in the
+	 * History Tab Pane's fields.
+	 *  
+	 * @param obj JobHistoryElement
+	 */
 	protected void displayJobInfo(Object obj) {
 		
 		if (!(obj instanceof JobHistoryElement)) return;
@@ -676,7 +765,9 @@ public class NodeMainUI extends JFrame {
 		
 	}
 
-
+	/**
+	 * Updates GridInfo in Control Center
+	 */
 	private void updateGridInfo() {
 		
 		JLabel nodeId = getUIElement("general.stats.nodeid");
@@ -685,7 +776,7 @@ public class NodeMainUI extends JFrame {
 		JLabel clusterService = getUIElement("general.stats.clusterservice");
 		
 		if (Grid.isNode()) {
-			
+			// If connected
 			GridNode instance = GridNode.getInstance();
 			
 			nodeId.setText(instance.getId().toString());
@@ -696,19 +787,27 @@ public class NodeMainUI extends JFrame {
 			getUIElement("menu.node.discover").setEnabled(false);
 			
 			registerHooks(instance);
-			
+			setStatus("Idle");
 
 			
 		}
 		else {
+			// If not connected
 			nodeId.setText("Not Connected");
 			nodeIp.setText("Not Connected");
 			clusterId.setText("Not Connected");
 			clusterService.setText("Not Connected");
+			setStatus("Not Connected");
 			getUIElement("menu.node.discover").setEnabled(true);
 		}
 	}
 	
+	/**
+	 * Registers Service Event Hooks to update fields, once
+	 * connected
+	 * 
+	 * @param instance GridNode instance
+	 */
 	private void registerHooks(GridNode instance) {
 		
 		// Disconnection Hook
@@ -728,7 +827,7 @@ public class NodeMainUI extends JFrame {
 			
 		}, instance.getClusterId().toString(), ServiceMessageType.NODE_DISCONNECTED);
 		
-		
+		// Job Start Hook
 		ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
 
 			@Override
@@ -739,12 +838,17 @@ public class NodeMainUI extends JFrame {
 									.getJobExecutionService()
 									.getJobName(jobId);
 				
+				activeJobId = jobId;
+				
 				final long timeStart = System.currentTimeMillis();
 				
 				SwingUtilities.invokeLater(new Runnable() {
 
 					@Override
 					public void run() {
+						
+						showBusyIcon();
+						setStatus("Executing Job");
 						
 						((JLabel) getUIElement("general.stats.jobname"))
 								.setText(jobName);
@@ -801,6 +905,7 @@ public class NodeMainUI extends JFrame {
 							public void run() {
 								
 								try {
+									
 									JLabel durationLabel = getUIElement("general.stats.duration");
 									JLabel jobnameLabel = getUIElement("general.stats.jobname");
 									JLabel tasksLabel = getUIElement("general.stats.tasks");
@@ -831,6 +936,10 @@ public class NodeMainUI extends JFrame {
 									// Update Total Jobs Count
 									int totalJobs = Integer.parseInt(totalJobsLabel.getText()) + 1;
 									totalJobsLabel.setText(String.valueOf(totalJobs));
+									
+									showIdleIcon();
+									setStatus("Idle");
+									
 								} catch (Exception e) {
 									log.warn("[UI] Exception ",e);
 								}
@@ -847,6 +956,7 @@ public class NodeMainUI extends JFrame {
 		}, ServiceMessageType.LOCAL_JOBSTARTED);
 		
 
+		// Task Executed Hook
 		ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
 
 			public void onServiceEvent(final ServiceMessage message) {
@@ -876,6 +986,7 @@ public class NodeMainUI extends JFrame {
 			
 		}, ServiceMessageType.LOCAL_TASKDONE);
 		
+		// Task Failed Hook
 		ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
 
 			public void onServiceEvent(final ServiceMessage message) {
@@ -899,32 +1010,35 @@ public class NodeMainUI extends JFrame {
 			}
 		}, ServiceMessageType.LOCAL_TASKFAILED);
 		
+		// Task Execution Time Hook
 		ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
 
 			public void onServiceEvent(final ServiceMessage message) {
 				
+				try {
+					executionTime += Long.parseLong(message.getMessage());
+				} catch (Exception e) {
+					log.warn("[UI] Exception ",e);
+				}
+
 				SwingUtilities.invokeLater(new Runnable() {
 
 					public void run() {
-						
-						try {
-							
-							JLabel execTimeLabel = getUIElement("general.stats.exectime");
-							executionTime += Long.parseLong(message.getMessage());
-							
-							execTimeLabel.setText(TimeUtils.buildTimeString(executionTime));		
-							
-						} catch (Exception e) {
-							log.warn("[UI] Exception ",e);
-						}
+							updateExecutionTime();
 					}
 				});
 			}
 		}, ServiceMessageType.LOCAL_TASKEXEC);
 		
+		// Node Banned Hook
 		ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
 
 			public void onServiceEvent(final ServiceMessage message) {
+				
+				// If not relevant to node, ignore
+				if (!message.getMessage().startsWith(GridNode.getInstance().getId().toString())) {
+					return;
+				}
 				
 				SwingUtilities.invokeLater(new Runnable() {
 
@@ -941,11 +1055,14 @@ public class NodeMainUI extends JFrame {
 					}
 				});
 			}
-		}, GridNode.getInstance().getId().toString(),ServiceMessageType.NODE_BANNED);
+		},ServiceMessageType.NODE_BANNED);
 		
 		
 	}
 
+	/**
+	 * Updates the total execution time field
+	 */
 	private void updateExecutionTime() {
 		((JLabel) getUIElement("general.stats.exectime"))
 			.setText(TimeUtils.buildTimeString(executionTime));
@@ -970,7 +1087,17 @@ public class NodeMainUI extends JFrame {
 		components.remove(identifier);
 	}
 
-	
+	/**
+	 * Returns the UI Element for given Identifier.
+	 * 
+	 * @param <T> Expected Type of UI Element
+	 * @param identifier Element Identifier
+	 * 
+	 * @return UI Element Instance
+	 * 
+	 * @throws IllegalArgumentException if invalid identifier
+	 * @throws ClassCastException if invalid type
+	 */
 	@SuppressWarnings("unchecked")
 	protected <T extends JComponent> T getUIElement(String identifier) throws IllegalArgumentException, ClassCastException {
 		if (! components.containsKey(identifier)) throw new IllegalArgumentException("Invalid Identifier");
@@ -979,7 +1106,9 @@ public class NodeMainUI extends JFrame {
 	
 	
 	/* -- ACTIONS --*/
-
+	/**
+	 * Shutdowns the GridNode
+	 */
 	protected void doShutdownNode() {
 		
 		int result = JOptionPane.showConfirmDialog(this, "Are You Sure to Shutdown Node ?","Nebula Grid", JOptionPane.YES_NO_OPTION);
@@ -987,12 +1116,33 @@ public class NodeMainUI extends JFrame {
 		// If user chose no, abort shutdown
 		if (result==JOptionPane.NO_OPTION) return;
 		
-		// TODO Implement
-		System.exit(0);
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+					
+					// If connected to Cluster, unregister
+					if (Grid.isNode()) {
+						GridNode.getInstance().shutdown();
+					}
+					
+					System.exit(0);
+				} catch (Exception e) {
+					log.fatal("[GridNode] Exception while Shutting Down",e);
+					System.exit(1);
+				}
+			}
+			
+		}).start();
 	}
 	
 
-
+	/**
+	 * Attempts to discover a cluster.
+	 * 
+	 * @param silent if silent, no message will be displayed
+	 */
 	protected void doDiscover(final boolean silent) {
 		new Thread(new Runnable() {
 
@@ -1034,28 +1184,58 @@ public class NodeMainUI extends JFrame {
 		}).start();
 	}
 	
+	/**
+	 * Displays About Dialog
+	 */
 	protected void showAbout() {
-		// TODO Auto-generated method stub
-		
+		new AboutDialog(this);
 	}
 
+	/**
+	 * Displays Help Contents
+	 */
 	protected void showHelp() {
-		// TODO Auto-generated method stub
+		File helpFile = new File("help/index.html");
+		
+		if (!helpFile.exists()) {
+			JOptionPane.showMessageDialog(this, "Unable to locate Help Files");
+		}
+		
+		// Initialize Browser
+		Browser.init();
+		try {
+			Browser.displayURL(helpFile.toURI().toURL().toString());
+		} catch (IOException e) {
+			log.warn("[UI] Unable to display Help",e);
+			JOptionPane.showMessageDialog(this, "Unable to display Help Contents");
+		}
 		
 	}
 
+	/**
+	 * Displays Configuration dialog
+	 */
 	protected void showConfiguration() {
 		// TODO Auto-generated method stub
 		
 	}
 
+	/**
+	 * Invoked on Shutdown Event
+	 */
 	protected void onShutdown() {
 		showBusyIcon();
 		doShutdownNode();
 		showIdleIcon();
 	}
 	
-	
+	/**
+	 * Class which represents a Job History Element, inserted into the
+	 * JobHistory List Model.
+	 * 
+	 * @author Yohan Liyanage
+	 * @version 1.0
+	 */
 	protected static class JobHistoryElement {
 		
 		private String jobName;
@@ -1065,7 +1245,17 @@ public class NodeMainUI extends JFrame {
 		private int tasks;
 		private int failures;
 		
-		
+		/**
+		 * Constructs a JobHistoryElement with given field
+		 * values.
+		 * 
+		 * @param jobName job name
+		 * @param jobId job id
+		 * @param startTime job start time
+		 * @param duration job duration
+		 * @param tasks tasks executed for job on this node
+		 * @param failures total failures for job on this node
+		 */
 		public JobHistoryElement(String jobName, String jobId,
 				String startTime, String duration, int tasks, int failures) {
 			super();
@@ -1077,31 +1267,58 @@ public class NodeMainUI extends JFrame {
 			this.failures = failures;
 		}
 
+		/**
+		 * Returns the user friendly name for Job
+		 * 
+		 * @return name
+		 */
 		public String getJobName() {
 			return jobName;
 		}
 		
+		/**
+		 * Returns the JobId for Job
+		 * @return job id
+		 */
 		public String getJobId() {
 			return jobId;
 		}
 		
+		/**
+		 * Returns the start time for job
+		 * @return start time
+		 */
 		public String getStartTime() {
 			return startTime;
 		}
 		
+		/**
+		 * Returns the duration for job
+		 * @return duration
+		 */
 		public String getDuration() {
 			return duration;
 		}
 		
+		/**
+		 * Returns the number of tasks executed for job on this node
+		 * @return tasks
+		 */
 		public int getTasks() {
 			return tasks;
 		}
 		
+		/**
+		 * Returns the number of tasks failed for job on this node
+		 * @return tasks
+		 */
 		public int getFailures() {
 			return failures;
 		}
 		
-		
+		/**
+		 * {@inheritDoc}
+		 */
 		@Override
 		public boolean equals(Object obj) {
 			if (!( obj instanceof JobHistoryElement)) return false;
@@ -1110,12 +1327,17 @@ public class NodeMainUI extends JFrame {
 			return this.jobId.equals(element.getJobId());
 		}
 
+		/**
+		 * {@inheritDoc}
+		 */
 		@Override
 		public int hashCode() {
-			// TODO Auto-generated method stub
-			return super.hashCode();
+			return this.jobId.hashCode();
 		}
 
+		/**
+		 * {@inheritDoc}
+		 */
 		@Override
 		public String toString() {
 			return "[" + this.startTime + "] " + this.jobName;
@@ -1123,22 +1345,41 @@ public class NodeMainUI extends JFrame {
 
 	}
 	
+	/**
+	 * ListModel for JobHistory List.
+	 * 
+	 * @author Yohan Liyanage
+	 * @version 1.0
+	 */
 	protected static class JobHistoryListModel extends AbstractListModel {
 
 		private static final long serialVersionUID = 4872462645102776860L;
 		
-		
+		// Job History Elements
 		private List<JobHistoryElement> elements = new ArrayList<JobHistoryElement>();
 		
+		/**
+		 * Adds a new JobHistoryElement.
+		 * 
+		 * @param element new element
+		 */
 		public void addJobHistoryElement(JobHistoryElement element) {
 			elements.add(element);
+			fireIntervalAdded(this, this.getSize()-1, this.getSize()-1);
 		}
 		
+		
+		/**
+		 * {@inheritDoc}
+		 */
 		@Override
 		public Object getElementAt(int index) {
 			return elements.get(index);
 		}
 
+		/**
+		 * {@inheritDoc}
+		 */
 		@Override
 		public int getSize() {
 			return elements.size();
@@ -1146,6 +1387,11 @@ public class NodeMainUI extends JFrame {
 		
 	}
 	
+	/**
+	 * Displays Splash Screen.
+	 * 
+	 * @return Splash Screen reference
+	 */
 	public static JWindow showSplash() {
 		
 		JWindow splash = new JWindow();
@@ -1170,6 +1416,10 @@ public class NodeMainUI extends JFrame {
 		return splash;
 	}
 	
+	/**
+	 * Creates a GridNode UI
+	 * @return UI
+	 */
 	public static NodeMainUI create() {
 		
 		final NodeMainUI ui = new NodeMainUI();

@@ -93,6 +93,9 @@ public class ServiceEventsSupport {
 	public static void fireServiceEvent(ServiceMessage message) {
 		if (instance==null) throw new IllegalStateException("Not initialized");
 		
+		if (log.isDebugEnabled()){
+			log.debug("[Events] Fired Local Event " + message.getType() + " : " + message.getMessage());
+		}
 		instance.onServiceMessage(message);
 	}
 	
@@ -109,13 +112,30 @@ public class ServiceEventsSupport {
 		getInstance().hooks.add(new ServiceHookElement(event,callback));
 	}
 	
-	// TODO FixDoc
-	public static void addServiceHook(ServiceHookCallback serviceHookCallback, ServiceMessageType... types) throws IllegalArgumentException {
+	/**
+	 * Convenience overloaded version of {@link #addServiceHook(ServiceEvent, ServiceHookCallback)},
+	 * which allows users to specify the attributes of ServiceEvent directly, but without a
+	 * message body.
+	 * 
+	 * @param serviceHookCallback callback
+	 * @param types ServiceMessageTypes for hook
+	 * @throws IllegalStateException if {@link ServiceEventsSupport} is not initialized
+	 */
+	public static void addServiceHook(ServiceHookCallback serviceHookCallback, ServiceMessageType... types) throws IllegalStateException {
 		if (instance==null) throw new IllegalStateException("Not initialized");
 		addServiceHook(serviceHookCallback, null, types);
 	}
 	
-	// TODO FixDoc
+	/**
+	 * Convenience overloaded version of {@link #addServiceHook(ServiceEvent, ServiceHookCallback)},
+	 * which allows users to specify the attributes of ServiceEvent directly, with the
+	 * message body.
+	 * 
+	 * @param serviceHookCallback callback
+	 * @param message message body
+	 * @param types ServiceMessageTypes for hook
+	 * @throws IllegalStateException if {@link ServiceEventsSupport} is not initialized
+	 */
 	public static void addServiceHook(ServiceHookCallback serviceHookCallback, String message, ServiceMessageType... types) throws IllegalArgumentException {
 		
 		if (instance==null) throw new IllegalStateException("Not initialized");

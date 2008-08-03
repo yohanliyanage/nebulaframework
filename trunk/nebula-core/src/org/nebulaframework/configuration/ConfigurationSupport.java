@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 2008 Yohan Liyanage. 
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
+ * you may not use this file except in compliance with the License. 
+ * You may obtain a copy of the License at 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS, 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 package org.nebulaframework.configuration;
 
 import java.io.FileInputStream;
@@ -45,7 +58,6 @@ public class ConfigurationSupport {
 			log.info("[GridConfiguration] Loading from XML File");
 		}
 		else {
-			// TODO Currently Config only contains cluster URL. So fallback = discovery enabled
 			// No Configuration File [ Attempt Discovery]
 			log.warn("[GridConfiguration] Configuration Details Not Found. Falling back to defaults");
 		}
@@ -72,8 +84,6 @@ public class ConfigurationSupport {
 			// Property File Read
 			log.info("[GridConfiguration] Loading from Property File");
 			
-			// TODO Process and Update Props as Needed
-			
 			// If No Transport Information, add dummy value
 			if (!props.containsKey(ConfigurationKeys.TRANSPORT_URLS.value())) {
 				props.put(ConfigurationKeys.TRANSPORT_URLS.value(), "");
@@ -84,7 +94,6 @@ public class ConfigurationSupport {
 			log.info("[GridConfiguration] Loading from XML File");
 		}
 		else {
-			// TODO Currently Config only contains cluster URL. So fallback = discovery enabled
 			// No Configuration File [ Attempt Discovery]
 			log.warn("[GridConfiguration] Configuration Details Not Found. Falling back to defaults");
 		}

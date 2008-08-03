@@ -11,33 +11,32 @@
  * See the License for the specific language governing permissions and 
  * limitations under the License.
  */
-package org.nebulaframework.discovery.ws;
+package org.nebulaframework.ui.console.cluster;
 
-import javax.jws.WebService;
+import org.nebulaframework.grid.Grid;
 
 /**
- * {@code ColombusDiscovery} allows Nebula Grid Members to 
- * detect Clusters using a Web Service based discovery
- * mechanism, named as <b>Nebula Colombus Service</b>.
+ * Console Execution Point for Nebula ClusterManager.
  * <p>
- * This interface is the service which allows to discover
- * nodes, and it is implemented as a web service endpoint
- * in Colombus Server.
+ * Note that this class provides only minimal
+ * functionality. Advanced users are advised to
+ * use the API methods to create their own classes,
+ * specially for embedded execution situations.
  * <p>
- * <i>Web Service</i>
- *  
+ * If the requirement is to run the framework
+ * as stand-alone application, consider using 
+ * Swing UIs of the framework.
+ * 
  * @author Yohan Liyanage
  * @version 1.0
  */
-@WebService
-public interface ColombusDiscovery {
-	
+public class ClusterConsole {
+
 	/**
-	 * Attempts to discover a Cluster using a given
-	 * Colombus Server.
-	 * 
-	 * @return IP Address of Cluster
+	 * Console Execution Point
+	 * @param args arguments
 	 */
-	public String discover();
-	
+	public static void main(String[] args) {
+		Grid.startClusterManager();
+	}
 }

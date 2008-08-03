@@ -70,11 +70,6 @@ public class SplitterServiceImpl implements SplitterService {
 	 */
 	public synchronized void startSplitter(final GridJobProfile profile) {
 		
-		// TODO Debug Code. Remove
-		if (profile.getTaskTracker()==null) {
-			throw new IllegalStateException("TaskTracker not set");
-		}
-		
 		if (this.jobServiceImpl==null) {
 			this.jobServiceImpl = ClusterManager.getInstance().getJobService();
 		}

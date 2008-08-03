@@ -1,3 +1,16 @@
+/*
+ * Copyright (C) 2008 Yohan Liyanage. 
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
+ * you may not use this file except in compliance with the License. 
+ * You may obtain a copy of the License at 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS, 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+ * See the License for the specific language governing permissions and 
+ * limitations under the License.
+ */
 package org.nebulaframework.grid.cluster.manager.services.jobs.splitaggregate;
 
 import java.util.HashMap;
@@ -16,7 +29,16 @@ import org.nebulaframework.grid.service.message.ServiceMessage;
 import org.nebulaframework.grid.service.message.ServiceMessageType;
 import org.springframework.beans.factory.annotation.Required;
 
-// TODO FixDoc
+/**
+ * Split-Aggregate JobManager, which manages execution of
+ * Split-Aggregate Model GridJobs. This class holds references
+ * to {@code SplitterService} and {@code AggregatorService}, which handles the
+ * split and aggregate processes, and also {@code ResultCollector}s,
+ * which are responsible for collecting individual results.
+ * 
+ * @author Yohan Liyanage
+ * @version 1.0
+ */
 public class SplitAggregateJobManager extends AbstractJobExecutionManager {
 	
 	private static final Log log = LogFactory.getLog(SplitAggregateJobManager.class);
@@ -24,6 +46,7 @@ public class SplitAggregateJobManager extends AbstractJobExecutionManager {
 	private SplitterService splitter;
 	private AggregatorService aggregator;
 	
+	// Result Collectors
 	private Map<String, ResultCollector> collectors = new HashMap<String, ResultCollector>();
 
 
@@ -59,9 +82,6 @@ public class SplitAggregateJobManager extends AbstractJobExecutionManager {
 			// Start Splitter & Aggregator for GridJob
 			splitter.startSplitter(profile);
 			aggregator.startAggregator(profile, this);
-			
-			
-			
 			return true;
 		}
 		else {
@@ -138,7 +158,15 @@ public class SplitAggregateJobManager extends AbstractJobExecutionManager {
 		return aggregator;
 	}
 	
-	// TODO FixDoc
+	/**
+	 * Adds a {@code ResultCollector} for the given Job, denoted by
+	 * the jobId.
+	 * 
+	 * @param jobId GridJob Id
+	 * @param collector ResultCollector
+	 * @throws IllegalArgumentException if the specified GridJob is already
+	 * bound to a ResultCollector
+	 */
 	public void addResultCollector(final String jobId, ResultCollector collector) 
 		throws IllegalArgumentException {
 		

@@ -46,9 +46,22 @@ public interface JobExecutionManager {
 	 */
 	public boolean startExecution(GridJobProfile profile);
 	
+	/**
+	 * Attempts to cancel the execution of given GridJob,
+	 * if it exists in this JobExecutionManager.
+	 * 
+	 * @param jobId GridJobId
+	 * @return boolean indicating success, failure
+	 */
 	public boolean cancel(String jobId);
 	
-	// TODO FixDoc
+	/**
+	 * Re-enqueues the given task for a given GridJob,
+	 * if it is active in this {@link JobExecutionManager}.
+	 * 
+	 * @param jobId GridJob Id
+	 * @param taskId Task Id
+	 */
 	public void reEnqueueTask(String jobId, int taskId);
 
 }
