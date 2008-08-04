@@ -88,7 +88,11 @@ public class AggregatorServiceImpl implements AggregatorService {
 		//Start Aggregator, on a new Thread
 		new Thread(new Runnable() {
 			public void run() {
-				doStartAggregator(profile, manager);
+				try {
+					doStartAggregator(profile, manager);
+				} catch (Exception e) {
+					log.error("[Aggregator] Exception while starting ", e);
+				}
 			}
 		}, "Aggregator[ResultCollector]-" + profile.getJobId()).start();
 	}
@@ -137,7 +141,11 @@ public class AggregatorServiceImpl implements AggregatorService {
 		// Aggregate results, on a separate Thread
 		new Thread(new Runnable() {
 			public void run() {
-				doAggregateResults(profile);
+				try {
+					doAggregateResults(profile);
+				} catch (Exception e) {
+					log.error("[Aggregator] Exception while starting ", e);
+				}
 			}
 		}, "Aggregator[Aggregate]-" + profile.getJobId()).start();
 

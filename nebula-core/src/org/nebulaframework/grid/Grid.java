@@ -16,6 +16,7 @@ package org.nebulaframework.grid;
 import java.util.Properties;
 
 import javax.jms.Connection;
+import javax.swing.JOptionPane;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.commons.logging.Log;
@@ -28,6 +29,11 @@ import org.nebulaframework.discovery.GridNodeDiscoverySupport;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.node.GridNode;
 import org.nebulaframework.grid.cluster.node.services.job.execution.TaskExecutor;
+import org.nebulaframework.grid.service.event.ServiceEventsSupport;
+import org.nebulaframework.grid.service.event.ServiceHookCallback;
+import org.nebulaframework.grid.service.message.ServiceMessage;
+import org.nebulaframework.grid.service.message.ServiceMessageType;
+import org.nebulaframework.ui.swing.UISupport;
 import org.nebulaframework.util.spring.NebulaApplicationContext;
 import org.springframework.util.StopWatch;
 
@@ -46,16 +52,16 @@ public class Grid {
 	public static final String VERSION = "1.0 RC 1";
 	
 	/** Cluster Configuration Properties File */
-	public static final String CLUSTER_PROPERTY_CONFIGURATION = "nebula-cluster.properties";
+	public static final String CLUSTER_PROPERTY_CONFIGURATION = "conf/nebula-cluster.properties";
 	
 	/** Cluster XML Properties File */
-	public static final String CLUSTER_XML_CONFIGURATION = "nebula-cluster.xml";
+	public static final String CLUSTER_XML_CONFIGURATION = "conf/nebula-cluster.xml";
 	
 	/** Grid Node Configuration Properties File */
-	public static final String GRIDNODE_PROPERTY_CONFIGURATION = "nebula-client.properties";
+	public static final String GRIDNODE_PROPERTY_CONFIGURATION = "conf/nebula-client.properties";
 	
 	/** Grid Node XML Properties File */
-	public static final String GRIDNODE_XML_CONFIGURATION = "nebula-client.xml";
+	public static final String GRIDNODE_XML_CONFIGURATION = "conf/nebula-client.xml";
 	
 	/** Cluster Spring Beans Configuration File */
 	public static final String CLUSTER_SPRING_CONTEXT = "org/nebulaframework/grid/cluster/manager/cluster-manager.xml";
@@ -98,6 +104,8 @@ public class Grid {
 			throw new IllegalStateException("A Grid Memeber Already Started in VM");
 		}
 		
+		initializeDefaultExceptionHandler();
+		
 		StopWatch sw = new StopWatch();
 		
 		try {
@@ -129,6 +137,18 @@ public class Grid {
 			log.info("ClusterManager Started Up. " + sw.getLastTaskTimeMillis() + " ms");
 		}
 		 
+	}
+
+	private static void initializeDefaultExceptionHandler() {
+		Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+
+			@Override
+			public void uncaughtException(Thread t, Throwable e) {
+				log.fatal("[Uncaught Thread Exception] on Thread " + t.getName() + " - " + e.getMessage(),e);
+				e.printStackTrace();
+			}
+			
+		});		
 	}
 
 	/**
@@ -166,6 +186,8 @@ public class Grid {
 			// A Grid Member has already started in this VM
 			throw new IllegalStateException("A Grid Memeber Already Started in VM");
 		}
+		
+		initializeDefaultExceptionHandler();
 		
 		StopWatch sw = new StopWatch();
 		
@@ -222,7 +244,7 @@ public class Grid {
 	 * Member per VM.
 	 */
 	public static GridNode startLightGridNode() throws IllegalStateException {
-		return startLightGridNode(true);
+		return startLightGridNode(true, false);
 	}
 	
 	/**
@@ -240,11 +262,35 @@ public class Grid {
 	 * Member per VM.
 	 */
 	public static GridNode startLightGridNode(boolean useConfigDiscovery) throws IllegalStateException {
+		return startLightGridNode(useConfigDiscovery, false);
+	}
+	
+	/**
+	 * Starts a Light-weight {@link GridNode} (a GridNode without
+	 * Job Execution Support, that is non-worker) with default
+	 * settings, read from default properties file.
+	 * 
+	 * @param useConfigDiscovery indicates whether to use information
+	 * from configuration to discover
+	 * 
+	 * @param isGui indicates that the application is a GUI based
+	 * application and any disconnection notifications should be
+	 * done through message boxes.
+	 * 
+	 * @return GridNode
+	 * 
+	 * @throws IllegalStateException if a Grid Member (Cluster / Node) has
+	 * already started with in the current VM. Nebula supports only one Grid
+	 * Member per VM.
+	 */
+	public static GridNode startLightGridNode(boolean useConfigDiscovery, final boolean isGui) throws IllegalStateException {
 		
 		if (isInitialized()) {
 			// A Grid Member has already started in this VM
 			throw new IllegalStateException("A Grid Memeber Already Started in VM");
 		}
+		
+		initializeDefaultExceptionHandler();
 		
 		StopWatch sw = new StopWatch();
 		
@@ -278,7 +324,24 @@ public class Grid {
 			sw.stop();
 			log.info("GridNode Started Up. " + sw.getLastTaskTimeMillis() + " ms");
 			
-			return (GridNode) applicationContext.getBean("localNode");
+			GridNode node = (GridNode) applicationContext.getBean("localNode");
+			ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
+
+				@Override
+				public void onServiceEvent(ServiceMessage message) {
+					
+					log.warn("[GridNode] Disconnected from Cluster");
+					log.warn("[GridNode] Shutting Down");
+					
+					if (isGui) {
+						JOptionPane.showMessageDialog(UISupport.activeWindow(), "Disconnected from Cluster, terminating VM");
+					}
+					System.exit(0);
+				}
+				
+			}, node.getClusterId().toString(), ServiceMessageType.NODE_DISCONNECTED);
+			
+			return node;
 		
 		} finally {
 			if (sw.isRunning()) {

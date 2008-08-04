@@ -1,4 +1,4 @@
 Manifest-Version: 1.0
 Main-Class: test.node.TestNodeRunner
-Class-Path: spring.jar activemq.jar xbean.jar log4j-1.2.15.jar commons-logging-1.1.1.jar aspectjrt.jar aspectjweaver.jar
+Class-Path: ../lib/spring.jar ../lib/activemq.jar ../lib/xbean.jar ../lib/log4j-1.2.15.jar ../lib/commons-logging-1.1.1.jar ../lib/aspectjrt.jar ../lib/aspectjweaver.jar ../lib/ostermillerutils_1_07_00.jar ../lib/cxf-2.1-full.jar
 

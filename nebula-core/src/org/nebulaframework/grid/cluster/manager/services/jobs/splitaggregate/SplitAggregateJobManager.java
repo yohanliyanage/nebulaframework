@@ -30,25 +30,25 @@ import org.nebulaframework.grid.service.message.ServiceMessageType;
 import org.springframework.beans.factory.annotation.Required;
 
 /**
- * Split-Aggregate JobManager, which manages execution of
- * Split-Aggregate Model GridJobs. This class holds references
- * to {@code SplitterService} and {@code AggregatorService}, which handles the
- * split and aggregate processes, and also {@code ResultCollector}s,
- * which are responsible for collecting individual results.
+ * Split-Aggregate JobManager, which manages execution of Split-Aggregate Model
+ * GridJobs. This class holds references to {@code SplitterService} and
+ * {@code AggregatorService}, which handles the split and aggregate processes,
+ * and also {@code ResultCollector}s, which are responsible for collecting
+ * individual results.
  * 
  * @author Yohan Liyanage
  * @version 1.0
  */
 public class SplitAggregateJobManager extends AbstractJobExecutionManager {
-	
-	private static final Log log = LogFactory.getLog(SplitAggregateJobManager.class);
-	
+
+	private static final Log log = LogFactory
+			.getLog(SplitAggregateJobManager.class);
+
 	private SplitterService splitter;
 	private AggregatorService aggregator;
-	
+
 	// Result Collectors
 	private Map<String, ResultCollector> collectors = new HashMap<String, ResultCollector>();
-
 
 	/**
 	 * {@inheritDoc}
@@ -65,34 +65,49 @@ public class SplitAggregateJobManager extends AbstractJobExecutionManager {
 	/**
 	 * Starts given {@code SplitAggregateJob} on the Grid.
 	 * 
-	 * @param profile GridJobProfile
+	 * @param profile
+	 *            GridJobProfile
 	 */
 	@Override
-	public boolean startExecution(GridJobProfile profile) {
-		
+	public boolean startExecution(final GridJobProfile profile, ClassLoader classLoader) {
+
 		// If valid GridJob Type
 		if (profile.getJob() instanceof SplitAggregateGridJob) {
+
+			Thread t = new Thread(new Runnable() {
+
+				@Override
+				public void run() {
+
+					// Allow Final Results
+					profile.getFuture().setFinalResultSupported(true);
+
+					// Create Task Tracker
+					profile.setTaskTracker(GridJobTaskTracker
+							.startTracker(profile,
+											SplitAggregateJobManager.this));
+
+					// Start Splitter & Aggregator for GridJob
+					splitter.startSplitter(profile);
+					aggregator.startAggregator(profile,
+												SplitAggregateJobManager.this);
+
+				}
+
+			});
 			
-			// Allow Final Results
-			profile.getFuture().setFinalResultSupported(true);
+			t.setContextClassLoader(classLoader);
+			t.start();
 			
-			// Create Task Tracker
-			profile.setTaskTracker(GridJobTaskTracker.startTracker(profile, this));
-			
-			// Start Splitter & Aggregator for GridJob
-			splitter.startSplitter(profile);
-			aggregator.startAggregator(profile, this);
 			return true;
-		}
-		else {
+		} else {
 			return false;
 		}
-		
+
 	}
-	
+
 	/**
-	 * Sets the {@code SplitterService} used by the
-	 * {@code JobExecutionManager}.
+	 * Sets the {@code SplitterService} used by the {@code JobExecutionManager}.
 	 * <p>
 	 * {@code SplitterService} is responsible for splitting a given
 	 * {@code GridJob} into {@code GridTask}s which are to be executed
@@ -129,7 +144,7 @@ public class SplitAggregateJobManager extends AbstractJobExecutionManager {
 	public void setAggregator(AggregatorService aggregator) {
 		this.aggregator = aggregator;
 	}
-	
+
 	/**
 	 * Returns the {@code SplitterService} used by the
 	 * {@code ClusterJobServiceImpl}.
@@ -157,24 +172,26 @@ public class SplitAggregateJobManager extends AbstractJobExecutionManager {
 	public AggregatorService getAggregator() {
 		return aggregator;
 	}
-	
+
 	/**
-	 * Adds a {@code ResultCollector} for the given Job, denoted by
-	 * the jobId.
+	 * Adds a {@code ResultCollector} for the given Job, denoted by the jobId.
 	 * 
-	 * @param jobId GridJob Id
-	 * @param collector ResultCollector
-	 * @throws IllegalArgumentException if the specified GridJob is already
-	 * bound to a ResultCollector
+	 * @param jobId
+	 *            GridJob Id
+	 * @param collector
+	 *            ResultCollector
+	 * @throws IllegalArgumentException
+	 *             if the specified GridJob is already bound to a
+	 *             ResultCollector
 	 */
-	public void addResultCollector(final String jobId, ResultCollector collector) 
-		throws IllegalArgumentException {
-		
+	public void addResultCollector(final String jobId, ResultCollector collector)
+			throws IllegalArgumentException {
+
 		if (!this.collectors.containsKey(jobId)) {
-			
+
 			// Add Collector
 			collectors.put(jobId, collector);
-			
+
 			// Create Removal Hook
 			ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
 
@@ -182,37 +199,37 @@ public class SplitAggregateJobManager extends AbstractJobExecutionManager {
 				public void onServiceEvent(ServiceMessage message) {
 					collectors.remove(jobId);
 				}
-				
+
 			}, jobId, ServiceMessageType.JOB_END);
-		}
-		else {
-			throw new IllegalArgumentException("[Split-Aggregate] Result Collector Registered for Job " 
-			                                   + jobId);
+		} else {
+			throw new IllegalArgumentException(
+					"[Split-Aggregate] Result Collector Registered for Job "
+							+ jobId);
 		}
 	}
-	
+
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
 	public boolean cancel(String jobId) {
-		
-		if (collectors.containsKey(jobId)){
+
+		if (collectors.containsKey(jobId)) {
 			boolean result = collectors.get(jobId).cancel();
-			
+
 			// Record Cancellation
 			if (result) {
 				markCanceled(jobId);
 			}
-			
+
 			return result;
-		}
-		else {
-			
+		} else {
+
 			// If this job was canceled already
-			if (isRecentlyCancelled(jobId)) return true;
-			log.warn("[SplitAggregateJobService] Unable to Cancel Job " 
-			         + jobId + " : No Processor Reference");
+			if (isRecentlyCancelled(jobId))
+				return true;
+			log.warn("[SplitAggregateJobService] Unable to Cancel Job " + jobId
+					+ " : No Processor Reference");
 			return false;
 		}
 	}
@@ -223,14 +240,13 @@ public class SplitAggregateJobManager extends AbstractJobExecutionManager {
 	@Override
 	public void reEnqueueTask(String jobId, int taskId) {
 		try {
-			log.debug("[SplitAggregateJobService] Re-enqueing  Task"
-			          + jobId + "|" + taskId);
+			log.debug("[SplitAggregateJobService] Re-enqueing  Task" + jobId
+					+ "|" + taskId);
 			splitter.reEnqueueTask(jobId, taskId);
 		} catch (RuntimeException e) {
-			log.debug("[SplitAggregateJobService] Unable to Re-enqueue Task " 
-	         + jobId + "|" + taskId, e);
+			log.debug("[SplitAggregateJobService] Unable to Re-enqueue Task "
+					+ jobId + "|" + taskId, e);
 		}
 	}
-	
 
 }

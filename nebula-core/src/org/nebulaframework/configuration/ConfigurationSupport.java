@@ -114,6 +114,16 @@ public class ConfigurationSupport {
 		try {
 			// Load Properties
 			log.debug("Config : " + fileName);
+			
+			String nebulaDir = System.getProperty("nebula.home");
+			if (nebulaDir!=null) {
+				fileName = nebulaDir + "/" + fileName;
+			}
+			else {
+				// Default Location
+				nebulaDir = "..";
+			}
+			
 			fis = new FileInputStream(fileName);
 			props.load(fis);
 			return true;

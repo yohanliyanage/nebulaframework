@@ -62,7 +62,7 @@ public class UnboundedJobExecutionManager extends AbstractJobExecutionManager {
 	 * @param profile GridJobProfile
 	 */
 	@Override
-	public boolean startExecution(final GridJobProfile profile) {
+	public boolean startExecution(final GridJobProfile profile, ClassLoader classLoader) {
 		
 		// If Valid GridJob Type
 		if (profile.getJob() instanceof UnboundedGridJob) {
@@ -73,7 +73,7 @@ public class UnboundedJobExecutionManager extends AbstractJobExecutionManager {
 			// Start Task Tracker
 			profile.setTaskTracker(GridJobTaskTracker.startTracker(profile, this));
 			
-			new Thread(new Runnable() {
+			Thread t = new Thread(new Runnable() {
 				public void run() {
 					
 					log.info("[UnboundedJobService] Starting Processsor");
@@ -93,9 +93,13 @@ public class UnboundedJobExecutionManager extends AbstractJobExecutionManager {
 						}
 						
 					}, profile.getJobId(), ServiceMessageType.JOB_END);
+					
+					// Start Processor
 					processor.start();
 				}
-			}).start();
+			});
+			t.setContextClassLoader(classLoader);
+			t.start();
 			
 			// Register as Execution Manager
 			profile.setExecutionManager(this);

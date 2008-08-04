@@ -44,7 +44,7 @@ public interface JobExecutionManager {
 	 * @param profile {@code GridJobProfile} for Job
 	 * @return boolean value indicating success / failure
 	 */
-	public boolean startExecution(GridJobProfile profile);
+	public boolean startExecution(GridJobProfile profile, ClassLoader classLoader);
 	
 	/**
 	 * Attempts to cancel the execution of given GridJob,

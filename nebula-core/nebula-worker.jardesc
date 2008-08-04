@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="WINDOWS-1252"?>
+<jardesc>
+<jar path="C:/Documents and Settings/Yohan/Desktop/SwingWorker/bin/nebula-worker.jar"/>
+<options buildIfNeeded="false" compress="true" descriptionLocation="/Nebula-Trunk/nebula-worker.jardesc" exportErrors="false" exportWarnings="true" includeDirectoryEntries="false" overwrite="false" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
+<storedRefactorings deprecationInfo="true" structuralOnly="false"/>
+<selectedProjects/>
+<manifest generateManifest="false" manifestLocation="/Nebula-Trunk/Worker.MF" manifestVersion="1.0" reuseManifest="false" saveManifest="true" usesManifest="true">
+<sealing sealJar="false">
+<packagesToSeal/>
+<packagesToUnSeal/>
+</sealing>
+</manifest>
+<selectedElements exportClassFiles="true" exportJavaFiles="false" exportOutputFolder="false">
+<javaElement handleIdentifier="=Nebula-Trunk/src"/>
+</selectedElements>
+</jardesc>

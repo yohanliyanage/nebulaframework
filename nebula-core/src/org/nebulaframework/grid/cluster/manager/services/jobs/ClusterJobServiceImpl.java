@@ -17,8 +17,6 @@ package org.nebulaframework.grid.cluster.manager.services.jobs;
 import java.io.IOException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -72,19 +70,15 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 
 	private static Log log = LogFactory.getLog(ClusterJobServiceImpl.class);
 	private static int finished = 0;
-	
-	
+
 	private ClusterManager cluster;
 	private JobServiceJmsSupport jmsSupport;
 
 	@SuppressWarnings("unchecked")
-	private Map<Class<? extends GridJob>, JobExecutionManager> executors = 
-			new HashMap<Class<? extends GridJob>, JobExecutionManager>();
-	
-	
+	private Map<Class<? extends GridJob>, JobExecutionManager> executors = new HashMap<Class<? extends GridJob>, JobExecutionManager>();
+
 	private RemoteClusterJobService remoteJobServiceProxy;
 
-	
 	// Holds GridJobProfiles of all active GridJobs, against its JobId
 	// A LinkedHashMap is used to ensure insertion order iteration
 	private Map<String, GridJobProfile> jobs = new LinkedHashMap<String, GridJobProfile>();
@@ -105,8 +99,10 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	 * Registers a {@link JobExecutionManager} with this JobExecutionService,
 	 * which is capable of handling {@code GridJob}s of type {@code clazz}.
 	 * 
-	 * @param clazz Type of GridJob Class
-	 * @param manager JobExecutionManager
+	 * @param clazz
+	 *            Type of GridJob Class
+	 * @param manager
+	 *            JobExecutionManager
 	 */
 
 	public void setExecutors(JobExecutionManager[] managers) {
@@ -119,7 +115,7 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	 * {@inheritDoc}
 	 */
 	@Override
-	public String submitJob(UUID owner,  String className, byte[] classData)
+	public String submitJob(UUID owner, String className, byte[] classData)
 			throws GridJobRejectionException {
 		// Delegate to overloaded version
 		return submitJob(owner, className, classData, null, null);
@@ -129,8 +125,8 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	 * {@inheritDoc}
 	 */
 	@Override
-	public String submitJob(UUID owner,  String className, byte[] classData, GridArchive archive)
-			throws GridJobRejectionException {
+	public String submitJob(UUID owner, String className, byte[] classData,
+			GridArchive archive) throws GridJobRejectionException {
 		return submitJob(owner, className, classData, archive, null);
 	}
 
@@ -138,16 +134,17 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	 * {@inheritDoc}
 	 */
 	@Override
-	public String submitJob(UUID owner,  String className, byte[] classData,
+	public String submitJob(UUID owner, String className, byte[] classData,
 			String resultCallbackQueue) throws GridJobRejectionException {
 		return submitJob(owner, className, classData, null, resultCallbackQueue);
 	}
 
 	/**
 	 * {@inheritDoc}
-	 */	
+	 */
 	@Override
-	public String submitJob(final UUID owner,  final String className, final byte[] classData, GridArchive archive,
+	public String submitJob(final UUID owner, final String className,
+			final byte[] classData, GridArchive archive,
 			String resultCallbackQueue) throws GridJobRejectionException {
 
 		// Create JobId [ClusterID.OwnerID.RandomUUID]
@@ -168,27 +165,32 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		profile.setJobId(jobId);
 		profile.setOwner(owner);
 		profile.setFuture(future);
-		
+
+		ClassLoader classLoader = null;
+		if (archive!=null) {
+			classLoader = createArchiveClassLoader(archive, owner);
+		}
+		else {
+			classLoader = createNodeClassLoader(owner);
+		}
 		try {
 			// Deserialize and retrieve GridJob
-			profile.setJob(getGridJobInstance(owner, classData, archive));
+			profile.setJob(getGridJobInstance(owner, classData, archive, classLoader));
 		} catch (Exception e) {
 			log.warn("[JobService] Unable to de-serialize Job", e);
-			throw new GridJobRejectionException("Unable to de-serialize Job",e);
+			throw new GridJobRejectionException("Unable to de-serialize Job", e);
 		}
-		
-		
+
 		synchronized (this) {
 			// Insert GridJob to active jobs map
 			this.jobs.put(jobId, profile);
 		}
-		
-		
+
 		if (resultCallbackQueue != null) {
 			ResultCallback proxy = jmsSupport.createResultCallbackProxy(jobId, resultCallbackQueue);
 			profile.setResultCallback(proxy);
 		}
-		
+
 		if (archive != null) {
 			// If Job has a GridArchive, verify integrity
 			if (!verifyArchive(archive))
@@ -198,168 +200,211 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 			// Put Archive into GridJobProfile
 			profile.setArchive(archive);
 		}
-		
-		if (!startGridJob (profile)) {
+
+		if (!startGridJob(profile, classLoader)) {
 			// Unsupported Type
-			throw new GridJobRejectionException("GridJob Type Not Supported : " + 
-			                                    profile.getJob().getClass().getName());
+			throw new GridJobRejectionException("GridJob Type Not Supported : "
+					+ profile.getJob().getClass().getName());
 		}
 
 		// Track to see if Job Submitter Node Fails
 		stopIfNodeFails(owner, jobId);
-		
+
 		// Notify Job Start to Workers
 		notifyJobStart(jobId);
 
-		
 		return jobId;
 	}
 
 	/**
-	 * De-serializes and returns the {@link GridJob} instance,
-	 * from the byte[].
+	 * De-serializes and returns the {@link GridJob} instance, from the byte[].
 	 * 
-	 * @param owner Owner Node (for ClassLoading)
-	 * @param classData Serialized data
-	 * @param archive GridArchive, can be null
+	 * @param owner
+	 *            Owner Node (for ClassLoading)
+	 * @param classData
+	 *            Serialized data
+	 * @param archive
+	 *            GridArchive, can be null
 	 * 
 	 * @return GridJob instance
 	 * 
-	 * @throws IOException if occurred while processing
-	 * @throws ClassNotFoundException if a required class definition is missing
+	 * @throws IOException
+	 *             if occurred while processing
+	 * @throws ClassNotFoundException
+	 *             if a required class definition is missing
 	 */
-	private GridJob<?, ?> getGridJobInstance(final UUID owner, final byte[] classData, final GridArchive archive) throws IOException, ClassNotFoundException {
-		
-		if (archive!=null) {
-			// Read from Archive if Archived GridJob
-			try {
-				return (GridJob<?,?>) AccessController.doPrivileged(new PrivilegedExceptionAction<GridJob<?,?>>() {
+	private GridJob<?, ?> getGridJobInstance(final UUID owner,
+			final byte[] classData, final GridArchive archive, ClassLoader cl)
+			throws IOException, ClassNotFoundException {
 
-					@Override
-					public GridJob<?, ?> run() throws Exception{
-						
-						return IOSupport.deserializeFromBytes
-							(classData, 
-						    new GridArchiveClassLoader(archive,createClassLoader(owner)));
-						
-					}
-					
-				});
-			} catch (PrivilegedActionException e) {
-				
-				Exception ex = e.getException();
-				
-				if (ex instanceof ClassNotFoundException) {
-					throw (ClassNotFoundException) ex;
-				}
-				else if (ex instanceof IOException) {
-					throw (IOException) ex;
-				}
-				else {
-					throw new RuntimeException(ex);
-				}
-			}
-		}
-		else {
+		if (archive != null) {
+			// Read from Archive if Archived GridJob
+			return IOSupport.deserializeFromBytes(classData, cl);
+		} else {
 			// Read from GridNodeClassLoader
-			return (GridJob<?,?>) IOSupport.deserializeFromBytes(classData,
-	                                                             createClassLoader(owner));
+			return (GridJob<?, ?>) IOSupport
+					.deserializeFromBytes(classData, cl);
 		}
 	}
 
 	/**
-	 * Creates a {@link GridNodeClassLoader} to remotely load
-	 * necessary class definitions.
+	 * Creates a {@link GridNodeClassLoader} to remotely load necessary class
+	 * definitions.
 	 * 
-	 * @param owner Owner GridNode to load classes from
+	 * @param owner
+	 *            Owner GridNode to load classes from
 	 * 
 	 * @return ClassLoader instance
 	 */
-	protected ClassLoader createClassLoader(final UUID owner) {
-		return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+	protected ClassLoader createNodeClassLoader(final UUID owner) {
+		return AccessController
+				.doPrivileged(new PrivilegedAction<ClassLoader>() {
 
-			@Override
-			public ClassLoader run() {
-				ClassLoadingService service = ClusterManager.getInstance().getClassLoadingService();
-				return new GridNodeClassLoader(owner, service);
-			}
-			
-		});
+					@Override
+					public ClassLoader run() {
+						ClassLoadingService service = ClusterManager
+								.getInstance().getClassLoadingService();
+						return new GridNodeClassLoader(owner, service);
+					}
+
+				});
 	}
 
-	
+	protected ClassLoader createArchiveClassLoader(final GridArchive archive,
+			final UUID owner) {
+
+		return AccessController
+				.doPrivileged(new PrivilegedAction<ClassLoader>() {
+
+					@Override
+					public ClassLoader run() {
+						return new GridArchiveClassLoader(archive,
+								createNodeClassLoader(owner));
+					}
+
+				});
+	}
+
 	/**
-	 * Starts the given GridJob on the Grid. This method
-	 * attempts to find a proper {@link JobExecutionManager} for 
-	 * the job, and if found, it delegates to 
-	 * {@link #startExecution(JobExecutionManager, GridJobProfile)}
+	 * Starts the given GridJob on the Grid. This method attempts to find a
+	 * proper {@link JobExecutionManager} for the job, and if found, it
+	 * delegates to {@link #startExecution(JobExecutionManager, GridJobProfile)}
 	 * method.
 	 * 
-	 * @param profile GridJobProfile for the job
+	 * @param profile
+	 *            GridJobProfile for the job
 	 * @return boolean indicating result
 	 */
-	private boolean startGridJob(GridJobProfile profile) {
-		
-		GridJob<?,?> job = profile.getJob();
-		
+	private boolean startGridJob(GridJobProfile profile, ClassLoader cl) {
+
+		GridJob<?, ?> job = profile.getJob();
+
+		/* -- Check for direct implementation -- */
+
 		// Get all implemented interfaces of GridJob
 		Class<?>[] ifaces = job.getClass().getInterfaces();
-		
+
 		for (Class<?> clazz : ifaces) {
-			
+
 			// If we have a executor for the interface
 			if (executors.containsKey(clazz)) {
-				
+
 				// Attempt to Start GridJob
-				boolean started = startExecution(executors.get(clazz), profile);
-				
+				boolean started = startExecution(executors.get(clazz), profile, cl);
+
 				// If Success
 				if (started) {
 					return true;
 				}
 			}
 		}
-		
-		log.error("[JobService Unable to Find JobManager for Job Type " + job.getClass().getName());
-		
+
+		/* -- Check for indirect implementation -- */
+		if (findJobClass(job.getClass(), profile, cl)) {
+			return true;
+		}
+
+		log.error("[JobService Unable to Find JobManager for Job Type "
+				+ job.getClass().getName());
+
 		// No JobExecutionManager for Job
 		return false;
 	}
 
+	public boolean findJobClass(Class<?> c, GridJobProfile profile, ClassLoader cl) {
+
+		// If we have a executor for the interface
+		if (executors.containsKey(c)) {
+
+			// Attempt to Start GridJob
+			boolean started = startExecution(executors.get(c), profile, cl);
+
+			// If Success
+			if (started) {
+				return true;
+			}
+
+			log.debug("Unable to Start GridJobManager for GridJob Type "
+					+ c.getName());
+			return false;
+		}
+
+		if (c.getSuperclass() != null) {
+			if (findJobClass(c.getSuperclass(), profile, cl)) {
+				return true;
+			}
+		}
+
+		for (Class<?> clazz : c.getInterfaces()) {
+			if (findJobClass(clazz, profile, cl)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	/**
-	 * Starts execution of  the given job, using the specified
+	 * Starts execution of the given job, using the specified
 	 * {@link JobExecutionManager}.
 	 * 
-	 * @param jobExecutionManager Job execution manager for the job type
-	 * @param profile profile of the GridJob
+	 * @param jobExecutionManager
+	 *            Job execution manager for the job type
+	 * @param profile
+	 *            profile of the GridJob
 	 * 
 	 * @return boolean indicating success / failure
 	 */
 	private boolean startExecution(JobExecutionManager jobExecutionManager,
-			GridJobProfile profile) {
-		return jobExecutionManager.startExecution(profile);
+			GridJobProfile profile, ClassLoader cl) {
+		return jobExecutionManager.startExecution(profile, cl);
 	}
 
 	/**
-	 * Stops execution of the given {@code GridJob} if the
-	 * specified {@code GridNode} fails or leaves the Grid.
+	 * Stops execution of the given {@code GridJob} if the specified
+	 * {@code GridNode} fails or leaves the Grid.
 	 * 
-	 * @param nodeId {@code GridNode} Id
-	 * @param jobId {@code GridJob} Id
+	 * @param nodeId
+	 *            {@code GridNode} Id
+	 * @param jobId
+	 *            {@code GridJob} Id
 	 */
 	private void stopIfNodeFails(UUID nodeId, final String jobId) {
-		
-		ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
-			public void onServiceEvent(ServiceMessage message) {
-				try {
-					cancelJob(jobId);
-				} catch (IllegalArgumentException e) {
-					// Job Already Stopped
-				}
-			}
-		},nodeId.toString(), ServiceMessageType.HEARTBEAT_FAILED, ServiceMessageType.NODE_UNREGISTERED);
-	}
 
+		ServiceEventsSupport.addServiceHook(
+			new ServiceHookCallback() {
+				public void onServiceEvent(
+						ServiceMessage message) {
+					try {
+						cancelJob(jobId);
+					} catch (IllegalArgumentException e) {
+						// Job Already Stopped
+					}
+				}
+			}, nodeId.toString(), 
+			ServiceMessageType.HEARTBEAT_FAILED,
+			ServiceMessageType.NODE_UNREGISTERED);
+	}
 
 	/**
 	 * Verifies the {@code GridArchive} by comparing its provided SHA1 Hash
@@ -405,7 +450,7 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 			if (!profile.processRequest(nodeProfile)) {
 				throw new GridJobPermissionDeniedException("Permission Denied");
 			}
-			
+
 			// Return GridJobInfo for Profile
 			return createInfo(profile);
 
@@ -440,24 +485,24 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	/**
 	 * {@inheritDoc}
 	 */
-	public GridJobInfo requestNextJob(GridNodeProfile nodeProfile)  {
+	public GridJobInfo requestNextJob(GridNodeProfile nodeProfile) {
 
 		GridJobProfile profile = null;
-			
+
 		// For each job, try to get permission
-		for(GridJobProfile p : jobs.values()) {
-			
+		for (GridJobProfile p : jobs.values()) {
+
 			// If Allowed to Participate
 			if (p.processRequest(nodeProfile)) {
 				profile = p;
 				break;
 			}
 		}
-		
+
 		// If job is available, return profile, or else null
 		return (profile != null) ? createInfo(profile) : null;
 	}
-	
+
 	/**
 	 * Creates and returns the {@code GridJobInfo} instance for a
 	 * {@code GridJob}, denoted by the {@code GridJobProfile}.
@@ -472,7 +517,8 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		// Check for Nulls
 		Assert.notNull(profile);
 
-		GridJobInfo info = new GridJobInfo(profile.getJobId(), profile.getJob().getClass().getSimpleName());
+		GridJobInfo info = new GridJobInfo(profile.getJobId(), profile.getJob()
+				.getClass().getSimpleName());
 
 		if (profile.isArchived()) {
 			// If Archived Job, include Archive
@@ -481,30 +527,31 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		return info;
 	}
 
-
 	/**
 	 * Cancels execution of the given {@code GridJob} on the Grid.
 	 * 
-	 * @param jobId JobId of the GridJob to be canceled
-	 * @return a {@code boolean} value indicating success ({@code true}) / failure ({@code false}).
+	 * @param jobId
+	 *            JobId of the GridJob to be canceled
+	 * @return a {@code boolean} value indicating success ({@code true}) /
+	 *         failure ({@code false}).
 	 */
 	public boolean cancelJob(String jobId) throws IllegalArgumentException {
-		
+
 		// Check JobId
-		if (! this.jobs.containsKey(jobId)) {
-			throw new IllegalArgumentException("Invalid JobId, not an active Job of this Cluster");
+		if (!this.jobs.containsKey(jobId)) {
+			throw new IllegalArgumentException(
+					"Invalid JobId, not an active Job of this Cluster");
 		}
 
-		
 		GridJobProfile profile = jobs.get(jobId);
-		
-		log.debug("[ClusterJobService] Cancelling Job : {"+profile.getJobId()+"}");
-		
+
+		log.debug("[ClusterJobService] Cancelling Job : {" + profile.getJobId()
+				+ "}");
+
 		notifyJobCancel(jobId);
 		return profile.cancel();
 	}
-	
-	
+
 	/**
 	 * Notifies that a Job has started to all nodes in this cluster.
 	 * 
@@ -513,8 +560,8 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	 */
 	protected void notifyJobStart(String jobId) {
 
-		log.info("[JobService] Starting GridJob " +jobId);
-		
+		log.info("[JobService] Starting GridJob " + jobId);
+
 		// Create ServiceMessage for Job Start Notification
 		ServiceMessage message = new ServiceMessage(jobId,
 				ServiceMessageType.JOB_START);
@@ -531,13 +578,12 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	 *            JobId of the finished GridJob
 	 */
 	public void notifyJobEnd(String jobId) {
-			
-		
+
 		finished++;
-		
+
 		// Remove GridJob from Active GridJobs map
 		removeJob(jobId);
-		
+
 		// Create ServiceMessage for Job End Notification
 		ServiceMessage message = new ServiceMessage(jobId,
 				ServiceMessageType.JOB_END);
@@ -545,9 +591,9 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		// Send ServiceMessage to GridNodes
 		cluster.getServiceMessageSender().sendServiceMessage(message);
 		log.debug("[ClusterJobService] Notified Job End {" + jobId + "}");
-		
-		log.info("[JobService] Finished GridJob " +jobId);
-		
+
+		log.info("[JobService] Finished GridJob " + jobId);
+
 	}
 
 	/**
@@ -561,17 +607,16 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		finished++;
 		// Remove GridJob from Active GridJobs map
 		removeJob(jobId);
-		
+
 		// Create ServiceMessage for Job Cancel Notification
 		ServiceMessage message = new ServiceMessage(jobId,
 				ServiceMessageType.JOB_CANCEL);
 
 		// Send ServiceMessage to GridNodes
 		cluster.getServiceMessageSender().sendServiceMessage(message);
-		log.debug("[ClusterJobService] Notified Job Cancel {" + jobId
-						+ "}");
-		
-		log.info("[JobService] Cancelled GridJob " +jobId);
+		log.debug("[ClusterJobService] Notified Job Cancel {" + jobId + "}");
+
+		log.info("[JobService] Cancelled GridJob " + jobId);
 
 	}
 
@@ -596,9 +641,9 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	public synchronized GridJobProfile getProfile(String jobId) {
 		if (jobs.containsKey(jobId)) {
 			return jobs.get(jobId);
-		}
-		else {
-			throw new IllegalArgumentException("GridJob does not exist " + jobId);
+		} else {
+			throw new IllegalArgumentException("GridJob does not exist "
+					+ jobId);
 		}
 	}
 
@@ -636,14 +681,15 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	}
 
 	/**
-	 * Sets the {@code RemoteClusterJobService} proxy to be
-	 * used by the {@code ClusterManager}.
+	 * Sets the {@code RemoteClusterJobService} proxy to be used by the
+	 * {@code ClusterManager}.
 	 * <p>
 	 * <b>Note : </b>This is a <b>required</b> dependency.
 	 * <p>
 	 * <i>Spring Injected</i>
 	 * 
-	 * @param remoteJobServiceProxy proxy
+	 * @param remoteJobServiceProxy
+	 *            proxy
 	 */
 	@Required
 	public void setRemoteJobServiceProxy(
@@ -651,11 +697,8 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		this.remoteJobServiceProxy = remoteJobServiceProxy;
 	}
 
-
-
 	/**
-	 * Returns the number of jobs which have
-	 * finished execution on this Cluster.
+	 * Returns the number of jobs which have finished execution on this Cluster.
 	 * 
 	 * @return finished job count
 	 */
@@ -664,8 +707,7 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 	}
 
 	/**
-	 * Returns the number of currently active GridJobs on
-	 * this Cluster.
+	 * Returns the number of currently active GridJobs on this Cluster.
 	 * 
 	 * @return active job count
 	 */
@@ -673,7 +715,4 @@ public class ClusterJobServiceImpl implements ClusterJobService,
 		return jobs.size();
 	}
 
-
-
-	
 }

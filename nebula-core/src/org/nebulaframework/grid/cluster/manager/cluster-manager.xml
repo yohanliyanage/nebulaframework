@@ -24,9 +24,6 @@
 		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd 
 		http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core-5.1.0.xsd">
 
-	<!-- External Configuration File Location -->
-	<context:property-placeholder location="file:nebula-cluster.properties" />
-
 	<!-- Enable AspectJ Load Time Weaver -->
 	<context:load-time-weaver/>
 	

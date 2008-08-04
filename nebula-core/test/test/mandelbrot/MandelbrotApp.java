@@ -109,11 +109,6 @@ public class MandelbrotApp extends JFrame {
 
 			log.info("GridNode ID : " + node.getId());
 
-			node.getNodeRegistrationService().register();
-			log.info("Registered in Cluster : "
-					+ node.getNodeRegistrationService().getRegistration()
-							.getClusterId());
-
 			sw.stop();
 
 			log.info("GridNode Started Up. [" + sw.getLastTaskTimeMillis()
