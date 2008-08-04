@@ -1,3 +1,9 @@
+/*
+ * The copyright of these materials are subject to the
+ * original authors.
+ * 
+ * This code is distributed freely.
+ */
 package org.nebulaframework.benchmark.scimark;
 
 import org.nebulaframework.benchmark.scimark.grid.ExecutionResult;
