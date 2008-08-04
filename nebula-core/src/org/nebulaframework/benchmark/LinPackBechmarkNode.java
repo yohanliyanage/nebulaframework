@@ -25,6 +25,11 @@ public class LinPackBechmarkNode {
 	
 	private static Log log = LogFactory.getLog(LinPackBechmarkNode.class);
 
+	/**
+	 * Command-Line Application Execution Point.
+	 * 
+	 * @param args not supported
+	 */
 	public static void main(String[] args) {
 
 		try {

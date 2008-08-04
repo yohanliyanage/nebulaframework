@@ -13,21 +13,39 @@ import org.nebulaframework.grid.cluster.node.GridNode;
 import org.springframework.remoting.RemoteInvocationFailureException;
 import org.springframework.util.StopWatch;
 
+/**
+ * SciMark Benchmark Executor. This class submits a series of
+ * benchmark jobs, using the SciMark Benchmark Suite. The tests executed
+ * includes,
+ * <ul>
+ * 	<li>Fast Fourier Transformation</li>
+ * 	<li>Jacobi Successive Over Relaxation</li>
+ * 	<li>Monte Carlo Method to calculate PI</li>
+ * 	<li>LU Matrix Factorization</li>
+ * 	<li>Sparse Matrix Multiplication</li>
+ * </ul>
+ * <p>
+ * Note that this is a stand-alone console application, and it creates a 
+ * light-weight job submission GridNode.
+ * 
+ * @author Yohan Liyanage
+ * @version 1.0
+ */
 public class SciMarkMultiJobBenchmarkNode {
 	
 	private static Log log = LogFactory.getLog(SciMarkMultiJobBenchmarkNode.class);
 	
-	private static final int TASKCOUNT = 5;
+	// Number of Tasks Deployed per Test Job
+	// (Make this number higher than expected node count for best results)
+	private static final int TASKCOUNT = 5;	
 	
 	public static void main(String[] args) {
-
 		
-		
-		double mflop_fft = 0;
-		double mflop_sor = 0;
-		double mflop_monte = 0;
-		double mflop_lu = 0;
-		double mflop_sparse = 0;
+		double mflop_fft = 0;		// FFT Result
+		double mflop_sor = 0;		// SOR Result
+		double mflop_monte = 0;		// Monte Carlo Result
+		double mflop_lu = 0;		// LU Result
+		double mflop_sparse = 0;	// Sparse Result
 		
 		try {
 
