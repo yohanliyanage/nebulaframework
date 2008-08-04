@@ -31,10 +31,10 @@ import java.awt.TrayIcon;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.File;
-import java.io.IOException;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -79,12 +79,11 @@ import org.nebulaframework.grid.service.event.ServiceHookCallback;
 import org.nebulaframework.grid.service.message.ServiceMessage;
 import org.nebulaframework.grid.service.message.ServiceMessageType;
 import org.nebulaframework.ui.swing.AboutDialog;
+import org.nebulaframework.ui.swing.UISupport;
 import org.nebulaframework.util.log4j.JLabelAppender;
 import org.nebulaframework.util.log4j.JTextPaneAppender;
 import org.nebulaframework.util.profiling.TimeUtils;
 import org.springframework.util.StringUtils;
-
-import com.Ostermiller.util.Browser;
 
 /**
  * The Swing UI for the ClusterManager.
@@ -194,15 +193,19 @@ public class ClusterMainUI extends JFrame {
 			// Set Icon
 			trayIcon = new TrayIcon(idleIcon,"Nebula Grid Cluster", createTrayPopup());
 			trayIcon.setImageAutoSize(true);
-			trayIcon.addActionListener(new ActionListener() {
+			trayIcon.addMouseListener(new MouseAdapter() {
 
 				@Override
-				public void actionPerformed(ActionEvent e) {
-					if (!frame.isVisible()) {
-						frame.setVisible(true);
+				public void mouseClicked(MouseEvent e) {
+					if (e.getButton()==MouseEvent.BUTTON1) {
+						if (!frame.isVisible()) {
+							frame.setVisible(true);
+						}
+						
 						frame.setExtendedState(JFrame.NORMAL);
+						frame.requestFocus();
+						frame.toFront();
 					}
-					frame.requestFocus();
 				}
 				
 			});
@@ -280,6 +283,15 @@ public class ClusterMainUI extends JFrame {
 		if (trayIcon!=null) trayIcon.setImage(idleIcon);
 	}
 
+	/**
+	 * Removes System Tray icon.
+	 */
+	private void removeIcon() {
+		if (SystemTray.isSupported()) {
+			SystemTray.getSystemTray().remove(trayIcon);
+		}
+	}
+	
 	/**
 	 * Setups the Menu Bar
 	 * @return
@@ -925,6 +937,19 @@ public class ClusterMainUI extends JFrame {
 							return;
 						}
 						
+						// Double check for status label
+						if (!statusLabel.getText().equalsIgnoreCase("executing")) {
+							SwingUtilities.invokeLater(new Runnable() {
+
+								@Override
+								public void run() {
+									String newstate = profile.getFuture().getState().toString();
+									statusLabel.setText(StringUtils.capitalize(newstate.toLowerCase()));
+								}
+								
+							});
+						}
+						
 						if (!unbounded) {
 							
 							final int percentage = (int) (profile.percentage() * 100);
@@ -932,6 +957,12 @@ public class ClusterMainUI extends JFrame {
 							//final int failCount = profile.get
 							SwingUtilities.invokeLater(new Runnable() {
 								public void run() {
+									
+									// If finished at this point, do not update
+									if (progressBar.getValue()==100) {
+										return;
+									}
+									
 									// If ProgressBar is in indeterminate
 									if (progressBar.isIndeterminate()) {
 										progressBar.setIndeterminate(false);
@@ -1091,21 +1122,7 @@ public class ClusterMainUI extends JFrame {
 	 * Displays Help Contents
 	 */
 	protected void showHelp() {
-		
-		File helpFile = new File("help/index.html");
-		
-		if (!helpFile.exists()) {
-			JOptionPane.showMessageDialog(this, "Unable to locate Help Files");
-		}
-		
-		Browser.init();
-		try {
-			Browser.displayURLinNew(helpFile.toURI().toURL().toString());
-		} catch (IOException e) {
-			log.warn("[UI] Unable to display Help",e);
-			JOptionPane.showMessageDialog(this, "Unable to display Help Contents");
-		}
-		
+		UISupport.displayHelp(this);
 	}
 
 	/**
@@ -1137,12 +1154,14 @@ public class ClusterMainUI extends JFrame {
 	 */
 	public void onShutdown() {
 
+		removeIcon();
 		new Thread(new Runnable() {
 
 			@Override
 			public void run() {
 				// Forced Shutdown
-				ClusterManager.getInstance().shutdown(true);				
+				
+				ClusterManager.getInstance().shutdown(true);
 			}
 			
 		}).start();

@@ -29,10 +29,10 @@ import java.awt.TrayIcon;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -74,12 +74,11 @@ import org.nebulaframework.grid.service.event.ServiceHookCallback;
 import org.nebulaframework.grid.service.message.ServiceMessage;
 import org.nebulaframework.grid.service.message.ServiceMessageType;
 import org.nebulaframework.ui.swing.AboutDialog;
+import org.nebulaframework.ui.swing.UISupport;
 import org.nebulaframework.util.log4j.JLabelAppender;
 import org.nebulaframework.util.log4j.JTextPaneAppender;
 import org.nebulaframework.util.net.NetUtils;
 import org.nebulaframework.util.profiling.TimeUtils;
-
-import com.Ostermiller.util.Browser;
 
 /**
  * The Swing UI for GridNode. This UI exposes basic functionality of 
@@ -177,15 +176,19 @@ public class NodeMainUI extends JFrame {
 		if (SystemTray.isSupported()) {
 			trayIcon = new TrayIcon(idleIcon,"Nebula Grid Node", createTrayPopup());
 			trayIcon.setImageAutoSize(true);
-			trayIcon.addActionListener(new ActionListener() {
+			trayIcon.addMouseListener(new MouseAdapter() {
 
 				@Override
-				public void actionPerformed(ActionEvent e) {
-					if (!frame.isVisible()) {
-						frame.setVisible(true);
+				public void mouseClicked(MouseEvent e) {
+					if (e.getButton()==MouseEvent.BUTTON1) {
+						if (!frame.isVisible()) {
+							frame.setVisible(true);
+						}
+						
 						frame.setExtendedState(JFrame.NORMAL);
+						frame.requestFocus();
+						frame.toFront();
 					}
-					frame.requestFocus();
 				}
 				
 			});
@@ -260,6 +263,15 @@ public class NodeMainUI extends JFrame {
 	 */
 	private void showIdleIcon() {
 		if (trayIcon!=null) trayIcon.setImage(idleIcon);
+	}
+	
+	/**
+	 * Removes System Tray icon.
+	 */
+	private void removeIcon() {
+		if (SystemTray.isSupported()) {
+			SystemTray.getSystemTray().remove(trayIcon);
+		}
 	}
 
 	/**
@@ -1126,7 +1138,7 @@ public class NodeMainUI extends JFrame {
 					if (Grid.isNode()) {
 						GridNode.getInstance().shutdown();
 					}
-					
+					removeIcon();
 					System.exit(0);
 				} catch (Exception e) {
 					log.fatal("[GridNode] Exception while Shutting Down",e);
@@ -1188,28 +1200,19 @@ public class NodeMainUI extends JFrame {
 	 * Displays About Dialog
 	 */
 	protected void showAbout() {
-		new AboutDialog(this);
+		try {
+			new AboutDialog(this);
+		} catch (Exception e) {
+			log.error(e);
+			JOptionPane.showMessageDialog(this, "Unable to display About dialog");
+		}
 	}
 
 	/**
 	 * Displays Help Contents
 	 */
 	protected void showHelp() {
-		File helpFile = new File("help/index.html");
-		
-		if (!helpFile.exists()) {
-			JOptionPane.showMessageDialog(this, "Unable to locate Help Files");
-		}
-		
-		// Initialize Browser
-		Browser.init();
-		try {
-			Browser.displayURL(helpFile.toURI().toURL().toString());
-		} catch (IOException e) {
-			log.warn("[UI] Unable to display Help",e);
-			JOptionPane.showMessageDialog(this, "Unable to display Help Contents");
-		}
-		
+		UISupport.displayHelp(this);
 	}
 
 	/**
@@ -1227,8 +1230,11 @@ public class NodeMainUI extends JFrame {
 		showBusyIcon();
 		doShutdownNode();
 		showIdleIcon();
+
 	}
 	
+
+
 	/**
 	 * Class which represents a Job History Element, inserted into the
 	 * JobHistory List Model.

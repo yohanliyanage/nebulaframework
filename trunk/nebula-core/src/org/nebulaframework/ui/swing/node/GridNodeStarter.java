@@ -50,6 +50,8 @@ public class GridNodeStarter {
 	 */
 	public static void main(String[] args) {
 
+		//Log4JConfiguration.configure();
+		
 		// Process Arugments
 		processArgs(args);
 		

@@ -31,7 +31,6 @@ import org.nebulaframework.core.job.ResultCallback;
 import org.nebulaframework.core.job.future.GridJobFuture;
 import org.nebulaframework.grid.Grid;
 import org.nebulaframework.grid.cluster.node.GridNode;
-import org.nebulaframework.grid.cluster.registration.RegistrationException;
 import org.springframework.util.StopWatch;
 
 public class BuddhabrotApp extends JFrame {
@@ -58,20 +57,27 @@ public class BuddhabrotApp extends JFrame {
 			@Override
 			public void windowClosing(WindowEvent e) {
 				
-				if (future!=null) {
-					log.info("Cancelling Job... wait");
-					setTitle("Cancelling Job - WAIT");
-					if (!future.cancel()) {
-						log.warn("Cancel Failed");
-					}
-				}
-				
-				node.shutdown();
-				// Give time to send termination message
 				try {
-					Thread.sleep(2000);
-				} catch (InterruptedException e1) {
-					e1.printStackTrace();
+					if (future!=null) {
+						
+						if (! future.isJobFinished()) {
+							log.info("Cancelling Job... wait");
+							setTitle("Cancelling Job - WAIT");
+							if (!future.cancel()) {
+								log.warn("Cancel Failed");
+							}
+						}
+					}
+					
+					node.shutdown();
+					// Give time to send termination message
+					try {
+						Thread.sleep(2000);
+					} catch (InterruptedException e1) {
+						e1.printStackTrace();
+					}
+				} catch (Exception ex) {
+					ex.printStackTrace();
 				}
 				
 				System.exit(0);
@@ -120,14 +126,6 @@ public class BuddhabrotApp extends JFrame {
 
 			log.info("GridNode ID : " + node.getId());
 
-			// Register on Cluster
-			try {
-				node.getNodeRegistrationService().register();
-			} catch (RegistrationException e) {
-				e.printStackTrace();
-				System.exit(1);
-			}
-			
 			log.info("Registered in Cluster : "
 					+ node.getNodeRegistrationService().getRegistration()
 							.getClusterId());

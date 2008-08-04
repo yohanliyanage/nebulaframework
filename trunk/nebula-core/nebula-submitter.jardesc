@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="WINDOWS-1252"?>
 <jardesc>
-<jar path="C:/Documents and Settings/Yohan/Desktop/Submitter/nebula-submitter.jar"/>
+<jar path="C:/Documents and Settings/Yohan/Desktop/Submitter/bin/nebula-submitter.jar"/>
 <options buildIfNeeded="false" compress="true" descriptionLocation="/Nebula-Trunk/nebula-submitter.jardesc" exportErrors="false" exportWarnings="false" includeDirectoryEntries="false" overwrite="false" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
 <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
 <selectedProjects/>

@@ -30,6 +30,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.archive.GridArchive;
+import org.nebulaframework.core.task.ExecutionTimeAware;
 import org.nebulaframework.core.task.GridTask;
 import org.nebulaframework.core.task.GridTaskResultImpl;
 import org.nebulaframework.deployment.classloading.GridArchiveClassLoader;
@@ -430,6 +431,11 @@ public class TaskExecutor {
 			// Set Execution Time
 			long duration = System.currentTimeMillis() - start;
 			taskResult.setExecutionTime(duration);
+			
+			// If result is execution time aware, set the execution time
+			if (taskResult.getResult() instanceof ExecutionTimeAware) {
+				((ExecutionTimeAware) taskResult.getResult()).setExecutionTime(duration);
+			}
 			
 			log.debug("[TaskExecutor] Sending Result for Task " + taskId + " | Duration : " + duration);
 			
