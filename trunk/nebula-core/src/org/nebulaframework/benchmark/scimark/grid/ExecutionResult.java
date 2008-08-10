@@ -69,4 +69,10 @@ public class ExecutionResult implements Serializable, ExecutionTimeAware {
 		this.executionTime = ((double)executionTime) / 1000;
 	}
 
+	@Override
+	public String toString() {
+		return "Type : " + type + " | Cycles : " + cycles + " | Calculation Time : " + calculationTime;
+	}
+
+	
 }

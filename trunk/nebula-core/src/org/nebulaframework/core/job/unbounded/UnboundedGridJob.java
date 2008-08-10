@@ -17,7 +17,7 @@ import java.io.Serializable;
 
 import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.ResultCallback;
-import org.nebulaframework.core.job.annotations.UnboundedProcessingSettings;
+import org.nebulaframework.core.job.annotations.unbounded.UnboundedProcessingSettings;
 import org.nebulaframework.core.job.exceptions.InvalidResultException;
 import org.nebulaframework.core.job.future.GridJobFuture;
 import org.nebulaframework.core.job.splitaggregate.SplitAggregateGridJob;

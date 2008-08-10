@@ -15,6 +15,7 @@ package org.nebulaframework.core.job.future;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -69,10 +70,11 @@ public class GridJobFutureServerImpl implements InternalGridJobFuture, GridJobFu
 	
 	private InternalClusterJobService jobService;	// Job Service of CM
 
+	
 	ExecutorService executorService = Executors.newCachedThreadPool();
 	
 	// Server-side Listeners (in ClusterManager's VM)
-	private List<GridJobStateListener> serverListeners = new ArrayList<GridJobStateListener>();
+	private List<GridJobStateListener> serverListeners = Collections.synchronizedList(new ArrayList<GridJobStateListener>());
 	
 
 	// Synchronization Mutex
@@ -150,7 +152,6 @@ public class GridJobFutureServerImpl implements InternalGridJobFuture, GridJobFu
 	}
 
 
-
 	/**
 	 * Returns {@code true} if this {@code GridJob} supports
 	 * final result. Currently {@link SplitAggregateGridJob}
@@ -197,9 +198,8 @@ public class GridJobFutureServerImpl implements InternalGridJobFuture, GridJobFu
 				mutex.notifyAll();
 			}
 		}
-		
-
 	}
+
 
 	/**
 	 * {@inheritDoc}
@@ -221,17 +221,20 @@ public class GridJobFutureServerImpl implements InternalGridJobFuture, GridJobFu
 		new Thread(new Runnable() {
 			public void run() {
 				// Invoke state changed on each listener
-				for (final GridJobStateListener listener : serverListeners) {
-					executorService.execute(new Runnable() {
-
-						public void run() {
-							try {
-								listener.stateChanged(state);
-							} catch (RuntimeException e) {
-								log.error("[StateListener] Exception on GridJobStateListener - " + e.getMessage());
+				synchronized (serverListeners) {
+					for (final GridJobStateListener listener : serverListeners) {
+						executorService.execute(new Runnable() {
+	
+							public void run() {
+								try {
+									listener.stateChanged(state);
+								} catch (RuntimeException e) {
+									log.error("[StateListener] Exception on GridJobStateListener - " 
+									          + e.getMessage());
+								}
 							}
-						}
-					});
+						});
+					}
 				}
 			}
 		}).start();

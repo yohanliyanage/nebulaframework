@@ -13,9 +13,7 @@
  */
 package org.nebulaframework.grid.cluster.manager.services.jobs.tracking;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,6 +21,7 @@ import java.util.concurrent.Executors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJobState;
+import org.nebulaframework.core.job.splitaggregate.SplitAggregateGridJob;
 import org.nebulaframework.grid.cluster.manager.services.jobs.GridJobProfile;
 import org.nebulaframework.grid.cluster.manager.services.jobs.JobExecutionManager;
 import org.nebulaframework.grid.service.event.ServiceEventsSupport;
@@ -62,11 +61,15 @@ public class GridJobTaskTracker {
 	
 	// Tasks which are potentially failed 
 	// (results received for tasks enqueued after)
-	private List<Integer> potential = new ArrayList<Integer>();
+	private Queue<Integer> potential = new LinkedList<Integer>();
 	
 	// Tasks Marked as Failed and to be re-enqueued
-	private List<Integer> marked = new ArrayList<Integer>();
+	private Queue<Integer> marked = new LinkedList<Integer>();
 	
+	// Active Worker Count (as of last update)
+	private int workerCount = 0;
+	
+	private int renqueued = 0; // TODO Remove
 	
 	/**
 	 * Constructs a Task Tracker for given job.
@@ -161,20 +164,27 @@ public class GridJobTaskTracker {
 			}
 		}
 		
+		// Retrieve Worker Count
+		workerCount = profile.getWorkerCount();
+		
 		// We have duration information now
 		while (!stopped) {
 			
 			synchronized (this) {
 				renqueueMarked();
 				potentialToMarked();
+				enqueuedToPotential();
 			}
 
 			// If this is the final stage of Job Execution (90%)
-			if (this.profile.percentage() > 0.9) {
+			if (isFinalStage()) {
 				// Duplicate Tasks (Increases throughput)
-				enqueuedToPotential();
+				log.trace("In Final Stage");
+				enqueuedToMarked();
 			}
 			
+			// Update Worker Count
+			workerCount = profile.getWorkerCount();
 			
 			try {
 				// Sleep for some duration, determined by average * getMultiple()
@@ -186,6 +196,10 @@ public class GridJobTaskTracker {
 		
 		log.debug("[GridJobTaskTracker] Stopping for Job " + profile.getJobId());
 		
+	}
+
+	private boolean isFinalStage() {
+		return (this.profile.getWorkerCount() >= this.profile.getTaskCount());
 	}
 
 	/**
@@ -202,13 +216,16 @@ public class GridJobTaskTracker {
 		if (averageTaskDuration < 2) {
 			return 2000;
 		}
-		// 1.25 Times Delay for Durations 2-4 Secs
+		// 1.5 Times Delay for Durations 2-4 Secs
 		else if (averageTaskDuration < 4) {
+			return 1500;
+		}
+		// 1.25 Time Delay for Durations > 5 Seconds
+		else if (averageTaskDuration < 10) {
 			return 1250;
 		}
-		// 1 Time Delay for Durations > 5 Seconds
 		else {
-			return 1000;
+			return 1100;
 		}
 		
 	}
@@ -222,10 +239,15 @@ public class GridJobTaskTracker {
 		if (marked.size() == 0) return;
 		
 		Integer[] tasks = marked.toArray(new Integer[marked.size()]);
+		
+		log.trace("Reenqueuing " + tasks.length + "tasks");
+		
 		marked.clear();
 		
 		for (int task : tasks) {
 			executionManager.reEnqueueTask(profile.getJobId(), task);
+			log.trace("Re-enqueued " + task);
+			log.trace("Re-enqueued " + (++renqueued) + " tasks so far");
 		}
 		
 	}
@@ -235,17 +257,70 @@ public class GridJobTaskTracker {
 	 * marked task queue.
 	 */
 	private synchronized void potentialToMarked() {
-		for (int i=0; i <potential.size(); i++) {
-			marked.add(potential.remove(i));
+		
+		if (profile.getJob() instanceof SplitAggregateGridJob) {
+			
+			// For Split-Aggregate style, all tasks are enqueued in beginning.
+			// But we should only consider about the tasks which will be
+			// executed by workers.
+			int activeRange = workerCount;
+			activeRange = (potential.size() > activeRange) ? activeRange : potential.size();
+			
+			for (int i=0; i <activeRange; i++) {
+				marked.add(potential.remove());
+			}
+			
+			log.trace("Potential to Marked " + activeRange + "tasks");
+			
+		}
+		else {
+			for (int i=0; i <potential.size(); i++) {
+				marked.add(potential.remove());
+			}
+			
+			log.trace("Potential to Marked " + potential.size() + "tasks");
+		}
+		
+		
+		
+	}
+	
+	/**
+	 * Moves the existing enqueued tasks queue to
+	 * marked queue.
+	 */
+	private synchronized void enqueuedToPotential() {
+		
+		if (profile.getJob() instanceof SplitAggregateGridJob) {
+			
+			// For Split-Aggregate style, all tasks are enqueued in beginning.
+			// But we should only consider about the tasks which will be
+			// executed by workers.
+			int activeRange = workerCount;
+			activeRange = (enqueued.size()-1 > activeRange) ? activeRange : enqueued.size() -1;
+			
+			for (int i=0; i <activeRange; i++) {
+				potential.add(enqueued.remove());
+			}
+			log.trace("Enqueued to Potential " + activeRange + "tasks");
+		}
+		else {
+			for (int i=0; i <enqueued.size(); i++) {
+				potential.add(enqueued.remove());
+				log.trace("Enqueued to Potential " + enqueued.size() + "tasks");
+			}
 		}
 	}
 	
 
 	/**
 	 * Moves the existing enqueued tasks queue to
-	 * potentially failed queue.
+	 * marked queue.
 	 */
-	private synchronized void enqueuedToPotential() {
+	private synchronized void enqueuedToMarked() {
+		
+		log.trace("Enqueued to Marked " + enqueued.size() + "tasks");
+		
 		for (int i=0; i <enqueued.size(); i++) {
 			marked.add(enqueued.remove());
 		}
@@ -260,6 +335,7 @@ public class GridJobTaskTracker {
 		
 		if (stopped) return;
 		
+		log.trace("Enqueued " + taskId);
 		enqueued.add(taskId);
 	}
 	
@@ -288,16 +364,18 @@ public class GridJobTaskTracker {
 						// Remove all tasks ahead in queue
 						// and put to potentially failed
 						// list
-						while (! enqueued.peek().equals(taskId)) {
-							potential.add(enqueued.remove());
-						}
+//						while (! enqueued.peek().equals(taskId)) {
+//							potential.add(enqueued.remove());
+//						}
+						
+						// TODO Remove above block
 						
 						enqueued.remove(taskId);
 					}
-					else if (potential.contains(taskId)) {
+					if (potential.contains(taskId)) {
 						potential.remove(taskId);
 					}
-					else if (marked.contains(taskId)) {
+					if (marked.contains(taskId)) {
 						marked.remove(taskId);
 					}
 					

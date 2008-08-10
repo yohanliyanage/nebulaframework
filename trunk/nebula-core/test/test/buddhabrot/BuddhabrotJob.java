@@ -17,11 +17,11 @@ package test.buddhabrot;
 import java.awt.Color;
 import java.io.Serializable;
 
-import org.nebulaframework.core.job.annotations.UnboundedProcessingSettings;
+import org.nebulaframework.core.job.annotations.unbounded.UnboundedProcessingSettings;
 import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
 import org.nebulaframework.core.task.GridTask;
 
-@UnboundedProcessingSettings(maxTasksInQueue=10,reductionFactor=500, stopOnNullTask=false, mutuallyExclusiveTasks=true)
+@UnboundedProcessingSettings(maxTasksInQueue=20,reductionFactor=500, stopOnNullTask=false, mutuallyExclusiveTasks=true)
 public class BuddhabrotJob implements UnboundedGridJob<BuddhabrotResult> {
 
 	private static final long serialVersionUID = 8997815059325788647L;

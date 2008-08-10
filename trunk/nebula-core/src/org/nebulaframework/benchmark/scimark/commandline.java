@@ -29,7 +29,7 @@ public class commandline
 		// default to the (small) cache-contained version
 
 		double min_time = Constants.RESOLUTION_DEFAULT;
-		min_time = 1;
+		min_time = 2;
 		
 		int FFT_size = Constants.FFT_SIZE;
 		int SOR_size =  Constants.SOR_SIZE;

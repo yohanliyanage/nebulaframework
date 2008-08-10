@@ -21,7 +21,7 @@ public class BuddhabrotTask implements GridTask<BuddhabrotResult> {
 
 	private static final long serialVersionUID = -8080885595821455485L;
 
-	private static final long PLOT_SIZE = 100000L;
+	private static final long PLOT_SIZE = 10000L;
 	private static final int RED_DWELL = 20000;
 	private static final int GREEN_DWELL = 6000;
 	private static final int BLUE_DWELL = 20;

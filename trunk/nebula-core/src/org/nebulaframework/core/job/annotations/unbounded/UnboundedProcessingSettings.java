@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and 
  * limitations under the License.
  */
-package org.nebulaframework.core.job.annotations;
+package org.nebulaframework.core.job.annotations.unbounded;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -19,14 +19,20 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.nebulaframework.core.job.unbounded.UnboundedSettingsAware;
+
 /**
  * {@code UnboundedProcessingSettings} allows to provide processing settings for
  * {@code UnboundedGridJob}s. These settings will be processed and used by the
  * Nebula Framework when a {@code UnboundedGridJob} marked by this annotation is
  * submitted to the Grid.
+ * <p>
+ * The {@link UnboundedSettingsAware} interface allows to specify these settings
+ * directly in the GridJob class itself, and to avoid this annotation.
  * 
  * @author Yohan Liyanage
  * @version 1.0
+ * @see UnboundedSettingsAware
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

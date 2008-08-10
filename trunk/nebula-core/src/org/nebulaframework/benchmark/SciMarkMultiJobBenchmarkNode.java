@@ -37,7 +37,7 @@ public class SciMarkMultiJobBenchmarkNode {
 	
 	// Number of Tasks Deployed per Test Job
 	// (Make this number higher than expected node count for best results)
-	private static final int TASKCOUNT = 5;	
+	private static final int TASKCOUNT = 20;	
 	
 	public static void main(String[] args) {
 		

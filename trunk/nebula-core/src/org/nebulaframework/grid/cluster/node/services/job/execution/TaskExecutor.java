@@ -38,6 +38,7 @@ import org.nebulaframework.deployment.classloading.GridNodeClassLoader;
 import org.nebulaframework.deployment.classloading.service.ClassLoadingService;
 import org.nebulaframework.grid.cluster.node.GridNode;
 import org.nebulaframework.grid.service.event.ServiceEventsSupport;
+import org.nebulaframework.grid.service.event.ServiceHookCallback;
 import org.nebulaframework.grid.service.message.ServiceMessage;
 import org.nebulaframework.grid.service.message.ServiceMessageType;
 import org.nebulaframework.util.jms.JMSNamingSupport;
@@ -191,6 +192,18 @@ public class TaskExecutor {
 				// Fire Local Event
 				ServiceMessage message = new ServiceMessage(jobId, ServiceMessageType.LOCAL_JOBSTARTED);
 				ServiceEventsSupport.fireServiceEvent(message);
+				
+				// Add a hook to stop job if Cluster fails
+				ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
+
+					@Override
+					public void onServiceEvent(ServiceMessage message) {
+						ServiceMessage msg = new ServiceMessage(jobId, ServiceMessageType.JOB_END);
+						ServiceEventsSupport.fireServiceEvent(msg);
+					}
+					
+				}, GridNode.getInstance().getClusterId().toString(), ServiceMessageType.NODE_DISCONNECTED);
+				
 			}
 
 		}).start();

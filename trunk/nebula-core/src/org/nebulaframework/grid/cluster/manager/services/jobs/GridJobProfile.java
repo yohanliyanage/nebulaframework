@@ -95,11 +95,23 @@ public class GridJobProfile {
 	private int totalTasks = -1;
 	
 
+	private long startTime;	// Creation Time
+	
+	/**
+	 * Minimum Execution Time. (Default 4 seconds).
+	 * This is used to avoid thread interaction issues. If a 
+	 * job finishes before this threshold, the results will
+	 * be withheld for at least this amount + 1 second has been
+	 * elapsed.
+	 */
+	public static final int MINIMUM_EXEUCTION_TIME = 2000;
+	
 	/**
 	 * No-args constructor.
 	 */
 	public GridJobProfile() {
 		super();
+		startTime = System.currentTimeMillis();
 	}
 
 	/**
@@ -183,6 +195,14 @@ public class GridJobProfile {
 	 */
 	public UUID getOwner() {
 		return owner;
+	}
+
+	/**
+	 * Returns the start time of this Job.
+	 * @return Start time, as long
+	 */
+	public long getStartTime() {
+		return startTime;
 	}
 
 	/**
@@ -542,7 +562,15 @@ public class GridJobProfile {
 		return (val>0) ? val : 0;
 	}
 
-
+	/**
+	 * Returns the number of active worker nodes
+	 * for this GridJob.
+	 * 
+	 * @return worker node count
+	 */
+	public int getWorkerCount() {
+		return this.workerNodes.size();
+	}
 
 
 
