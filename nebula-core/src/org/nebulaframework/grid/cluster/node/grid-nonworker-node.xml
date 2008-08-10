@@ -87,6 +87,16 @@
 		<property name="serviceMessageSupport" ref="serviceMessageSupport" />
 	</bean>
 	
+	<!-- Annotation Based Job Support -->
+	<bean id="annotatedJobSupport" class="org.nebulaframework.core.job.annotations.AnnotatedJobSupport" factory-method="getInstance">
+		<property name="annotationProcessors">
+			<list value-type="org.nebulaframework.core.job.annotations.AnnotationProcessor">
+				<bean class="org.nebulaframework.core.job.annotations.splitaggregate.SplitAggregatAnnotationProcessor" />
+				<bean class="org.nebulaframework.core.job.annotations.unbounded.UnboundedAnnotationProcessor" />
+			</list>
+		</property>
+	</bean>
+	
 	<!-- Service Message Support -->
 	<bean id="serviceMessageSupport" class="org.nebulaframework.grid.cluster.node.services.message.NodeServiceMessageSupportImpl">
 	</bean>

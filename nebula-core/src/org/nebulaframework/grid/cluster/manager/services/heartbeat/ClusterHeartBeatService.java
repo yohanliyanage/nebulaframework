@@ -35,7 +35,7 @@ import org.nebulaframework.grid.cluster.node.GridNode;
 public interface ClusterHeartBeatService {
 
 	/** Period between heart beats in milliseconds */
-	public static final long BEAT_PERIOD = 2500L;
+	public static final long BEAT_PERIOD = 5000L;
 	
 	/** Maximum allowed missed beats before considering disconnected */
 	public static final int MAX_MISS = 3;

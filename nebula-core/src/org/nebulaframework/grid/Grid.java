@@ -97,7 +97,7 @@ public class Grid {
 	 * already started with in the current VM. Nebula supports only one Grid
 	 * Member per VM.
 	 */
-	public static ClusterManager startClusterManager() throws IllegalStateException{
+	public synchronized static ClusterManager startClusterManager() throws IllegalStateException{
 
 		if (isInitialized()) {
 			// A Grid Member has already started in this VM
@@ -144,7 +144,7 @@ public class Grid {
 
 			@Override
 			public void uncaughtException(Thread t, Throwable e) {
-				log.fatal("[Uncaught Thread Exception] on Thread " + t.getName() + " - " + e.getMessage(),e);
+				log.fatal("[Uncaught Thread Exception] on Thread " + t.getName() + " - " + e,e);
 				e.printStackTrace();
 			}
 			
@@ -162,7 +162,7 @@ public class Grid {
 	 * already started with in the current VM. Nebula supports only one Grid
 	 * Member per VM.
 	 */
-	public static GridNode startGridNode() throws IllegalStateException {
+	public synchronized static GridNode startGridNode() throws IllegalStateException {
 		return startGridNode(true);
 	}
 	
@@ -180,7 +180,7 @@ public class Grid {
 	 * already started with in the current VM. Nebula supports only one Grid
 	 * Member per VM.
 	 */
-	public static GridNode startGridNode(boolean useConfigDiscovery) throws IllegalStateException {
+	public synchronized static GridNode startGridNode(boolean useConfigDiscovery) throws IllegalStateException {
 		
 		if (isInitialized()) {
 			// A Grid Member has already started in this VM
@@ -243,7 +243,7 @@ public class Grid {
 	 * already started with in the current VM. Nebula supports only one Grid
 	 * Member per VM.
 	 */
-	public static GridNode startLightGridNode() throws IllegalStateException {
+	public synchronized static GridNode startLightGridNode() throws IllegalStateException {
 		return startLightGridNode(true, false);
 	}
 	
@@ -261,7 +261,7 @@ public class Grid {
 	 * already started with in the current VM. Nebula supports only one Grid
 	 * Member per VM.
 	 */
-	public static GridNode startLightGridNode(boolean useConfigDiscovery) throws IllegalStateException {
+	public synchronized static GridNode startLightGridNode(boolean useConfigDiscovery) throws IllegalStateException {
 		return startLightGridNode(useConfigDiscovery, false);
 	}
 	
@@ -283,7 +283,7 @@ public class Grid {
 	 * already started with in the current VM. Nebula supports only one Grid
 	 * Member per VM.
 	 */
-	public static GridNode startLightGridNode(boolean useConfigDiscovery, final boolean isGui) throws IllegalStateException {
+	public synchronized static GridNode startLightGridNode(boolean useConfigDiscovery, final boolean isGui) throws IllegalStateException {
 		
 		if (isInitialized()) {
 			// A Grid Member has already started in this VM

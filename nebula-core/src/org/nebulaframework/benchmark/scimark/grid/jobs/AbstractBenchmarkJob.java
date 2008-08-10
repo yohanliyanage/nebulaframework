@@ -39,7 +39,7 @@ public abstract class AbstractBenchmarkJob implements SplitAggregateGridJob<Exec
 	
 	// Tasks per Job (should be higher than node count 
 	// for optimal results)
-	protected int taskCount = 5;
+	protected int taskCount = 100;
 	
 
 	public AbstractBenchmarkJob() {

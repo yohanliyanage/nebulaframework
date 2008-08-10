@@ -194,8 +194,12 @@ public class AggregatorServiceImpl implements AggregatorService {
 			return;
 		} catch (Exception e) {
 			
+			
 			log.warn("[Aggregator] Exception while aggregating final result of "
 					+ profile.getJobId(), e);
+			
+			// Wait if execution completed before minimum duration
+			waitIfNeeded(profile);
 			
 			// Update Future
 			profile.getFuture().setException(new AggregateException(e));
@@ -206,7 +210,10 @@ public class AggregatorServiceImpl implements AggregatorService {
 			
 			return;
 		}
-
+		
+		// Wait if execution completed before minimum duration
+		waitIfNeeded(profile);
+		
 		/*  -- Aggregation Complete : Job Complete -- */
 		
 		// Notify Workers
@@ -217,5 +224,27 @@ public class AggregatorServiceImpl implements AggregatorService {
 		profile.getFuture().setState(GridJobState.COMPLETE);
 	}
 
+	/**
+	 * Withholds results if execution finished before minimum execution
+	 * duration, to avoid thread synchronization issues.
+	 * 
+	 * @param profile Job Profile
+	 */
+	private void waitIfNeeded(GridJobProfile profile) {
+		if (System.currentTimeMillis() - profile.getStartTime() < GridJobProfile.MINIMUM_EXEUCTION_TIME) {
+			try {
+				long duration = GridJobProfile.MINIMUM_EXEUCTION_TIME 
+									- (System.currentTimeMillis() 
+									- profile.getStartTime()) 
+									+ 1000;
+				
+				if (duration < 0) return;
+				
+				Thread.sleep(duration);
+			} catch (InterruptedException e) {
+				log.warn("Interrupted",e);
+			}
+		}
+	}
 
 }

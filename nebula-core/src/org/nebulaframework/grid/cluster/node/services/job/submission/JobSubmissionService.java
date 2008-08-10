@@ -14,6 +14,7 @@
 
 package org.nebulaframework.grid.cluster.node.services.job.submission;
 
+import java.io.Serializable;
 import java.util.Map;
 
 import org.nebulaframework.core.job.GridJob;
@@ -38,6 +39,51 @@ import org.nebulaframework.grid.cluster.manager.services.facade.ClusterManagerSe
  * @see ClusterManagerServicesFacade
  */
 public interface JobSubmissionService {
+	
+	/**
+	 * Submits the given <b>Annotated {@code GridJob}</b> to the Grid through {@code ClusterManager}.
+	 * <p>
+	 * This method dynamically adapts the given Serializable object as a GridJob and wraps
+	 * it in an GridJobAdpater, if properly annotated. If not properly annotated or
+	 * if annotation processing fails due to any exception, the job will be rejected.
+	 * Note that both job class and task class (if task is not in job class itself)
+	 * must be serializable.
+	 * <p>
+	 * 
+	 * If successful, returns a (proxy) reference to {@code GridJobFuture} for the Job.
+	 * If failed to submit, it throws an unchecked {@code GridJobRejectionException}.
+	 * 
+	 * @param job {@code GridJob} Job to submit
+	 * 
+	 * @return {@code GridJobFuture} proxy
+	 * 
+	 * @throws GridJobRejectionException if submission failed
+	 */
+	public GridJobFuture submitJob(Serializable annotatedJob) throws GridJobRejectionException;
+	
+	
+	/**
+	 * Submits the given <b>Annotated {@code GridJob}</b> to the Grid through {@code ClusterManager}, and
+	 * attaches the given {@code ResultCallback} to obtain intermediate results.
+	 * <p>
+	 * This method dynamically adapts the given Serializable object as a GridJob and wraps
+	 * it in an GridJobAdpater, if properly annotated. If not properly annotated or
+	 * if annotation processing fails due to any exception, the job will be rejected.
+	 * Note that both job class and task class (if task is not in job class itself)
+	 * must be serializable.
+	 * <p>
+	 * If successful, returns a (proxy) reference to {@code GridJobFuture} for the Job.
+	 * If failed to submit, it throws an unchecked {@code GridJobRejectionException}.
+	 * 
+	 * @param job {@code GridJob} Job to submit
+	 * @param callback {@code ResultCallback} object
+	 * 
+	 * @return {@code GridJobFuture} proxy
+	 * 
+	 * @throws GridJobRejectionException if submission failed
+	 */
+	public GridJobFuture submitJob(Serializable annotatedJob, ResultCallback callback) throws GridJobRejectionException;
+	
 	
 	/**
 	 * Submits the given {@code GridJob} to the Grid through {@code ClusterManager}.

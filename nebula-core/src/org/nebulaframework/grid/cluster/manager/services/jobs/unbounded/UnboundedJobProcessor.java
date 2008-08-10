@@ -23,10 +23,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJobState;
 import org.nebulaframework.core.job.ResultCallback;
-import org.nebulaframework.core.job.annotations.UnboundedProcessingSettings;
+import org.nebulaframework.core.job.annotations.unbounded.UnboundedProcessingSettings;
 import org.nebulaframework.core.job.exceptions.InvalidResultException;
 import org.nebulaframework.core.job.exceptions.SecurityViolationException;
 import org.nebulaframework.core.job.unbounded.UnboundedGridJob;
+import org.nebulaframework.core.job.unbounded.UnboundedSettingsAware;
 import org.nebulaframework.core.task.GridTask;
 import org.nebulaframework.core.task.GridTaskResult;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
@@ -60,8 +61,6 @@ public class UnboundedJobProcessor extends ResultCollectionSupport {
 
 	private static Log log = LogFactory.getLog(UnboundedJobProcessor.class);
 
-	public static final int MAX_CONSECUTIVE_NODE_FAILS = 3;
-	
 	private UnboundedGridJob<?> job;	// GridJob
 
 	private boolean canceled = false;
@@ -136,6 +135,18 @@ public class UnboundedJobProcessor extends ResultCollectionSupport {
 	 * @param job {@code UnboundedGridJob} job
 	 */
 	private void extractProcessingSettings(UnboundedGridJob<?> job) {
+		
+		if (job instanceof UnboundedSettingsAware) {
+			
+			UnboundedSettingsAware settings = (UnboundedSettingsAware) job;
+			
+			this.maxTaskConstant = settings.maxTasksInQueue();
+			this.reductionFactorConstant = settings.reductionFactor();
+			this.stopOnNullTask = settings.stopOnNullTask();
+			this.mutuallyExclusiveTasks = settings.mutuallyExclusiveTasks();
+			
+			return;
+		}
 		
 		Class<?> clazz = job.getClass();
 		
@@ -293,6 +304,8 @@ public class UnboundedJobProcessor extends ResultCollectionSupport {
 						log.error(e);
 					}
 				}
+				
+				waitIfNeeded();
 
 				// Stop Job (Exception / Task Null)
 				stopJob();
@@ -432,6 +445,8 @@ public class UnboundedJobProcessor extends ResultCollectionSupport {
 				log.error("[UnboundedJobProcessor] Security Violation while Processing Result",e);
 				log.warn("[UnboundedJobProcessor] Stopping Job Execution");
 				
+				waitIfNeeded();
+				
 				// Update Future
 				profile.getFuture().setState(GridJobState.FAILED);
 				profile.getFuture().setException(e);
@@ -443,6 +458,8 @@ public class UnboundedJobProcessor extends ResultCollectionSupport {
 			} catch (Exception e) {
 				log.warn("[UnboundedJobProcessor] Exception while Processing Result",e);
 				log.warn("[UnboundedJobProcessor] Stopping Job Execution");
+				
+				waitIfNeeded();
 				
 				// Update Future
 				profile.getFuture().setState(GridJobState.FAILED);
@@ -468,8 +485,12 @@ public class UnboundedJobProcessor extends ResultCollectionSupport {
 			// Check for Security Violations (Fails Job)
 			if (taskResult.getException() instanceof SecurityException) {
 				
+				
+				
 				log.error("[UnboundedJobProcessor] Security Violation detected. Terminating GridJob" + 
 				          profile.getJobId());
+				
+				waitIfNeeded();
 				
 				// Fail the Job
 				profile.getFuture().fail(new SecurityViolationException("Security Violation Detected", 
@@ -540,5 +561,25 @@ public class UnboundedJobProcessor extends ResultCollectionSupport {
 	 */
 	protected void setCanceled(boolean canceled) {
 		this.canceled = canceled;
+	}
+	
+	/**
+	 * Withholds results if execution finished before minimum execution
+	 * duration, to avoid thread synchronization issues.
+	 */
+	private void waitIfNeeded() {
+		if (System.currentTimeMillis() - profile.getStartTime() < GridJobProfile.MINIMUM_EXEUCTION_TIME) {
+			try {
+				long duration = GridJobProfile.MINIMUM_EXEUCTION_TIME 
+						- (System.currentTimeMillis() 
+						- profile.getStartTime()) 
+						+ 1000;
+
+				if (duration < 0) return;
+				Thread.sleep(duration);
+			} catch (InterruptedException e) {
+				log.warn("Interrupted",e);
+			}
+		}
 	}
 }

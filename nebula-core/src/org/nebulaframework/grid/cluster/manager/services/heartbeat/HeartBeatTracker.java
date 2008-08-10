@@ -89,6 +89,7 @@ class HeartBeatTracker implements Runnable {
 					ClusterManager.getInstance().getServiceMessageSender()
 							.sendServiceMessage(message);
 					log.warn("[Heartbeat] Heartbeat Failed on " + nodeId.toString());
+					stop();
 				}
 			}
 			
@@ -111,6 +112,7 @@ class HeartBeatTracker implements Runnable {
 		Thread beatThread = new Thread(this, "HeartBeatTracker-"
 				+ nodeId.toString());
 		beatThread.setDaemon(true);
+		beatThread.setPriority(Thread.MAX_PRIORITY);
 		beatThread.start();
 		log.debug("[HeartBeat] Started Tracking : " + nodeId);
 	}

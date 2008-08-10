@@ -33,7 +33,8 @@ public class Kernel {
 		final double EPS = 1.0e-10;
 		if (FFT.test(x) / N > EPS)
 			return 0.0;
-
+		
+		System.err.println("FFT | Time : " + Q.read() + " | Cycles : " + cycles);
 		return FFT.num_flops(N) * cycles / Q.read() * 1.0e-6;
 	}
 
@@ -51,6 +52,9 @@ public class Kernel {
 
 			cycles *= 2;
 		}
+		
+		System.err.println("SOR | Time : " + Q.read() + " | Cycles : " + cycles);
+		
 		// approx Mflops
 		return SOR.num_flops(N, N, cycles) / Q.read() * 1.0e-6;
 	}
@@ -69,8 +73,7 @@ public class Kernel {
 			cycles *= 2;
 		}
 		// approx Mflops
-		System.err.println("MC : Cycles - " + cycles );
-		System.err.println("MC : Time - " + Q.read() );
+		System.err.println("MC | Time : " + Q.read() + " | Cycles : " + cycles);
 		return MonteCarlo.num_flops(cycles) / Q.read() * 1.0e-6;
 	}
 
@@ -137,6 +140,9 @@ public class Kernel {
 
 			cycles *= 2;
 		}
+		
+		System.err.println("Sparse | Time : " + Q.read() + " | Cycles : " + cycles);
+		
 		// approx Mflops
 		return SparseCompRow.num_flops(N, nz, cycles) / Q.read() * 1.0e-6;
 	}
@@ -176,6 +182,9 @@ public class Kernel {
 
 		// else return approx Mflops
 		//
+		
+		System.err.println("LU | Time : " + Q.read() + " | Cycles : " + cycles);
+		
 		return LU.num_flops(N) * cycles / Q.read() * 1.0e-6;
 	}
 

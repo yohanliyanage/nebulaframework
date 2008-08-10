@@ -153,6 +153,7 @@ public class ClusterMainUI extends JFrame {
 		/* -- Setup Tabs -- */
 		centerPanel.setLayout(new BorderLayout());
 		JTabbedPane tabs = new JTabbedPane();
+		tabs.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
 		centerPanel.add(tabs);
 		addUIElement("tabs",tabs);	// Add to components map
 		
@@ -1212,7 +1213,7 @@ public class ClusterMainUI extends JFrame {
 		
 		// Local Nodes
 		final JLabel nodes = getUIElement("general.stats.nodes");
-		nodes.setText("0");
+		nodes.setText(String.valueOf(ClusterManager.getInstance().getClusterRegistrationService().getNodeCount()));
 		
 		
 		// Local Nodes Update Hook
@@ -1246,7 +1247,7 @@ public class ClusterMainUI extends JFrame {
 		
 		// Active Jobs
 		final JLabel activejobs = getUIElement("general.stats.activejobs");
-		activejobs.setText("0");
+		activejobs.setText(String.valueOf(ClusterManager.getInstance().getJobService().getActiveJobCount()));
 		
 		// Active Jobs Update Hook
 		ServiceEventsSupport.addServiceHook(new ServiceHookCallback() {
@@ -1369,12 +1370,17 @@ public class ClusterMainUI extends JFrame {
 		final ClusterMainUI ui = new ClusterMainUI();
 		ui.setLocationRelativeTo(null);
 
+		ui.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		
 		// Close Handler
 		ui.addWindowListener(new WindowAdapter() {
 
+			
+		
+
 			@Override
 			public void windowClosing(WindowEvent e) {
-				ui.onShutdown();
+				ui.doShutdownCluster();
 			}
 			
 		});

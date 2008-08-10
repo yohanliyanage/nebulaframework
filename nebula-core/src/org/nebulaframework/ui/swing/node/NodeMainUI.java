@@ -1431,6 +1431,8 @@ public class NodeMainUI extends JFrame {
 		final NodeMainUI ui = new NodeMainUI();
 		ui.setLocationRelativeTo(null);
 
+		ui.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		
 		ui.addWindowListener(new WindowAdapter() {
 
 			@Override

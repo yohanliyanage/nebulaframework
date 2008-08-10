@@ -15,6 +15,7 @@
 package org.nebulaframework.grid.cluster.node.services.job.submission;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +27,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.ResultCallback;
+import org.nebulaframework.core.job.annotations.AnnotatedJobSupport;
 import org.nebulaframework.core.job.archive.GridArchive;
 import org.nebulaframework.core.job.exceptions.GridJobRejectionException;
 import org.nebulaframework.core.job.future.GridJobFuture;
@@ -119,6 +121,51 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
 
 	/**
 	 * {@inheritDoc}
+	 */
+	@Override
+	public GridJobFuture submitJob(Serializable annotatedJob)
+			throws GridJobRejectionException {
+		
+		// If it is of GridJob type, do not process annotations
+		if (annotatedJob instanceof GridJob) {
+			return submitJob((GridJob<?,?>) annotatedJob);
+		}
+		
+		GridJob<?, ?> job;
+		
+		try {
+			job = AnnotatedJobSupport.adaptAsGridJob(annotatedJob);
+		} catch (IllegalArgumentException e) {
+			throw new GridJobRejectionException("GridJob Adaption Failed",e);
+		}
+		
+		return submitJob(job);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public GridJobFuture submitJob(Serializable annotatedJob,
+			ResultCallback callback) throws GridJobRejectionException {
+		
+		// If it is of GridJob type, do not process annotations
+		if (annotatedJob instanceof GridJob) {
+			return submitJob((GridJob<?,?>) annotatedJob, callback);
+		}
+		
+		GridJob<?, ?> job;
+		
+		try {
+			job = AnnotatedJobSupport.adaptAsGridJob(annotatedJob);
+		} catch (IllegalArgumentException e) {
+			throw new GridJobRejectionException("GridJob Adaption Failed",e);
+		}
+		
+		return submitJob(job, callback);
+	}
+	/**
+	 * {@inheritDoc}
 	 * <p>
 	 * This method delegates to each {@GridJob} submission to internal
 	 * overloaded version of method {@link #submitJob(GridJob, GridArchive)}
@@ -210,7 +257,7 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
 			serialData = IOSupport.serializeToBytes(job);
 		} catch (IOException e) {
 			log.error("[JobSubmission] IO Exception while serializing data");
-			throw new GridJobRejectionException("Serialization Failed");
+			throw new GridJobRejectionException("Serialization Failed", e);
 		}
 		
 		String jobId = this.node
@@ -252,5 +299,6 @@ public class JobSubmissionServiceImpl implements JobSubmissionService {
 
 		return queueName;
 	}
+
 
 }
