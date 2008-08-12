@@ -9,7 +9,16 @@ import org.nebulaframework.core.job.annotations.GridTaskAdapter;
 import org.nebulaframework.core.job.splitaggregate.SplitAggregateGridJob;
 import org.nebulaframework.core.task.GridTask;
 
-// TODO FixDoc
+/**
+ * The SplitAggregateJobAdapter is capable of relaying Split-Aggregate
+ * method invocations to a object which uses Split-Aggregate annotations.
+ * 
+ * @author Yohan Liyanage
+ * @version 1.0
+ *
+ * @param <T> Type of intermediate results
+ * @param <R> Type of final result
+ */
 public class SplitAggregateJobAdapter<T extends Serializable, R extends Serializable> implements SplitAggregateGridJob<T,R>{
 
 	private static final long serialVersionUID = 1378671135368561704L;
@@ -20,6 +29,15 @@ public class SplitAggregateJobAdapter<T extends Serializable, R extends Serializ
 	private String taskMethod;
 	
 	
+	/**
+	 * Constucts a {@link SplitAggregateJobAdapter) for the given adaptee with the
+	 * specified splt, aggregate and task methods.
+	 * 
+	 * @param adaptee Adaptee
+	 * @param splitMethod Split Method
+	 * @param aggregateMethod Aggregate Method
+	 * @param taskMethod Task Method
+	 */
 	public SplitAggregateJobAdapter(Serializable adaptee, Method splitMethod,
 			Method aggregateMethod, Method taskMethod) {
 		super();
@@ -29,9 +47,13 @@ public class SplitAggregateJobAdapter<T extends Serializable, R extends Serializ
 		this.taskMethod = taskMethod.getName();
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@SuppressWarnings("unchecked")
 	public R aggregate(List<? extends Serializable> results) {
 		try {
+			// Invoke  Aggregate on Adaptee
 			Method m = adaptee.getClass().getMethod(aggregateMethod, List.class);
 			return (R) m.invoke(adaptee, results);
 		} catch (Exception e) {
@@ -39,6 +61,9 @@ public class SplitAggregateJobAdapter<T extends Serializable, R extends Serializ
 		}
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	@SuppressWarnings("unchecked")
 	public List<? extends GridTask<T>> split() {
@@ -49,6 +74,8 @@ public class SplitAggregateJobAdapter<T extends Serializable, R extends Serializ
 		
 		try {
 			Method m = adaptee.getClass().getMethod(splitMethod);
+			
+			// Invoke Split on Adaptee
 			list = (List<?>) m.invoke(adaptee);
 		} catch (Exception e) {
 			throw new RuntimeException("Exception in split",e);
@@ -58,6 +85,7 @@ public class SplitAggregateJobAdapter<T extends Serializable, R extends Serializ
 			throw new NullPointerException("Task list was null");
 		}
 
+		// Convert each object returned to a GridTask
 		for (Object obj : list) {
 			if (!(obj instanceof Serializable)) {
 				throw new IllegalArgumentException("Returned List from Split method was not Serializable");

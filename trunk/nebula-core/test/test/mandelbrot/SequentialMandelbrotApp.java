@@ -25,6 +25,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.util.StopWatch;
 
+// Modified From JavaSpaces Patterns and Principals
+// 
 public class SequentialMandelbrotApp extends JFrame {
 
 	public static final int MAX_LINES = 10; // # of scan lines per task ( must

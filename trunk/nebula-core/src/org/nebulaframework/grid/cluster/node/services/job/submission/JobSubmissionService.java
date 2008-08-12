@@ -131,7 +131,7 @@ public interface JobSubmissionService {
 	 * @return A {@code Map> containing {@code GridJobFuture} against fully
 	 * qualified class name of the {@code GridJob} class
 	 */
-	public Map<String, GridJobFuture> submitArchive(GridArchive archive);
+	public Map<String, GridJobFuture> submitArchive(GridArchive archive) throws GridJobRejectionException;
 	
 	/**
 	 * Submits the given {@code GridArchive} to the Grid through {@code ClusterManager}
@@ -153,5 +153,5 @@ public interface JobSubmissionService {
 	 * @return A {@code Map> containing {@code GridJobFuture} against fully
 	 * qualified class name of the {@code GridJob} class
 	 */
-	public Map<String, GridJobFuture> submitArchive(GridArchive archive, Map<String, ResultCallback> callbacks);
+	public Map<String, GridJobFuture> submitArchive(GridArchive archive, Map<String, ResultCallback> callbacks) throws GridJobRejectionException;;
 }

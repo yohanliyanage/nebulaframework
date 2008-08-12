@@ -13,6 +13,8 @@
  */
 package org.nebulaframework.grid;
 
+import java.io.Serializable;
+import java.util.Map;
 import java.util.Properties;
 
 import javax.jms.Connection;
@@ -23,12 +25,18 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.configuration.ConfigurationKeys;
 import org.nebulaframework.configuration.ConfigurationSupport;
+import org.nebulaframework.core.job.GridJob;
+import org.nebulaframework.core.job.ResultCallback;
+import org.nebulaframework.core.job.archive.GridArchive;
+import org.nebulaframework.core.job.exceptions.GridJobRejectionException;
+import org.nebulaframework.core.job.future.GridJobFuture;
 import org.nebulaframework.discovery.ClusterDiscoverySupport;
 import org.nebulaframework.discovery.DiscoveryFailureException;
 import org.nebulaframework.discovery.GridNodeDiscoverySupport;
 import org.nebulaframework.grid.cluster.manager.ClusterManager;
 import org.nebulaframework.grid.cluster.node.GridNode;
 import org.nebulaframework.grid.cluster.node.services.job.execution.TaskExecutor;
+import org.nebulaframework.grid.cluster.node.services.job.submission.JobSubmissionService;
 import org.nebulaframework.grid.service.event.ServiceEventsSupport;
 import org.nebulaframework.grid.service.event.ServiceHookCallback;
 import org.nebulaframework.grid.service.message.ServiceMessage;
@@ -40,11 +48,16 @@ import org.springframework.util.StopWatch;
 /**
  * The general access point to Nebula Grid. Allows to configure
  * and start {@link ClusterManager} and {@link GridNode} instances.
+ * <p>
+ * This class implements the JobSubmissionService to allow easy access 
+ * to grid job submission operations. Note that the Job submission methods
+ * delegate to the actual {@link JobSubmissionService} implementation. 
+ * These methods are only available when the Grid has an active Grid Node.
  * 
  * @author Yohan Liyanage
  * @version 1.0
  */
-public class Grid {
+public class Grid implements JobSubmissionService {
 	
 	/**
 	 * Nebula Version.
@@ -429,10 +442,67 @@ public class Grid {
 		return applicationContext !=null;
 	}
 
+	/**
+	 * Invoked by GridNodes to notify that the GridNode has
+	 * disconnected from Cluster.
+	 */
 	public static void nodeDisconnected() {
 		applicationContext = null;
 		node = false;
 		lightweight = false;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public Map<String, GridJobFuture> submitArchive(GridArchive archive) throws IllegalStateException, GridJobRejectionException{
+		return GridNode.getInstance().getJobSubmissionService().submitArchive(archive);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public Map<String, GridJobFuture> submitArchive(GridArchive archive,
+			Map<String, ResultCallback> callbacks) throws IllegalStateException, GridJobRejectionException {
+		return GridNode.getInstance().getJobSubmissionService().submitArchive(archive, callbacks);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public GridJobFuture submitJob(Serializable annotatedJob)
+			throws GridJobRejectionException, IllegalStateException {
+		return GridNode.getInstance().getJobSubmissionService().submitJob(annotatedJob);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public GridJobFuture submitJob(Serializable annotatedJob,
+			ResultCallback callback) throws GridJobRejectionException, IllegalStateException {
+		return GridNode.getInstance().getJobSubmissionService().submitJob(annotatedJob, callback);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public GridJobFuture submitJob(GridJob<?, ?> job)
+			throws GridJobRejectionException, IllegalStateException {
+		return GridNode.getInstance().getJobSubmissionService().submitJob(job);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public GridJobFuture submitJob(GridJob<?, ?> job, ResultCallback callback)
+			throws GridJobRejectionException, IllegalStateException {
+		return GridNode.getInstance().getJobSubmissionService().submitJob(job, callback);
 	}
 
 	

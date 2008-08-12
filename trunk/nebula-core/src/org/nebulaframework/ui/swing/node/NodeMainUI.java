@@ -1219,8 +1219,8 @@ public class NodeMainUI extends JFrame {
 	 * Displays Configuration dialog
 	 */
 	protected void showConfiguration() {
-		// TODO Auto-generated method stub
-		
+		// TODO Implement
+		JOptionPane.showMessageDialog(this, "This feature is not implemented");		
 	}
 
 	/**

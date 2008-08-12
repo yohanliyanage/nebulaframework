@@ -6,7 +6,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-// TODO FixDoc
+/**
+ * Marker Annotation which denotes a
+ * Split Aggregate Grid Job.
+ * 
+ * @author Yohan Liyanage
+ * @version 1.0
+ */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

@@ -105,7 +105,7 @@ public class MandelbrotApp extends JFrame {
 			StopWatch sw = new StopWatch();
 			sw.start();
 
-			GridNode node = Grid.startGridNode();
+			GridNode node = Grid.startLightGridNode();
 
 			log.info("GridNode ID : " + node.getId());
 

@@ -8,10 +8,21 @@ import org.apache.commons.logging.LogFactory;
 import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.annotations.AbstractAnnotationProcessor;
 
+/**
+ * The Unbounded Annotation Processor is responsible for
+ * handling annotations of Unbounded Jobs.
+ * 
+ * @author Yohan Liyanage
+ * @version 1.0
+ */
 public class UnboundedAnnotationProcessor extends AbstractAnnotationProcessor {
 
 	private static final Log log = LogFactory
 			.getLog(UnboundedAnnotationProcessor.class);
+	
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public GridJob<?, ?> adapt(Serializable obj)
 			throws IllegalArgumentException {
@@ -58,6 +69,9 @@ public class UnboundedAnnotationProcessor extends AbstractAnnotationProcessor {
 		return job;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean isValid(Serializable obj) {
 		
@@ -90,10 +104,24 @@ public class UnboundedAnnotationProcessor extends AbstractAnnotationProcessor {
 		return true;
 	}
 
+	/**
+	 * Returns true if the given class contains the UnboundedJob annotation.
+	 * 
+	 * @param clazz class to test
+	 * @return true if has UnboundedJob annotation
+	 */
 	private boolean isUnbounded(Class<? extends Serializable> clazz) {
 		return clazz.isAnnotationPresent(UnboundedJob.class);
 	}
 	
+	/**
+	 * Returns a reference to the method which is annotated
+	 * with TaskGeneator annotation.
+	 * 
+	 * @param clazz class to process
+	 * @return Method reference to the method with TaskGeneator annotation
+	 * @throws IllegalArgumentException if class does not contain proper TaskGeneator method
+	 */
 	private Method taskGeneratorMethod(Class<?> clazz) throws IllegalArgumentException {
 
 		for (Method m : clazz.getMethods()) {
@@ -130,6 +158,14 @@ public class UnboundedAnnotationProcessor extends AbstractAnnotationProcessor {
 				+ clazz.getSimpleName());
 	}
 	
+	/**
+	 * Returns a reference to the method which is annotated
+	 * with ResultPostProcessor annotation.
+	 * 
+	 * @param clazz class to process
+	 * @return Method reference to the method with ResultPostProcessor annotation
+	 * @throws IllegalArgumentException if class does not contain proper ResultPostProcessor method
+	 */
 	private Method processResultMethod(Class<?> clazz) throws IllegalArgumentException {
 		for (Method m : clazz.getMethods()) {
 
