@@ -199,7 +199,11 @@ public class TaskExecutor {
 					@Override
 					public void onServiceEvent(ServiceMessage message) {
 						ServiceMessage msg = new ServiceMessage(jobId, ServiceMessageType.JOB_END);
-						ServiceEventsSupport.fireServiceEvent(msg);
+						try {
+							GridNode.getInstance().getJobExecutionService().onServiceMessage(msg);
+						} catch (IllegalStateException e) {
+							log.debug("GridNode Instance Destroyed");
+						}
 					}
 					
 				}, GridNode.getInstance().getClusterId().toString(), ServiceMessageType.NODE_DISCONNECTED);

@@ -10,16 +10,28 @@ import org.nebulaframework.core.job.GridJob;
 import org.nebulaframework.core.job.annotations.AbstractAnnotationProcessor;
 
 
-// TODO FixDoc
+/**
+ * The Split-Aggregate Annotation Processor is responsible for
+ * handling annotations of Split-Aggregate Jobs.
+ * 
+ * @author Yohan Liyanage
+ * @version 1.0
+ */
 public class SplitAggregatAnnotationProcessor extends AbstractAnnotationProcessor {
 
 	private static final Log log = LogFactory
 			.getLog(SplitAggregatAnnotationProcessor.class);
 	
+	/**
+	 * Default Constructor.
+	 */
 	public SplitAggregatAnnotationProcessor() {
 		super();
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public GridJob<?, ?> adapt(Serializable obj) throws IllegalArgumentException {
 		
@@ -38,7 +50,9 @@ public class SplitAggregatAnnotationProcessor extends AbstractAnnotationProcesso
 	}
 
 
-
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean isValid(Serializable obj) {
 		
@@ -59,10 +73,23 @@ public class SplitAggregatAnnotationProcessor extends AbstractAnnotationProcesso
 		return true;
 	}
 
+	/**
+	 * Returns true if the given class contains SplitAggregateJob annotation.
+	 * @param clazz class to test
+	 * @return true if SplutAggregateJob annotation is present
+	 */
 	private boolean isSplitAggregate(Class<? extends Serializable> clazz) {
 		return clazz.isAnnotationPresent(SplitAggregateJob.class);
 	}
 	
+	/**
+	 * Returns a reference to the method which is annotated
+	 * with Split annotation.
+	 * 
+	 * @param clazz class to process
+	 * @return Method reference to the method with Split annotation
+	 * @throws IllegalArgumentException if class does not contain proper split method
+	 */
 	private Method splitMethod(Class<?> clazz) throws IllegalArgumentException {
 		
 		for (Method m : clazz.getMethods()) {
@@ -95,6 +122,14 @@ public class SplitAggregatAnnotationProcessor extends AbstractAnnotationProcesso
 		throw new IllegalArgumentException("No Split Annotation Found in type " + clazz.getSimpleName());
 	}
 	
+	/**
+	 * Returns a reference to the method which is annotated
+	 * with Aggregate annotation.
+	 * 
+	 * @param clazz class to process
+	 * @return Method reference to the method with Aggregate annotation
+	 * @throws IllegalArgumentException if class does not contain proper aggregate method
+	 */
 	private Method aggregateMethod(Class<?> clazz) throws IllegalArgumentException {
 		for (Method m : clazz.getMethods()) {
 			

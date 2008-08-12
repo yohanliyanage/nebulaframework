@@ -314,6 +314,7 @@ public class ClusterMainUI extends JFrame {
 		// Discover -> Multicast
 		JMenuItem clusterDiscoverMulticast = new JMenuItem("Multicast");
 		clusterDiscoverMulticast.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F9,0));
+		clusterDiscoverMulticast.setEnabled(false); 
 		clusterDiscoverMulticast.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				doDiscoverMulticast();
@@ -324,6 +325,7 @@ public class ClusterMainUI extends JFrame {
 		
 		// Discover -> WS
 		JMenuItem clusterDiscoverWS = new JMenuItem("Colombus Web Service");
+		clusterDiscoverWS.setEnabled(false);
 		clusterDiscoverWS.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F10,0));
 		clusterDiscoverWS.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -1130,24 +1132,24 @@ public class ClusterMainUI extends JFrame {
 	 * Invokes Peer Discovery using Colombus Web Servers.
 	 */
 	protected void doDiscoverWS() {
-		// TODO Auto-generated method stub
-		
+		// TODO Implement
+		JOptionPane.showMessageDialog(this, "This feature is not implemented");
 	}
 
 	/**
 	 * Invokes Peer Discovery using Multicast.
 	 */
 	protected void doDiscoverMulticast() {
-		// TODO Auto-generated method stub
-		
+		// TODO Implement
+		JOptionPane.showMessageDialog(this, "This feature is not implemented");
 	}
 
 	/**
 	 * Displays Configuration Dialog Box.
 	 */
 	protected void showConfiguration() {
-		// TODO Auto-generated method stub
-		
+		// TODO Implement
+		JOptionPane.showMessageDialog(this, "This feature is not implemented");
 	}
 	
 	/**
